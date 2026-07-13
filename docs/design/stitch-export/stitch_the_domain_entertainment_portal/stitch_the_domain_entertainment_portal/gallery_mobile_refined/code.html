@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Domain - Gallery</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@600&amp;family=Inter:wght@400&amp;family=Syne:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#d0c5af",
+                "on-error-container": "#ffdad6",
+                "inverse-surface": "#e3e2e7",
+                "primary-fixed-dim": "#e9c349",
+                "on-tertiary-container": "#454544",
+                "on-secondary-fixed-variant": "#474646",
+                "surface": "#121317",
+                "on-tertiary-fixed-variant": "#474746",
+                "on-secondary-fixed": "#1c1b1b",
+                "surface-container-lowest": "#0d0e12",
+                "on-tertiary-fixed": "#1c1b1b",
+                "secondary-fixed": "#e5e2e1",
+                "primary-fixed": "#ffe088",
+                "surface-container-high": "#292a2e",
+                "error": "#ffb4ab",
+                "tertiary": "#d0cdcd",
+                "on-secondary": "#313030",
+                "error-container": "#93000a",
+                "surface-variant": "#343539",
+                "background": "#121317",
+                "on-surface": "#e3e2e7",
+                "on-primary": "#3c2f00",
+                "on-primary-fixed": "#241a00",
+                "on-primary-container": "#554300",
+                "surface-tint": "#e9c349",
+                "outline": "#99907c",
+                "tertiary-container": "#b4b2b2",
+                "primary-container": "#d4af37",
+                "secondary-fixed-dim": "#c8c6c5",
+                "primary": "#f2ca50",
+                "inverse-on-surface": "#2f3034",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "secondary-container": "#4a4949",
+                "surface-container-low": "#1a1b1f",
+                "tertiary-fixed": "#e5e2e1",
+                "surface-container-highest": "#343539",
+                "surface-bright": "#38393d",
+                "surface-container": "#1e1f23",
+                "on-secondary-container": "#bab8b7",
+                "inverse-primary": "#735c00",
+                "outline-variant": "#4d4635",
+                "secondary": "#c8c6c5",
+                "surface-dim": "#121317",
+                "on-background": "#e3e2e7",
+                "on-primary-fixed-variant": "#574500",
+                "on-error": "#690005",
+                "on-tertiary": "#313030"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "element-gap": "32px",
+                "container-max": "1440px",
+                "section-gap": "160px",
+                "margin-mobile": "20px",
+                "gutter": "24px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Syne"
+                ],
+                "headline-lg-mobile": [
+                        "Syne"
+                ],
+                "label-sm": [
+                        "Geist"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Syne"
+                ],
+                "display-lg": [
+                        "Syne"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "display-xl": [
+                        "Syne"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "36px",
+                        {
+                                "lineHeight": "44px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-lg": [
+                        "64px",
+                        {
+                                "lineHeight": "72px",
+                                "letterSpacing": "-0.03em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-xl": [
+                        "80px",
+                        {
+                                "lineHeight": "90px",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "800"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .mask-reveal {
+            animation: maskReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        
+        @keyframes maskReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .masonry-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: start;
+        }
+
+        @media (min-width: 768px) {
+            .masonry-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .masonry-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24 md:pb-0 overflow-x-hidden antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl dark:bg-surface/80 border-b border-white/5 transition-all duration-300" id="topAppBar">
+<div class="flex justify-between items-center px-margin-mobile md:px-gutter py-4 max-w-container-max mx-auto">
+<div class="flex items-center gap-4">
+<button aria-label="Menu" class="text-primary dark:text-primary hover:text-primary transition-all duration-300 scale-95 active:scale-90 p-2 -ml-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+</div>
+<div class="absolute left-1/2 -translate-x-1/2 text-center md:static md:translate-x-0">
+<h1 class="font-display-lg text-headline-md md:text-headline-lg text-primary dark:text-primary tracking-tighter m-0 leading-none">The Domain</h1>
+</div>
+<nav class="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+<a class="text-on-surface/70 font-label-sm hover:text-primary transition-colors py-2" href="#">Home</a>
+<a class="text-on-surface/70 font-label-sm hover:text-primary transition-colors py-2" href="#">Events</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-label-sm" href="#">Gallery</a>
+<a class="text-on-surface/70 font-label-sm hover:text-primary transition-colors py-2" href="#">Contact</a>
+</nav>
+<div class="flex items-center">
+<button class="bg-primary-container text-on-primary-container font-label-sm px-6 py-3 rounded hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all duration-300 scale-95 active:scale-90">
+                    Get Tickets
+                </button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-[104px] w-full max-w-container-max mx-auto px-margin-mobile md:px-gutter pb-24 md:pb-section-gap">
+<!-- Header & Filters -->
+<section class="mb-12 mask-reveal" style="animation-delay: 0.1s;">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<h2 class="font-headline-lg-mobile md:font-display-lg text-headline-lg-mobile md:text-display-lg tracking-tighter mb-4 text-white">Immersive Archives</h2>
+<p class="font-body-lg text-body-md md:text-body-lg text-on-surface-variant max-w-2xl">Relive the energy. High-definition highlights from our premier events.</p>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<button class="whitespace-nowrap px-6 py-3 rounded-full bg-primary text-on-primary font-label-sm transition-all duration-300 shrink-0">All Media</button>
+<button class="whitespace-nowrap px-6 py-3 rounded-full border border-outline text-on-surface hover:border-primary hover:text-primary font-label-sm transition-all duration-300 shrink-0">Concerts</button>
+<button class="whitespace-nowrap px-6 py-3 rounded-full border border-outline text-on-surface hover:border-primary hover:text-primary font-label-sm transition-all duration-300 shrink-0">Corporate</button>
+<button class="whitespace-nowrap px-6 py-3 rounded-full border border-outline text-on-surface hover:border-primary hover:text-primary font-label-sm transition-all duration-300 shrink-0">Festivals</button>
+<button class="whitespace-nowrap px-6 py-3 rounded-full border border-outline text-on-surface hover:border-primary hover:text-primary font-label-sm transition-all duration-300 shrink-0">Highlights</button>
+</div>
+</section>
+<!-- Masonry Grid for Media -->
+<section class="masonry-grid">
+<!-- Card 1 -->
+<div class="relative group aspect-[9/16] overflow-hidden bg-surface-container rounded-lg mask-reveal cursor-pointer" onclick="openModal()" style="animation-delay: 0.2s;">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A striking vertical wide shot of a massive concert crowd illuminated by piercing yellow and gold laser lights cutting through heavy theatrical fog. The stage is visible in the distance, bathed in bright, cinematic high-contrast lighting against the obsidian darkness of the premier entertainment venue. The mood is euphoric and high-energy." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAw5DJcUDydbL_1Vq6NKRErGpOZBTUEXXT6iaydgoZgsaOE5U9NMXfkrJgFpiVzSIaAwKavEhGb6fHRvwSlGZqnZ79iwQ1dXO0bFbtQ4jr9kDUoblEjjJ0xM_pWSAoSLimIuT35iBdqDb8gLQWjYBrZNn0-umRMLXsTlwjvTc4jTiSPPMEaM0O8sq24UQup_I5V_Hk4XBSJZzheYUz5H6zVxBvOlDvHzvbKo6_EOu6qBlH17A5c7NJM')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="w-16 h-16 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<span class="inline-block px-2 py-1 mb-2 bg-surface/50 backdrop-blur-md border border-white/10 rounded font-label-sm text-label-sm text-primary uppercase tracking-widest">Concert</span>
+<h3 class="font-headline-md text-headline-md text-white line-clamp-2 leading-tight">Neon Nights Festival '24</h3>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="relative group aspect-[9/16] overflow-hidden bg-surface-container rounded-lg mask-reveal cursor-pointer mt-4 md:mt-0" onclick="openModal()" style="animation-delay: 0.3s;">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="An extreme close-up of a DJ's hands manipulating a high-end mixing console in a dark, moody club setting. The console buttons glow with sharp yellow and gold accents. The background is a deep, blurred void, emphasizing the cinematic minimalism and premium, atmospheric depth of the venue's visual narrative. The lighting is low-key but sharp." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDfs64_f_rzqg0gHabji7tkmpTYfQSJlaKHzoxrVn2mnB01Xr7hVjTHt86qFqqpsEF_xOBngAAyU3NOkfZnUhjfqHveIXXQmphAFmfXjAAQN6qfA9uU80YfGcV8cYDpbNOEr60WLFP4pD-kJaHJEcjOqaJQ67VoFXLyzTUjP8EeMNx_53L2dVkjswUqeRokhXri2A-vpC0Q3YQ1mSy_naJfvQf2D22E63co9zQM5QDjHhVAKt6W82u1')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="w-16 h-16 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<span class="inline-block px-2 py-1 mb-2 bg-surface/50 backdrop-blur-md border border-white/10 rounded font-label-sm text-label-sm text-primary uppercase tracking-widest">Highlight</span>
+<h3 class="font-headline-md text-headline-md text-white line-clamp-2 leading-tight">Guest DJ Mix: Vol 3</h3>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="relative group aspect-[9/16] overflow-hidden bg-surface-container rounded-lg mask-reveal cursor-pointer" onclick="openModal()" style="animation-delay: 0.4s;">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A wide, dramatic shot of a high-end corporate gala setup inside a vast, dark industrial event space. Long banqueting tables are adorned with minimalist white floral centerpieces and illuminated by precise, warm gold spotlighting. The surrounding walls are draped in sheer black fabric, creating an atmosphere of exclusive luxury and cinematic elegance." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC4ZQIuIJVbJeqFIlPnGDRPPHdg9LlvL2FXvatomzyN_As3cxAhEO_3-cjoJggzTCG4kX-NT5GjKrmbyfxNl8vW99zmMnEoDxtpI1_Ts81qt5WD0s3wfiBAViJ2ehy9aHdXLDOXJ-9LDk2IQRHbalPSUtPc8fZuPJHCAT_EFpqOEIvGYYHTGqvSCO96GSmDTNdxdwJ6-rrIUOFBJQn9yzE2n250iXvdXWjU1UyAMTXgYuKq4YUR44U3')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="w-16 h-16 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<span class="inline-block px-2 py-1 mb-2 bg-surface/50 backdrop-blur-md border border-white/10 rounded font-label-sm text-label-sm text-primary uppercase tracking-widest">Corporate</span>
+<h3 class="font-headline-md text-headline-md text-white line-clamp-2 leading-tight">Tech Summit Gala</h3>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="relative group aspect-[9/16] overflow-hidden bg-surface-container rounded-lg mask-reveal cursor-pointer mt-4 md:mt-0" onclick="openModal()" style="animation-delay: 0.5s;">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A dynamic, low-angle shot of a performer on stage reaching towards the audience, captured in sharp silhouette against a massive LED screen displaying abstract golden geometric patterns. The air is thick with theatrical smoke, and the heavy contrast between the deep blacks and the radiant yellow accent creates a powerful, high-stakes cinematic feel." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCf_BC5kwYBmSlDPhLfyrnX0IN01-ZQN8lhuciyLaizvhHK3w_M2C8mtDZwODU3zfx-8CyeFcXanb8hKF94nNhamVFjzM9wIRIiKhwwONaHJbSDIq-jK9z5JDZvoJFoXBAHDr00TS-QcpcXMNWCq5GSCQ7ILtwauJfRs-BhSH3aLjRzzYnlN3OWWd9NhMZEDdXZJg-TkEJezujierhCqxBcpujZVrnbQA5kYPNMX2XHbkY3WqHUyq58')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="w-16 h-16 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<span class="inline-block px-2 py-1 mb-2 bg-surface/50 backdrop-blur-md border border-white/10 rounded font-label-sm text-label-sm text-primary uppercase tracking-widest">Concert</span>
+<h3 class="font-headline-md text-headline-md text-white line-clamp-2 leading-tight">The Vanguard Tour</h3>
+</div>
+</div>
+</section>
+<!-- Loading Indicator -->
+<div class="flex justify-center pt-12 pb-12">
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-bounce"></div>
+<div class="w-2 h-2 rounded-full bg-primary animate-bounce" style="animation-delay: 0.2s"></div>
+<div class="w-2 h-2 rounded-full bg-primary animate-bounce" style="animation-delay: 0.4s"></div>
+</div>
+</div>
+</main>
+<!-- Modal/Lightbox -->
+<div class="fixed inset-0 z-[100] hidden flex-col items-center justify-center bg-background/95 backdrop-blur-xl opacity-0 transition-opacity duration-300" id="mediaModal">
+<button class="absolute top-6 right-6 text-on-surface hover:text-primary transition-colors p-4 rounded-full bg-surface/20 backdrop-blur-md border border-white/10 z-10" onclick="closeModal()">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+<div class="w-full h-full md:max-w-[400px] md:h-[80vh] bg-surface-container-highest md:rounded-xl overflow-hidden relative shadow-[0_0_40px_rgba(212,175,55,0.15)] transform scale-95 transition-transform duration-300" id="modalContent">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A placeholder video frame showing a massive concert crowd bathed in cinematic gold lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB3Iy_a0Mdv06Wtff543tfma0fuVyYtv4cKybTWXQ13VJ2JSuDZtbdXbRn5-lV4d9LeNwlnchfVUSYwd0uFEDNoU1rZ3DBusrlUpBIBbtfu33UGlL1etZzkNdE7VQb2FrMGt0W0K4o19S5Dcx0CAORGMPsiELQEs90NgW9WraHsu0v_H0gBuQwewSCZ16a_Zsdcb58aDZ4ob8nFJqb95ggJJa9sSuCq3qgPa7__OJikUScNA4xmuCsh')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute inset-0 flex items-center justify-center cursor-pointer group">
+<div class="w-20 h-20 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/50 group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-primary text-5xl ml-2" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface/95 backdrop-blur-2xl dark:bg-surface-dim/95 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform active:scale-90 flex justify-around items-center h-20 px-4 pb-safe border-t border-white/5">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:bg-surface-bright p-3 rounded-lg flex-1" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:bg-surface-bright p-3 rounded-lg flex-1" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">calendar_today</span>
+<span class="font-label-sm text-label-sm">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary active:bg-surface-bright p-3 rounded-lg flex-1 relative" href="#">
+<span class="absolute top-0 w-8 h-1 bg-primary rounded-b-full"></span>
+<span class="material-symbols-outlined mb-1 mt-1" style="font-variation-settings: 'FILL' 1;">auto_awesome_motion</span>
+<span class="font-label-sm text-label-sm font-bold">Gallery</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:bg-surface-bright p-3 rounded-lg flex-1" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">mail</span>
+<span class="font-label-sm text-label-sm">Contact</span>
+</a>
+</nav>
+<script>
+        // Modal Logic
+        const modal = document.getElementById('mediaModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            // Trigger reflow
+            void modal.offsetWidth;
+            modal.classList.add('opacity-100');
+            modalContent.classList.add('scale-100');
+            modalContent.classList.remove('scale-95');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('opacity-100');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Top AppBar scroll effect
+        const topAppBar = document.getElementById('topAppBar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                topAppBar.classList.add('shadow-lg', 'bg-surface/95');
+                topAppBar.classList.remove('bg-transparent');
+            } else {
+                topAppBar.classList.remove('shadow-lg', 'bg-surface/95');
+                topAppBar.classList.add('bg-transparent');
+            }
+        });
+    </script>
+</body></html>

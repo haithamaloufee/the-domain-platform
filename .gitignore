@@ -1,0 +1,56 @@
+# Dependencies and frontend builds
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.turbo/
+
+# .NET outputs
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and diagnostics
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary and editor files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Production and raw media
+assets/raw-media/**
+!assets/raw-media/README.md
+uploads/
+**/uploads/
+production-media/
+
+# Local databases and container volumes
+docker/volumes/
+**/pgdata/
+*.db
+*.db-shm
+*.db-wal
+
+# Tool and test artifacts
+.cache/
+.nyc_output/
+TestResults/

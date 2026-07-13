@@ -1,0 +1,34 @@
+@TheDomain.Api_HostAddress = http://localhost:5276
+
+GET {{TheDomain.Api_HostAddress}}/health
+Accept: text/plain
+
+###
+
+GET {{TheDomain.Api_HostAddress}}/api/info
+Accept: application/json
+
+###
+
+POST {{TheDomain.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "<local-password>"
+}
+
+###
+
+GET {{TheDomain.Api_HostAddress}}/api/auth/me
+Authorization: Bearer <access-token>
+
+###
+
+GET {{TheDomain.Api_HostAddress}}/api/public/events/upcoming
+Accept: application/json
+
+###
+
+GET {{TheDomain.Api_HostAddress}}/api/admin/events
+Authorization: Bearer <access-token>

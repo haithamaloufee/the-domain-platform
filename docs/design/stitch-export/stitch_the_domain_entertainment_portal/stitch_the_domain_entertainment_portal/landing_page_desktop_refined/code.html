@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Domain - Premium Entertainment Venue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Syne:wght@600;700;800&amp;family=Geist:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#d0c5af",
+                "on-error-container": "#ffdad6",
+                "inverse-surface": "#e3e2e7",
+                "primary-fixed-dim": "#e9c349",
+                "on-tertiary-container": "#454544",
+                "on-secondary-fixed-variant": "#474646",
+                "surface": "#121317",
+                "on-tertiary-fixed-variant": "#474746",
+                "on-secondary-fixed": "#1c1b1b",
+                "surface-container-lowest": "#0d0e12",
+                "on-tertiary-fixed": "#1c1b1b",
+                "secondary-fixed": "#e5e2e1",
+                "primary-fixed": "#ffe088",
+                "surface-container-high": "#292a2e",
+                "error": "#ffb4ab",
+                "tertiary": "#d0cdcd",
+                "on-secondary": "#313030",
+                "error-container": "#93000a",
+                "surface-variant": "#343539",
+                "background": "#121317",
+                "on-surface": "#e3e2e7",
+                "on-primary": "#3c2f00",
+                "on-primary-fixed": "#241a00",
+                "on-primary-container": "#554300",
+                "surface-tint": "#e9c349",
+                "outline": "#99907c",
+                "tertiary-container": "#b4b2b2",
+                "primary-container": "#d4af37",
+                "secondary-fixed-dim": "#c8c6c5",
+                "primary": "#f2ca50",
+                "inverse-on-surface": "#2f3034",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "secondary-container": "#4a4949",
+                "surface-container-low": "#1a1b1f",
+                "tertiary-fixed": "#e5e2e1",
+                "surface-container-highest": "#343539",
+                "surface-bright": "#38393d",
+                "surface-container": "#1e1f23",
+                "on-secondary-container": "#bab8b7",
+                "inverse-primary": "#735c00",
+                "outline-variant": "#4d4635",
+                "secondary": "#c8c6c5",
+                "surface-dim": "#121317",
+                "on-background": "#e3e2e7",
+                "on-primary-fixed-variant": "#574500",
+                "on-error": "#690005",
+                "on-tertiary": "#313030"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "element-gap": "32px",
+                "container-max": "1440px",
+                "section-gap": "160px",
+                "margin-mobile": "20px",
+                "gutter": "24px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Syne"
+                ],
+                "headline-lg-mobile": [
+                        "Syne"
+                ],
+                "label-sm": [
+                        "Geist"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Syne"
+                ],
+                "display-lg": [
+                        "Syne"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "display-xl": [
+                        "Syne"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "36px",
+                        {
+                                "lineHeight": "44px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-lg": [
+                        "64px",
+                        {
+                                "lineHeight": "72px",
+                                "letterSpacing": "-0.03em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-xl": [
+                        "80px",
+                        {
+                                "lineHeight": "90px",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "800"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        /* 
+         * Animation Notes:
+         * Page loader: Implement a fast, stark logo reveal fading to content.
+         * Section reveal: Use subtle upward translation and opacity fade-in on scroll.
+         * Counters: Animate large metric numbers cleanly from 0 on visibility.
+         */
+        
+        .glow-hover:hover {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .mask-reveal {
+            clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0% 100%);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mask-reveal.visible {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Navbar shrink transition */
+        #main-nav {
+            transition: padding 0.5s ease-in-out, background-color 0.5s ease-in-out;
+        }
+        #main-nav.scrolled {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: rgba(18, 19, 23, 0.7);
+            backdrop-filter: blur(24px);
+            border-bottom-color: rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased overflow-x-hidden selection:bg-primary/30 selection:text-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-transparent border-b border-transparent py-6" id="main-nav">
+<div class="flex justify-between items-center px-gutter md:px-element-gap max-w-container-max mx-auto h-full">
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+<a class="font-headline-md text-headline-md text-on-surface tracking-tighter" href="#">The Domain</a>
+</div>
+<nav class="hidden md:flex items-center gap-12">
+<a class="text-primary font-label-sm text-label-sm border-b border-primary pb-1 uppercase" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm uppercase" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm uppercase" href="#">Gallery</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm uppercase" href="#">Contact</a>
+</nav>
+<button class="bg-primary text-on-primary px-8 py-3 rounded font-label-sm text-label-sm uppercase glow-hover transition-all duration-300 hover:opacity-90">
+                Get Tickets
+            </button>
+</div>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="relative h-screen w-full flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30 z-10 mix-blend-multiply"></div>
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/40 to-background z-10 pointer-events-none"></div>
+<img class="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" data-alt="A cinematic, ultra-high-resolution wide shot of an empty, vast underground concert hall or industrial club space. The atmosphere is heavy with atmospheric fog and subtle laser lighting piercing through the darkness in deep obsidian tones with singular, radiant golden accents. The mood is anticipatory, high-end, and immersive." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3gXYxePus0kI25PWCUSBS1UHBFDG52P0pqDKNNj5lRQCZekd4CQaRf8o0JS1iI7kTRBHiiHwjC1HTIpqo-UpNFcKpAVV_Ay8qVH0a83oyePwERx6yr1Ezoe2zFlJ0cJ_pI-XhMNPZYf_IMeSJ4pBXagDF_HwBZoTEIXYts7wOorglLpD4tirWar2LZBcM8xCEdPoLZv41BTUGRWfZiHPuebS0ADdsKh2qpte3b-QOml2xdob7U4w3"/>
+</div>
+<div class="relative z-10 text-center max-w-5xl px-8 flex flex-col items-center mt-20">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-[0.4em] mb-8 mask-reveal delay-100">Welcome to the Pinnacle</p>
+<h1 class="font-display-xl text-display-xl text-on-surface mb-8 mask-reveal delay-200">Where Nightlife<br/>Meets High Art.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-12 mask-reveal delay-300 leading-relaxed">An immersive, agency-grade entertainment experience designed for those who demand the extraordinary.</p>
+<button class="bg-surface-container-highest/50 backdrop-blur-md border border-outline-variant text-on-surface px-10 py-5 rounded font-label-sm text-label-sm uppercase hover:bg-surface-container hover:border-primary/50 transition-all duration-300 mask-reveal delay-400">
+                    Explore Upcoming Events
+                </button>
+</div>
+</section>
+<!-- Featured Event Bento Grid -->
+<section class="py-section-gap px-gutter md:px-element-gap max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-element-gap mask-reveal gap-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-6">Curated Experiences</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">Our lineup is meticulously selected to provide unparalleled audiovisual journeys.</p>
+</div>
+<a class="font-label-sm text-label-sm text-on-surface uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-3 pb-2 border-b border-transparent hover:border-primary" href="#">
+                    View All <span class="material-symbols-outlined text-lg">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-[900px] md:h-[800px]">
+<!-- Main Feature -->
+<div class="col-span-1 md:col-span-8 relative group overflow-hidden rounded-xl bg-surface-container-lowest border border-outline-variant/30 mask-reveal h-full">
+<img class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-80 transition-all duration-1000 grayscale group-hover:grayscale-0" data-alt="A striking, moody portrait of an electronic music DJ performing on stage. The shot is captured from a low angle, emphasizing a monolithic scale. Lighting is sparse but impactful, featuring stark contrasts between deep blacks and sharp beams of golden light cutting through stage fog. Cinematic noir aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvjfmXdkUpQlADOlja50rv3L83WuKynWCkFM5jkiKuzuEb7O86No28PIw_LsOLlQ-eE6fjHHZqrQv9odDLWt2EwZ-M1WwsAr4QxQ2sEh4XQ9NCKbHFpWEo6zpiGAcO3EGmT3Dd8PBSZZlOYDmNsqtfvQevb2Urrd9RqIMZy2fkWKxwSPv2K5iixPrzsyFXzWnnbayev1i87THO3FdJo4bAmdkdM6f6EWuSPRHPTGjsOWpMmEJKR4tB"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/40 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-12 w-full transform translate-y-6 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 tracking-widest uppercase">Next Friday • Main Room</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mb-4">Resonance Protocol</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 mb-8 max-w-2xl">An extended 6-hour set exploring the deep, melodic spectrums of modern techno, accompanied by bespoke visual architecture.</p>
+<button class="bg-surface-bright/80 backdrop-blur-xl border border-outline-variant text-on-surface px-8 py-4 rounded font-label-sm text-label-sm uppercase tracking-widest hover:border-primary hover:text-primary transition-all duration-300 opacity-0 group-hover:opacity-100 delay-200">Reserve Access</button>
+</div>
+</div>
+<!-- Secondary Features -->
+<div class="col-span-1 md:col-span-4 grid grid-rows-2 gap-gutter h-full">
+<div class="relative group overflow-hidden rounded-xl bg-surface-container-lowest border border-outline-variant/30 mask-reveal delay-100 h-full">
+<img class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-all duration-1000 grayscale group-hover:grayscale-0" data-alt="A high-contrast conceptual image of an avant-garde fashion showcase or art installation within a dark gallery space. Focus on sharp geometric shapes and silhouettes against an atmospheric, shadowed background illuminated by a single spotlight. Sophisticated, noir vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSFiDjxkrk0ZbrZfDzb7vIC1NuJkMaqrggqiPj-8MKZJnKUsZe_nwd1k19vq_BWnpz1yGAdTRXybtwadkKvf09Ru5CVhRLRxw-eQrmEKlUJbinsMbsmHIblyQwNMzOFTSn2KUpbcwwdgVHKMPbHinajJkuQDdKaLmP-pxxQaPgtldSSiHcXXGBOLdNylS1INXLFw8Xi7K4n3dLWXhmH8tKpnqdb3x86Sih5OKmb2ZBemrXFTUILmAd"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-3 tracking-widest uppercase">Art Installation</p>
+<h4 class="font-headline-lg text-headline-lg text-on-surface">Void Sculptures</h4>
+</div>
+</div>
+<div class="relative group overflow-hidden rounded-xl bg-surface-container-lowest border border-outline-variant/30 mask-reveal delay-200 h-full">
+<img class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-all duration-1000 grayscale group-hover:grayscale-0" data-alt="A close-up, dramatic shot of a high-end cocktail or luxury spirits bottle resting on a dark marble surface. The lighting is low-key, creating deep shadows with selective highlights that emphasize the premium quality and texture of the glass and liquid. Cinematic and elegant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVXNfNzFEjpK4shCzM0X9OKFNG1ZF_cxGCkrN1REIANX7KSDSYoTjY-Jjr5nyv-8C83l4QyJxOZcB4PctLhrREE-KQCxzEMcK8A5kIeaadPB6-dvnNeu51A_aL7io0j-TCFgfk2q8wdlEkZ9MQ-Gn7k5ZaoIllmCpqUplBHucJ24_Ve44-LGxMoEUTNpaB8bzCvhhj4HKIM-EIOngJOXmijx3t8pn7NykVhFin9Go9Iodb5ZxKaccI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-3 tracking-widest uppercase">Lounge Experience</p>
+<h4 class="font-headline-lg text-headline-lg text-on-surface">The Obsidian Room</h4>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-section-gap bg-surface-container-lowest border-t border-outline-variant/20 mt-section-gap">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-gutter md:px-element-gap max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-1">
+<a class="font-display-lg text-on-surface opacity-30 block mb-10 tracking-tighter" href="#">The Domain</a>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2">© 2024 The Domain Entertainment.</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">All Rights Reserved.</p>
+</div>
+<div class="col-span-1 md:col-span-3 flex flex-wrap justify-start md:justify-end gap-16 items-start md:items-end mt-10 md:mt-0">
+<div class="flex flex-col gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface hover:translate-x-1 transition-all ease-out duration-300" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface hover:translate-x-1 transition-all ease-out duration-300" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface hover:translate-x-1 transition-all ease-out duration-300" href="#">Press Kit</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface hover:translate-x-1 transition-all ease-out duration-300" href="#">Contact Us</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple Intersection Observer for Mask Reveals
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
+
+            document.querySelectorAll('.mask-reveal').forEach(el => observer.observe(el));
+            
+            // Navbar scroll effect
+            const nav = document.getElementById('main-nav');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            });
+        });
+    </script>
+</body></html>

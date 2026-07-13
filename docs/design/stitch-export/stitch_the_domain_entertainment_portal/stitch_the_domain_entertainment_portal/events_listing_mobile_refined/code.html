@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Events Listing - The Domain</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@200..800&amp;family=Syne:wght@400..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#d0c5af",
+                "on-error-container": "#ffdad6",
+                "inverse-surface": "#e3e2e7",
+                "primary-fixed-dim": "#e9c349",
+                "on-tertiary-container": "#454544",
+                "on-secondary-fixed-variant": "#474646",
+                "surface": "#121317",
+                "on-tertiary-fixed-variant": "#474746",
+                "on-secondary-fixed": "#1c1b1b",
+                "surface-container-lowest": "#0d0e12",
+                "on-tertiary-fixed": "#1c1b1b",
+                "secondary-fixed": "#e5e2e1",
+                "primary-fixed": "#ffe088",
+                "surface-container-high": "#292a2e",
+                "error": "#ffb4ab",
+                "tertiary": "#d0cdcd",
+                "on-secondary": "#313030",
+                "error-container": "#93000a",
+                "surface-variant": "#343539",
+                "background": "#121317",
+                "on-surface": "#e3e2e7",
+                "on-primary": "#3c2f00",
+                "on-primary-fixed": "#241a00",
+                "on-primary-container": "#554300",
+                "surface-tint": "#e9c349",
+                "outline": "#99907c",
+                "tertiary-container": "#b4b2b2",
+                "primary-container": "#d4af37",
+                "secondary-fixed-dim": "#c8c6c5",
+                "primary": "#f2ca50",
+                "inverse-on-surface": "#2f3034",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "secondary-container": "#4a4949",
+                "surface-container-low": "#1a1b1f",
+                "tertiary-fixed": "#e5e2e1",
+                "surface-container-highest": "#343539",
+                "surface-bright": "#38393d",
+                "surface-container": "#1e1f23",
+                "on-secondary-container": "#bab8b7",
+                "inverse-primary": "#735c00",
+                "outline-variant": "#4d4635",
+                "secondary": "#c8c6c5",
+                "surface-dim": "#121317",
+                "on-background": "#e3e2e7",
+                "on-primary-fixed-variant": "#574500",
+                "on-error": "#690005",
+                "on-tertiary": "#313030"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "element-gap": "32px",
+                "container-max": "1440px",
+                "section-gap": "160px",
+                "margin-mobile": "20px",
+                "gutter": "24px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Syne"
+                ],
+                "headline-lg-mobile": [
+                        "Syne"
+                ],
+                "label-sm": [
+                        "Geist"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Syne"
+                ],
+                "display-lg": [
+                        "Syne"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "display-xl": [
+                        "Syne"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "36px",
+                        {
+                                "lineHeight": "44px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-lg": [
+                        "64px",
+                        {
+                                "lineHeight": "72px",
+                                "letterSpacing": "-0.03em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-xl": [
+                        "80px",
+                        {
+                                "lineHeight": "90px",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "800"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .mask-reveal {
+            animation: maskReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+        }
+        @keyframes maskReveal {
+            0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); transform: translateY(20px); }
+            100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); transform: translateY(0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen antialiased selection:bg-primary-container selection:text-black pb-24 md:pb-0">
+<header class="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-[30px] transition-transform duration-500 ease-in-out" id="top-app-bar">
+<div class="flex justify-between items-center px-margin-mobile md:px-gutter w-full h-20 max-w-container-max mx-auto">
+<button class="md:hidden text-primary hover:opacity-80 transition-opacity duration-300 scale-95 active:scale-90 flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 focus:outline-none">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<div class="font-display-lg text-headline-md tracking-tighter text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                THE DOMAIN
+            </div>
+<div class="hidden md:flex items-center gap-8 font-headline-md text-headline-md tracking-tighter">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Curations</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Galleries</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Archive</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Members</a>
+</div>
+<button class="hidden md:flex items-center justify-center px-6 py-3 bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest rounded hover:opacity-80 transition-opacity duration-300 scale-95 active:scale-90">
+                Access
+            </button>
+<button class="md:hidden text-primary flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50 focus:outline-none scale-95 active:scale-90">
+<span class="material-symbols-outlined">person</span>
+</button>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-gutter pt-[140px] md:pt-[180px] pb-section-gap">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20 mask-reveal">
+<div class="max-w-3xl">
+<h1 class="font-display-xl text-display-lg md:text-display-xl text-on-surface mb-6 leading-none tracking-tighter">Curated Events</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant opacity-80 max-w-2xl">Discover immersive experiences, high-end artist residencies, and exclusive VIP nights hosted within our obsidian walls.</p>
+</div>
+<div class="flex-shrink-0 w-full md:w-auto relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">search</span>
+<input class="w-full md:w-80 bg-surface-container-low border-b-2 border-outline-variant focus:border-primary-container text-on-surface placeholder-on-surface-variant py-4 pl-12 pr-4 font-body-md text-body-md bg-transparent transition-colors duration-300 outline-none rounded-t" placeholder="Search artists, dates, genres..." type="text"/>
+</div>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-6 mb-12 scrollbar-hide border-b border-white/5 mask-reveal" style="animation-delay: 0.1s;">
+<button class="px-6 py-3 rounded-full bg-primary/10 text-primary border border-primary/30 font-label-sm text-label-sm uppercase tracking-widest flex items-center gap-2 transition-all hover:bg-primary/20">
+<span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(212,175,55,0.8)]"></span>
+                Upcoming
+            </button>
+<button class="px-6 py-3 rounded-full bg-transparent text-on-surface-variant border border-outline-variant hover:border-primary/50 hover:text-on-surface transition-colors font-label-sm text-label-sm uppercase tracking-widest">
+                Previous
+            </button>
+<button class="px-6 py-3 rounded-full bg-transparent text-on-surface-variant border border-outline-variant hover:border-primary/50 hover:text-on-surface transition-colors font-label-sm text-label-sm uppercase tracking-widest">
+                All Events
+            </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 mask-reveal" style="animation-delay: 0.2s;">
+<article class="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[600px] md:h-[800px] min-h-[500px] cursor-pointer ring-1 ring-white/5">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-[1.03]" data-alt="A striking, high-impact editorial photograph capturing a live electronic music performance in a massive, cavernous venue. The scene is defined by cinematic minimalism, featuring an obsidian foundation piercingly illuminated by dramatic, radiant gold laser lights cutting through thick stage fog. The atmosphere is intense, premium, and agency-grade, focusing on the atmospheric depth and the silhouette of the artist against the blinding spotlight. The deep blacks contrast sharply with the singular, radiant yellow-gold accent colors, emphasizing a sense of high-stakes anticipation and elite entertainment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDt9Y0ikHBfqxwv1UiKC5GypQMCxzzANFqe8qF5BzCaiiT1Avdz4g-rGA3qjmrrNBxOvo5chax1yOcHm4WhkgKXMjTNWm0MVFFgIOPCnv5ZXHE95HSIg4htHHtifhMueOU7F84uwL2O5w4oYLnB-DHZLZgvYi5MIJEJj3U9fZawu5mzMQBfw7ul0wUnhSkYSsMfZCC3lk6Iqlht3lnWIW8f96dFPZPfCtq3ji030qaAdq6kfob3pOkG')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 transition-opacity duration-700 group-hover:opacity-100"></div>
+<div class="absolute top-8 left-8 flex gap-4">
+<span class="px-4 py-2 bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-[0.15em] rounded flex items-center gap-2 shadow-lg">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span> Selling Fast
+                    </span>
+<span class="px-4 py-2 bg-black/60 backdrop-blur-xl text-on-surface font-label-sm text-label-sm uppercase tracking-widest rounded border border-white/10">
+                        Oct 24
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-8 md:p-12 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">Main Stage • 10:00 PM</p>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4 leading-tight">The Midnight Resonance</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-200 line-clamp-3 mb-8">An exclusive 4-hour set journeying through deep melodic techno, featuring an immersive kinetic lighting installation that responds dynamically to audio frequencies.</p>
+<button class="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-300 px-8 py-4 bg-transparent border border-primary text-primary font-label-sm text-label-sm uppercase tracking-widest rounded hover:bg-primary hover:text-on-primary flex items-center gap-3">
+                        Reserve Access <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<article class="md:col-span-4 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[600px] md:h-[800px] min-h-[500px] cursor-pointer ring-1 ring-white/5">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-[1.03]" data-alt="An atmospheric, moody shot of an exclusive VIP lounge area within a high-end night club setting. The aesthetic is heavily grounded in darkspace, utilizing a fluid composition where deep shadows swallow the edges of the frame. A single, focused, warm amber spotlight highlights a sleek, modern DJ deck and the hands of the performer, creating a glowing luminescence against the level 0 black background. The visual narrative speaks to cinematic noir, offering a sophisticated, immersive experience tailored for a premier, high-end audience." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCSGgI22U0a74Eq94HYByPglh6e1NkDAXh1XSzdvqlCTdBptDv0fs7ngKMx88ifW1gvez13HeUWqPfUMEWpTbUAalfzd1dJB91bpwrIe4ZBkvlWBEw3DKS7deiSFkNs78SnLxQPcDIs-twhJmd2RotR-X89sXm_mBjZYL2pu1CEbpf0fQ8RWS6hJwJV3JEH5JOGaxNIfYlNhhRamLHhAZXo03GRbjIxquf27PISPgOaOzAUxlVzZV3Y')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent opacity-90 transition-opacity duration-700 group-hover:opacity-100"></div>
+<div class="absolute top-8 left-8 flex gap-4">
+<span class="px-4 py-2 bg-black/60 backdrop-blur-xl text-on-surface font-label-sm text-label-sm uppercase tracking-widest rounded border border-white/10">
+                        Oct 31
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-8 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">The Vault • 11:30 PM</p>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-3 leading-tight">Shadow Play Sessions</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-200 line-clamp-3 mb-6">Intimate underground house grooves curated for an exclusive guestlist in our subterranean vault.</p>
+<button class="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-300 text-primary font-label-sm text-label-sm uppercase tracking-widest flex items-center gap-2 group/btn">
+                        View Details <span class="material-symbols-outlined text-[20px] group-hover/btn:translate-x-2 transition-transform">east</span>
+</button>
+</div>
+</article>
+<article class="md:col-span-6 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[450px] min-h-[400px] cursor-pointer ring-1 ring-white/5">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-[1.03]" data-alt="A breathtaking digital art installation within an obsidian-dark gallery space, representing a premier entertainment event. The composition features extreme contrast, with a mesmerizing, generative wave of glowing, luminescent gold particles suspended in mid-air against an absolute black void. The lighting simulates cinematic depth of field, blurring out the distant edges to create a spotlight effect on the central light formation. The overall mood is mysterious, luxurious, and motion-first, evoking the quiet but electrifying energy moments before a major performance begins." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBzv6mPu_jjDVH05YYO_XEqddpDpNQdO5ghtxggxrn0R1_ppcve-m3migvJrF_MxwotkJc34syvnd6iagQb7gSOmVia7exFFnSa-oAjfi4gckTTWBCnBZrhET7ZAKZrlgu_acqX7u7Dy5Sk8R1dB4VXaOtOulgBWwT0f5YKj34Mb8j9GExH0jkAIobkR6Ga_fzZRXlDmuY0c41a109Q6mSlF6GIeqVhtXnQsuuaylNOE5ZWKv0Gv4WN')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 transition-opacity duration-700 group-hover:opacity-100"></div>
+<div class="absolute top-8 left-8 flex gap-4">
+<span class="px-4 py-2 bg-surface-container-highest/80 backdrop-blur-xl text-error font-label-sm text-label-sm uppercase tracking-widest rounded border border-error/20 flex items-center gap-2">
+                        Sold Out
+                    </span>
+<span class="px-4 py-2 bg-black/60 backdrop-blur-xl text-on-surface font-label-sm text-label-sm uppercase tracking-widest rounded border border-white/10">
+                        Nov 12
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+<h2 class="font-headline-md text-headline-md text-on-surface/60 mb-2 leading-tight group-hover:text-on-surface transition-colors duration-500">Aether: Live Visuals</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 line-clamp-1">Gallery Space • Invite Only</p>
+</div>
+</article>
+<article class="md:col-span-6 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[450px] min-h-[400px] cursor-pointer ring-1 ring-white/5">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-[1.03]" data-alt="A sophisticated close-up of high-end cocktail preparation in a darkly lit, minimalist bar setting. The aesthetic is strictly dark mode, focusing on the cinematic reflections of ambient gold lighting off crystalline ice and polished dark marble surfaces. The depth of field is shallow, isolating the sharp detail of the glassware against a deep #0F0F0F background. The image exudes an aura of premium hospitality and agency-grade design, perfect for highlighting an elite tasting event." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAXfolP__HFw6TnY2jJssQTouT8mfCKqB8q6ViY7q3DWZeNYBohSUGk6bWfSRrUCv6dW82SHt5OyC4wR493fiPozBtSb3SYwfP6A4yp_T8GvtRFUjGznlu3_H8KbV9460rP3x3ldu9xBE-EsJsfSsrB9OnlkCEDlwSsobdWvT1YBAXSjwCP2ygp0zIFby0YiKKFayFqY8BqWZjasbxxMf7Fqt22PyR8LVMUDA5e2SC5-JmGp7kMY6Ct')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 transition-opacity duration-700 group-hover:opacity-100"></div>
+<div class="absolute top-8 left-8 flex gap-4">
+<span class="px-4 py-2 bg-black/60 backdrop-blur-xl text-on-surface font-label-sm text-label-sm uppercase tracking-widest rounded border border-white/10">
+                        Nov 18
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2 leading-tight">Mixology Masters</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 line-clamp-1">The Lounge • 8:00 PM</p>
+</div>
+</article>
+</div>
+<div class="mt-section-gap py-32 px-8 rounded-2xl bg-surface-container-lowest border border-white/5 flex flex-col items-center justify-center text-center relative overflow-hidden mask-reveal" style="animation-delay: 0.3s;">
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 50% 50%, #d4af37 0%, transparent 50%); mix-blend-mode: screen;"></div>
+<span class="material-symbols-outlined text-[80px] text-primary/30 mb-8" style="font-variation-settings: 'wght' 200;">calendar_month</span>
+<h3 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6">No Events Scheduled</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mx-auto mb-12 opacity-80">Our calendar is currently being curated for the upcoming season. Sign up for our private digest to receive early access codes.</p>
+<button class="px-10 py-5 bg-transparent border border-outline-variant text-on-surface font-label-sm text-label-sm uppercase tracking-widest rounded hover:border-primary hover:text-primary transition-all duration-300 relative group overflow-hidden">
+<span class="relative z-10">Contact Concierge</span>
+<div class="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></div>
+</button>
+</div>
+</main>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-4 bg-surface/90 backdrop-blur-2xl border-t border-outline-variant md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-highest transition-all duration-200 w-full h-full">
+<span class="material-symbols-outlined text-[24px] mb-1">grain</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary scale-110 transition-transform active:bg-surface-container-highest w-full h-full">
+<span class="material-symbols-outlined text-[24px] mb-1" style="font-variation-settings: 'FILL' 1;">layers</span>
+<span class="font-label-sm text-label-sm font-bold">Curation</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-highest transition-all duration-200 w-full h-full">
+<span class="material-symbols-outlined text-[24px] mb-1">lock</span>
+<span class="font-label-sm text-label-sm">Vault</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-highest transition-all duration-200 w-full h-full">
+<span class="material-symbols-outlined text-[24px] mb-1">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+<script>
+        let lastScrollY = window.scrollY;
+        const topAppBar = document.getElementById('top-app-bar');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > lastScrollY && window.scrollY > 100) {
+                topAppBar.style.transform = 'translateY(-100%)';
+            } else {
+                topAppBar.style.transform = 'translateY(0)';
+            }
+            lastScrollY = window.scrollY;
+        }, { passive: true });
+    </script>
+</body></html>

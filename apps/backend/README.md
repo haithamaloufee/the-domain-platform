@@ -1,0 +1,82 @@
+# The Domain Backend
+
+ASP.NET Core Web API foundation for The Domain Platform, targeting .NET 8. This sprint establishes boundaries and operational fundamentals only; it contains no business modules.
+
+## Solution structure
+
+- `TheDomain.Api` — HTTP composition root, endpoints, middleware, configuration, OpenAPI, health checks, CORS, and logging.
+- `TheDomain.Application` — application use-case boundary and service registration.
+- `TheDomain.Domain` — dependency-free domain boundary.
+- `TheDomain.Infrastructure` — future persistence and external-service implementations.
+- `TheDomain.Shared` — framework-independent shared contracts.
+- `tests` — API integration and layer-specific test projects.
+
+## Commands
+
+Run these commands from `apps/backend`:
+
+```powershell
+dotnet restore
+dotnet build --no-restore
+dotnet run --project src/TheDomain.Api
+dotnet test --no-build
+```
+
+In Development, Swagger UI is available at `/swagger`, health status at `/health`, and API metadata at `/api/info`. Default launch URLs are defined in `src/TheDomain.Api/Properties/launchSettings.json`.
+
+## Configuration
+
+`Api` and `Cors` settings are strongly typed and validated at startup. Development permits only the local website and admin origins. Production startup requires at least one explicitly configured origin; wildcard origins are not enabled.
+
+PostgreSQL persistence is implemented in `TheDomain.Infrastructure` with EF Core and the Npgsql provider. Persistence is disabled by default so the foundation can run without silently depending on a local database. To enable it, set untracked environment values:
+
+```powershell
+$env:Database__Enabled = 'true'
+$env:Database__ConnectionString = 'Host=localhost;Port=5432;Database=the_domain;Username=the_domain;Password=<local-password>'
+```
+
+When enabled, startup validates the connection string and `/health` includes PostgreSQL connectivity. `Database__CommandTimeoutSeconds` defaults to 30.
+
+The design-time context factory reads `Database__ConnectionString`. After an approved model exists, migrations will be created from `apps/backend` with:
+
+```powershell
+dotnet ef migrations add <MigrationName> --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api --output-dir Persistence/Migrations
+dotnet ef database update --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
+```
+
+The first migration, `AddIdentitySchema`, contains only the approved internal identity tables and indexes.
+
+## Admin authentication
+
+Admin authentication is disabled by default. Enable it only with untracked configuration containing an issuer, audience, and signing key of at least 32 UTF-8 bytes:
+
+```powershell
+$env:Authentication__Enabled = 'true'
+$env:Authentication__Issuer = 'TheDomain.Api.Local'
+$env:Authentication__Audience = 'TheDomain.Admin.Local'
+$env:Authentication__SigningKey = '<strong-random-local-key>'
+```
+
+Access tokens default to 15 minutes. Refresh tokens default to 14 days, are rotated on use, and are stored only as SHA-256 hashes. Authentication endpoints are `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`, and protected `/api/auth/me`. Public registration is not available.
+
+Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged.
+
+The committed local tool manifest pins `dotnet-ef` 8.0.11. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
+
+Serilog writes structured events to the console only. Production exceptions return RFC-style Problem Details without exception messages or stack traces.
+
+## Intentionally not implemented
+
+Public registration, full user CRUD, Cloudinary, uploads, campaigns, contact forms, and frontend authentication UI remain outside this sprint.
+
+## Events and media metadata
+
+The event aggregate supports Draft, Published, Cancelled, and Archived lifecycle states. Public display status and external-booking availability are computed from UTC schedule data at request time. Public APIs expose upcoming, previous, featured, detail, and event-based gallery album projections. Admin event APIs require `AdminDashboardAccess`.
+
+`MediaAsset` stores descriptive metadata and external URLs only. `EventMedia` assigns approved assets to event usages and ordering. The migration `AddEventsAndMediaMetadata` creates the approved event and metadata schema.
+
+## Cloudinary media management
+
+Cloudinary integration is disabled by default. Configure `Cloudinary__Enabled`, cloud name, API key, API secret, folder prefix, and size/MIME policy through untracked environment values. Images default to JPEG/PNG/WebP up to 15 MB; videos default to MP4/WebM up to 100 MB.
+
+Admin media APIs provide single-file upload, bounded pagination, metadata editing, approve/hide lifecycle, safe deletion by hiding, and event-media assignment. PostgreSQL stores metadata and URLs only. Cloudinary deletion is limited to compensation when an upload succeeds but metadata persistence fails.

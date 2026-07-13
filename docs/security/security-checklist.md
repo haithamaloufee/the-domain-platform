@@ -1,0 +1,22 @@
+# Security checklist
+
+- [ ] Secrets remain outside source control.
+- [ ] Public and admin origins are explicitly configured.
+- [ ] Authentication and role authorization are enforced server-side.
+- [ ] Inputs and uploaded files are validated server-side.
+- [ ] Rate limits and secure response headers are configured.
+- [ ] Logs exclude credentials, tokens, and sensitive personal data.
+- [ ] Dependencies and container images are scanned before release.
+- [ ] Backup and incident-response procedures are documented.
+- [x] Passwords use the ASP.NET Core framework hasher and are never stored or logged in plaintext.
+- [x] Refresh tokens are cryptographically random, stored only as SHA-256 hashes, rotated, and revocable.
+- [x] JWT issuer, audience, lifetime, and minimum signing-key strength are startup validated when enabled.
+- [x] Initial SuperAdmin provisioning is explicit, one-time, password-policy validated, and disabled by default.
+- [ ] Add rate limiting to login and refresh endpoints during security hardening.
+- [x] Public event queries exclude Draft and Archived records and Hidden/Draft media.
+- [x] Admin event mutations require the AdminDashboardAccess policy.
+- [x] Event APIs use explicit DTOs rather than EF entities.
+- [x] Uploads validate emptiness, MIME/extension agreement, and configured size limits before storage.
+- [x] Cloudinary credentials are configuration-gated, startup validated, and absent from responses/logging.
+- [x] Media deletion defaults to Hidden; external deletion occurs only as failed-save compensation.
+- [ ] Add malware scanning before high-volume production ingestion.
