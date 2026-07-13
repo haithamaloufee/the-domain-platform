@@ -80,7 +80,7 @@ export function MediaLibrary({
             {page.items.map((item, index) => (
               <Link
                 aria-label={`View ${mediaTypeLabels[item.mediaType]} uploaded ${formatDate(item.createdAtUtc)}`}
-                href={`/dashboard/media/${item.id}`}
+                href={`/dashboard/media/${item.id}${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`}
                 key={item.id}
               >
                 <Card className="group h-full overflow-hidden transition hover:border-gold focus-within:border-gold">

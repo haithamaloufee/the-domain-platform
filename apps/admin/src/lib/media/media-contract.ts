@@ -4,6 +4,7 @@ import {
   MediaOrientation,
   MediaType,
   type AdminMediaDetails,
+  type AdminEventMediaItem,
   type AdminMediaListItem,
   type AssignEventMediaRequest,
   type EventMediaResponse,
@@ -54,6 +55,17 @@ export function parseEventMedia(value: unknown): EventMediaResponse {
     isFeatured: booleanValue(value.isFeatured),
     createdAtUtc: dateString(value.createdAtUtc),
   };
+}
+
+export function parseAdminEventMediaList(value: unknown): AdminEventMediaItem[] {
+  if (!Array.isArray(value)) throw new Error("The server returned an invalid event media list.");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("Expected an event media item.");
+    return {
+      ...parseEventMedia(item),
+      media: parseMediaDetails(item.media),
+    };
+  });
 }
 
 export function parseMetadataRequest(value: unknown): UpdateMediaMetadataRequest | null {

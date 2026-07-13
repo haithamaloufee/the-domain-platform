@@ -110,6 +110,10 @@ export interface EventMediaResponse {
   createdAtUtc: string;
 }
 
+export interface AdminEventMediaItem extends EventMediaResponse {
+  media: AdminMediaDetails;
+}
+
 export interface AdminMediaErrorResponse {
   message: string;
 }

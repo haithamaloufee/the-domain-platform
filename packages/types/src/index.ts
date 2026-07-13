@@ -23,6 +23,7 @@ export type {
   UpdateEventRequest,
 } from "./events";
 export type {
+  AdminEventMediaItem,
   AdminMediaDetails,
   AdminMediaErrorResponse,
   AdminMediaListItem,

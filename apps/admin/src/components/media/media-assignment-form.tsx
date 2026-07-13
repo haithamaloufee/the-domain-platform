@@ -10,20 +10,17 @@ import { buttonClasses, Input, Select } from "@the-domain/ui";
 import { useEffect, useState } from "react";
 import { listAdminEvents } from "@/lib/events/admin-events-client";
 import { assignMediaToEvent, removeEventMediaAssignment } from "@/lib/media/admin-media-client";
+import { eventMediaUsageLabels } from "./media-labels";
 
-const usageLabels: Record<EventMediaUsageValue, string> = {
-  [EventMediaUsage.Hero]: "Hero",
-  [EventMediaUsage.Cover]: "Cover",
-  [EventMediaUsage.Poster]: "Poster",
-  [EventMediaUsage.Gallery]: "Gallery",
-  [EventMediaUsage.Thumbnail]: "Thumbnail",
-  [EventMediaUsage.HomepagePreview]: "Homepage preview",
-  [EventMediaUsage.PreviousEventPreview]: "Previous event preview",
-};
-
-export function MediaAssignmentForm({ mediaId }: { mediaId: string }) {
+export function MediaAssignmentForm({
+  eventId: initialEventId,
+  mediaId,
+}: {
+  eventId?: string;
+  mediaId: string;
+}) {
   const [events, setEvents] = useState<AdminEventListItem[]>([]);
-  const [eventId, setEventId] = useState("");
+  const [eventId, setEventId] = useState(initialEventId ?? "");
   const [usage, setUsage] = useState<EventMediaUsageValue>(EventMediaUsage.Gallery);
   const [sortOrder, setSortOrder] = useState(0);
   const [isFeatured, setIsFeatured] = useState(false);
@@ -104,7 +101,7 @@ export function MediaAssignmentForm({ mediaId }: { mediaId: string }) {
             onChange={(event) => setUsage(Number(event.target.value) as EventMediaUsageValue)}
             value={usage}
           >
-            {Object.entries(usageLabels).map(([value, label]) => (
+            {Object.entries(eventMediaUsageLabels).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -150,7 +147,9 @@ export function MediaAssignmentForm({ mediaId }: { mediaId: string }) {
               key={assignment.id}
             >
               <div>
-                <p className="text-sm text-ink">Assigned as {usageLabels[assignment.usage]}</p>
+                <p className="text-sm text-ink">
+                  Assigned as {eventMediaUsageLabels[assignment.usage]}
+                </p>
                 <p className="mt-1 text-xs text-ink-muted">
                   Sort {assignment.sortOrder}
                   {assignment.isFeatured ? " / Featured" : ""}

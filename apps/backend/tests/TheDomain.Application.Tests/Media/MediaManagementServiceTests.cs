@@ -24,6 +24,23 @@ public sealed class MediaManagementServiceTests
     }
 
     [Fact]
+    public async Task EventMediaListIncludesAssignmentAndAssetMetadataInOrder()
+    {
+        var repository = new FakeRepository { Event = CreateEvent(), Media = CreateMedia(MediaApprovalStatus.Approved) };
+        var later = new EventMedia(Guid.NewGuid(), repository.Event.Id, repository.Media.Id, EventMediaUsage.Gallery, 20, false, DateTimeOffset.UtcNow);
+        var earlier = new EventMedia(Guid.NewGuid(), repository.Event.Id, repository.Media.Id, EventMediaUsage.Gallery, 10, true, DateTimeOffset.UtcNow.AddMinutes(-1));
+        repository.Event.AddMedia(earlier, repository.Media);
+        repository.Event.AddMedia(later, repository.Media);
+        repository.EventMedia = [later, earlier];
+
+        var result = await CreateService(repository).GetEventMediaAsync(repository.Event.Id, CancellationToken.None);
+
+        Assert.Equal([earlier.Id, later.Id], result.Select(item => item.Id));
+        Assert.All(result, item => Assert.Equal(repository.Media.Id, item.Media.Id));
+        Assert.True(result[0].IsFeatured);
+    }
+
+    [Fact]
     public async Task AssignmentRejectsDuplicate()
     {
         var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent(), Duplicate = true };
@@ -53,9 +70,11 @@ public sealed class MediaManagementServiceTests
     private sealed class FakeRepository : IMediaRepository
     {
         public MediaAsset Media { get; init; } = CreateMedia(MediaApprovalStatus.Approved); public EntertainmentEvent? Event { get; init; } public bool Duplicate { get; init; }
+        public IReadOnlyList<EventMedia> EventMedia { get; set; } = [];
         public Task<(IReadOnlyList<MediaAsset> Items, int TotalCount)> SearchAsync(MediaListQuery query, CancellationToken token) => Task.FromResult<(IReadOnlyList<MediaAsset>, int)>(([], 0));
         public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => Task.FromResult(Media.Id == id ? Media : null);
         public Task<EntertainmentEvent?> FindEventAsync(Guid id, CancellationToken token) => Task.FromResult(Event?.Id == id ? Event : null);
+        public Task<IReadOnlyList<EventMedia>> ListEventMediaAsync(Guid eventId, CancellationToken token) => Task.FromResult(EventMedia);
         public Task<EventMedia?> FindEventMediaAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => Task.FromResult<EventMedia?>(null);
         public Task<bool> AssignmentExistsAsync(Guid eventId, Guid mediaAssetId, EventMediaUsage usage, Guid? excludingId, CancellationToken token) => Task.FromResult(Duplicate);
         public void AddMedia(MediaAsset media) { } public void AddEventMedia(EventMedia eventMedia) { } public void RemoveEventMedia(EventMedia eventMedia) { } public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;

@@ -30,3 +30,9 @@ Shared event contracts live in `packages/types`. The admin app validates backend
 Authenticated media pages live under `/dashboard/media`. Browser components call only same-origin handlers under `/api/admin/media/*` and `/api/admin/events/*/media`; Cloudinary credentials and bearer tokens remain server-side. The BFF reconstructs uploads as multipart requests, permits only known metadata fields and filters, validates response shapes, and returns sanitized failures.
 
 Media contracts are shared through `packages/types`. The library requests one bounded page at a time, images use the Next.js image pipeline, grid videos use thumbnails or inert placeholders, and the details player loads metadata only until the operator starts playback. Multi-file uploads run sequentially to control memory and network pressure. Event assignment is available during upload and from item details; cross-assignment reordering is reserved for the gallery-management workflow.
+
+## Admin event gallery boundary
+
+The dedicated `/dashboard/events/[id]/media` route combines existing event details with an event-scoped assignment list. The backend read DTO nests safe media metadata beneath each real assignment identifier; the BFF validates that shape before browser code receives it. No EF entities, bearer tokens, Cloudinary identifiers, or storage credentials cross the boundary.
+
+The editor groups assignments by usage and keeps draft changes in component state. Move controls normalize sort order within one usage group, while usage, sort order, and featured changes persist sequentially through the existing assignment update route. The approved-media picker requests one bounded global-library page at a time. Uploading reuses the global upload queue with the event preselected rather than duplicating file handling.

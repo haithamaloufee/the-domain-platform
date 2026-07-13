@@ -7,6 +7,7 @@ import { isSameOriginRequest } from "@/lib/auth/route-security";
 import {
   parseAssignmentRequest,
   parseAssignmentUpdate,
+  parseAdminEventMediaList,
   parseEventMedia,
   parseMediaDetails,
   parseMediaPage,
@@ -25,7 +26,7 @@ const queryKeys = [
   "search",
 ] as const;
 
-type ResponseShape = "page" | "details" | "assignment" | "empty";
+type ResponseShape = "page" | "details" | "assignment" | "assignments" | "empty";
 
 export function proxyMediaList(request: NextRequest) {
   const query = new URLSearchParams();
@@ -93,6 +94,10 @@ export async function proxyEventMediaCreate(request: NextRequest, path: `/${stri
   return proxyJsonMutation(request, path, "POST", body, "assignment");
 }
 
+export function proxyEventMediaList(path: `/${string}`) {
+  return proxyRequest(path, { method: "GET" }, "assignments");
+}
+
 export async function proxyEventMediaUpdate(request: NextRequest, path: `/${string}`) {
   const body = await readJson(request, parseAssignmentUpdate);
   if (!body) return errorResponse("Please review the media assignment and try again.", 400);
@@ -143,9 +148,11 @@ async function proxyRequest(path: `/${string}`, init: RequestInit, shape: Respon
     const result =
       shape === "page"
         ? parseMediaPage(value)
-        : shape === "assignment"
-          ? parseEventMedia(value)
-          : parseMediaDetails(value);
+        : shape === "assignments"
+          ? parseAdminEventMediaList(value)
+          : shape === "assignment"
+            ? parseEventMedia(value)
+            : parseMediaDetails(value);
     return NextResponse.json(result, {
       status: response.status,
       headers: { "Cache-Control": "no-store" },

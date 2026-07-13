@@ -7,6 +7,7 @@ public sealed class DisabledMediaService : IMediaManagementService, IMediaQueryS
 {
     public Task<PagedResponse<AdminMediaListItemResponse>> GetAsync(MediaListQuery query, CancellationToken token) => Task.FromResult(new PagedResponse<AdminMediaListItemResponse>(1, Math.Clamp(query.PageSize, 1, 50), 0, 0, false, false, []));
     public Task<AdminMediaResponse?> GetByIdAsync(Guid id, CancellationToken token) => Task.FromResult<AdminMediaResponse?>(null);
+    public Task<IReadOnlyList<AdminEventMediaResponse>> GetEventMediaAsync(Guid eventId, CancellationToken token) => Task.FromResult<IReadOnlyList<AdminEventMediaResponse>>([]);
     public Task<EventOperationResult<AdminMediaResponse>> UploadAsync(UploadMediaCommand command, CancellationToken token) => MediaDisabled();
     public Task<EventOperationResult<AdminMediaResponse>> UpdateMetadataAsync(Guid id, UpdateMediaMetadataRequest request, CancellationToken token) => MediaDisabled();
     public Task<EventOperationResult<AdminMediaResponse>> ApproveAsync(Guid id, CancellationToken token) => MediaDisabled();

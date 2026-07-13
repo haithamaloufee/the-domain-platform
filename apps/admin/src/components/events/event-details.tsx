@@ -178,9 +178,9 @@ export function EventDetails({ eventId }: { eventId: string }) {
             </dl>
             <Link
               className={buttonClasses("secondary", "mt-6 w-full")}
-              href={`/dashboard/media?eventId=${encodeURIComponent(event.id)}`}
+              href={`/dashboard/events/${encodeURIComponent(event.id)}/media`}
             >
-              Manage event media
+              Manage Event Media
             </Link>
           </Card>
           <Card className="p-6">

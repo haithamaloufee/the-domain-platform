@@ -11,6 +11,7 @@ public static class AdminEventMediaEndpoint
     public static IEndpointRouteBuilder MapAdminEventMediaEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/admin/events/{eventId:guid}/media").WithTags("Admin Event Media").RequireAuthorization(AuthorizationPolicies.MediaManagerOrAbove);
+        group.MapGet("/", async (Guid eventId, IMediaQueryService service, CancellationToken token) => Results.Ok(await service.GetEventMediaAsync(eventId, token)));
         group.MapPost("/", async (Guid eventId, AssignEventMediaRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.AssignAsync(eventId, request, token)));
         group.MapPut("/{eventMediaId:guid}", async (Guid eventId, Guid eventMediaId, UpdateEventMediaRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.UpdateAssignmentAsync(eventId, eventMediaId, request, token)));
         group.MapDelete("/{eventMediaId:guid}", async (Guid eventId, Guid eventMediaId, IMediaManagementService service, CancellationToken token) => await service.RemoveAssignmentAsync(eventId, eventMediaId, token) ? Results.NoContent() : Results.NotFound(Problem("Event media assignment was not found.", 404)));

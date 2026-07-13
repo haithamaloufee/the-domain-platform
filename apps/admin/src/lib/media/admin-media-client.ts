@@ -2,6 +2,7 @@ import type {
   AdminMediaDetails,
   AdminMediaErrorResponse,
   AdminMediaListItem,
+  AdminEventMediaItem,
   AssignEventMediaRequest,
   EventMediaResponse,
   MediaListQuery,
@@ -10,7 +11,12 @@ import type {
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,
 } from "@the-domain/types";
-import { parseEventMedia, parseMediaDetails, parseMediaPage } from "./media-contract";
+import {
+  parseAdminEventMediaList,
+  parseEventMedia,
+  parseMediaDetails,
+  parseMediaPage,
+} from "./media-contract";
 
 export function listAdminMedia(query: MediaListQuery): Promise<PagedResponse<AdminMediaListItem>> {
   const search = new URLSearchParams();
@@ -82,6 +88,14 @@ export function assignMediaToEvent(
     "POST",
     input,
     parseEventMedia,
+  );
+}
+
+export function listEventMedia(eventId: string): Promise<AdminEventMediaItem[]> {
+  return request(
+    `/api/admin/events/${encodeURIComponent(eventId)}/media`,
+    { method: "GET" },
+    parseAdminEventMediaList,
   );
 }
 

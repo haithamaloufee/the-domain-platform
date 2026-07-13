@@ -6,4 +6,5 @@ public interface IMediaQueryService
 {
     Task<PagedResponse<AdminMediaListItemResponse>> GetAsync(MediaListQuery query, CancellationToken token);
     Task<AdminMediaResponse?> GetByIdAsync(Guid id, CancellationToken token);
+    Task<IReadOnlyList<AdminEventMediaResponse>> GetEventMediaAsync(Guid eventId, CancellationToken token);
 }

@@ -15,4 +15,7 @@
 - [x] Media binaries are streamed to external storage and are never loaded from PostgreSQL.
 - [x] Admin uploads run sequentially and report per-item progress to limit concurrent memory and network pressure.
 - [x] Admin media grids avoid video autoplay; details use metadata-only preload until playback is requested.
+- [x] Event gallery management loads only one event's assignments and uses thumbnail previews without autoplay.
+- [x] The assign-existing workflow searches approved media with bounded pagination instead of loading the global library.
+- [x] Assignment updates use controlled sequential requests for the expected per-event media volume.
 - [ ] Design resumable/background bulk import before ingesting the full media archive.

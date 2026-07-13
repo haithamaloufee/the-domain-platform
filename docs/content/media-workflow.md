@@ -14,8 +14,16 @@ Media begins as Draft or the explicitly supplied state, becomes publicly usable 
 
 `EventMedia` assigns an asset to Hero, Cover, Gallery, HomepagePreview, or another approved usage with ordering and featured state. Removing an assignment does not remove the asset. Public event/gallery projections include only Published events and Approved media.
 
+## Event gallery management
+
+The admin event media page groups real assignments into Hero, Cover, Poster, Gallery, Thumbnail, HomepagePreview, and PreviousEventPreview sections. Editors can change usage, featured state, and numeric ordering or use keyboard-accessible move controls. A save operation updates changed assignments sequentially through the existing endpoint and normalizes move-based order within each usage group. Hidden and Draft media remain visible to authorized editors with explicit status badges; public projections still exclude them.
+
+Removing an assignment deletes only the `EventMedia` relationship. It never hides the `MediaAsset`, removes another event's assignment, or deletes the Cloudinary file. The approved-media selector reads bounded pages from the reusable global library. The upload shortcut returns to the same upload queue with the event preselected, preserving the Browser-to-BFF-to-Backend-to-Cloudinary flow.
+
+These usage and ordering records prepare the future public event gallery, homepage previews, and Previous Events experience. Public gallery UI, drag-and-drop ordering, bulk migration, and direct browser-to-Cloudinary upload remain intentionally unimplemented.
+
 A future bulk importer must use controlled concurrency, resumable/background processing, per-item validation, and audit reporting. The full production archive must never be committed to this repository.
 
 ## Local verification
 
-Use disposable development assets only. Enable the backend Cloudinary integration with development credentials, sign in as a role covered by `MediaManagerOrAbove`, upload a small supported image or video as Draft, and verify list filtering, details, metadata editing, approval/hide, and event assignment. Confirm the browser receives only delivery URLs and metadata; API credentials must remain in the backend process environment.
+Use disposable development assets only. Enable the backend Cloudinary integration with development credentials, sign in as a role covered by `MediaManagerOrAbove`, upload a small supported image or video as Draft, and verify list filtering, details, metadata editing, approval/hide, and event assignment. Approve an asset, open `/dashboard/events/{id}/media`, then verify usage grouping, move controls, numeric order, featured state, existing-media assignment, and relationship-only removal. Confirm the browser receives only delivery URLs and metadata; API credentials must remain in the backend process environment.

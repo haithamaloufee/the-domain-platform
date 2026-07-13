@@ -73,4 +73,6 @@ pnpm --filter @the-domain/website dev
 
 Admin runs at `http://localhost:3001`; the website runs at `http://localhost:3000`. Visit `http://localhost:3001/login` and use the SuperAdmin provisioned during the first configured API startup. After successful login, the admin BFF sets HttpOnly cookies and redirects to `/dashboard`. Neither token is available through JavaScript or browser Web Storage.
 
+For event gallery testing, create or select an event, approve at least one disposable media asset, and open `/dashboard/events/{id}/media`. Assignment listing and ordering work without Cloudinary once metadata exists; uploading additional files still requires the Cloudinary development configuration described above. Removing an event assignment preserves the reusable media asset.
+
 Repository checks are `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `dotnet test apps/backend/TheDomain.Backend.sln`.

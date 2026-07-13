@@ -15,7 +15,7 @@ import {
 import { MediaApprovalBadge, mediaTypeLabels, orientationLabels } from "./media-labels";
 import { MediaAssignmentForm } from "./media-assignment-form";
 
-export function MediaDetails({ mediaId }: { mediaId: string }) {
+export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: string }) {
   const [media, setMedia] = useState<AdminMediaDetails | null>(null);
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -100,7 +100,14 @@ export function MediaDetails({ mediaId }: { mediaId: string }) {
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className={buttonClasses("ghost")} href="/dashboard/media">
+          <Link
+            className={buttonClasses("ghost")}
+            href={
+              eventId
+                ? `/dashboard/media?eventId=${encodeURIComponent(eventId)}`
+                : "/dashboard/media"
+            }
+          >
             Back to library
           </Link>
           {media.approvalStatus !== MediaApprovalStatus.Approved && (
@@ -204,7 +211,7 @@ export function MediaDetails({ mediaId }: { mediaId: string }) {
               Connect this asset to an event usage without moving or duplicating the file.
             </p>
             <div className="mt-6">
-              <MediaAssignmentForm mediaId={media.id} />
+              <MediaAssignmentForm eventId={eventId} mediaId={media.id} />
             </div>
           </Card>
         </aside>

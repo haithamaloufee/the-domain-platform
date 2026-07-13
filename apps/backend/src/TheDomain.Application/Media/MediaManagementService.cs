@@ -51,6 +51,14 @@ public sealed class MediaManagementService(
         return new(page, size, result.TotalCount, pages, page < pages, page > 1, result.Items.Select(MapList).ToArray());
     }
     public async Task<AdminMediaResponse?> GetByIdAsync(Guid id, CancellationToken token) => await repository.FindMediaAsync(id, token) is { } item ? Map(item) : null;
+    public async Task<IReadOnlyList<AdminEventMediaResponse>> GetEventMediaAsync(Guid eventId, CancellationToken token) =>
+        (await repository.ListEventMediaAsync(eventId, token))
+            .OrderBy(item => item.Usage)
+            .ThenBy(item => item.SortOrder)
+            .ThenBy(item => item.CreatedAtUtc)
+            .Select(item => new AdminEventMediaResponse(item.Id, item.EventId, item.MediaAssetId, item.Usage,
+                item.SortOrder, item.IsFeatured, item.CreatedAtUtc, Map(item.MediaAsset)))
+            .ToArray();
     public Task<EventOperationResult<AdminMediaResponse>> UpdateMetadataAsync(Guid id, UpdateMediaMetadataRequest request, CancellationToken token) => ChangeMedia(id, item => item.UpdateMetadata(request.Category, request.Caption, request.AltText, timeProvider.GetUtcNow()), token);
     public Task<EventOperationResult<AdminMediaResponse>> ApproveAsync(Guid id, CancellationToken token) => ChangeMedia(id, item => item.Approve(timeProvider.GetUtcNow()), token);
     public Task<EventOperationResult<AdminMediaResponse>> HideAsync(Guid id, CancellationToken token) => ChangeMedia(id, item => item.Hide(timeProvider.GetUtcNow()), token);

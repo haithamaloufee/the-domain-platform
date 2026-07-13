@@ -5,6 +5,14 @@ namespace TheDomain.Api.Tests.Endpoints;
 
 public sealed class AdminMediaEndpointTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
+    [Fact]
+    public async Task EventMediaListRequiresAuthentication()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/api/admin/events/00000000-0000-0000-0000-000000000001/media");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Theory]
     [InlineData("/api/admin/media")]
     [InlineData("/api/admin/media/upload")]

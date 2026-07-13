@@ -11,6 +11,7 @@ import { buttonClasses, Card, Input, Select, Textarea } from "@the-domain/ui";
 import { useEffect, useRef, useState } from "react";
 import { listAdminEvents } from "@/lib/events/admin-events-client";
 import { uploadAdminMedia } from "@/lib/media/admin-media-client";
+import { eventMediaUsageLabels } from "./media-labels";
 
 type UploadStatus = "waiting" | "uploading" | "success" | "failed";
 interface QueueItem {
@@ -26,16 +27,6 @@ const allowedFiles: Record<string, { label: string; maximumBytes: number }> = {
   "image/webp": { label: "WebP", maximumBytes: 15 * 1024 * 1024 },
   "video/mp4": { label: "MP4", maximumBytes: 100 * 1024 * 1024 },
   "video/webm": { label: "WebM", maximumBytes: 100 * 1024 * 1024 },
-};
-
-const usageLabels: Record<EventMediaUsageValue, string> = {
-  [EventMediaUsage.Hero]: "Hero",
-  [EventMediaUsage.Cover]: "Cover",
-  [EventMediaUsage.Poster]: "Poster",
-  [EventMediaUsage.Gallery]: "Gallery",
-  [EventMediaUsage.Thumbnail]: "Thumbnail",
-  [EventMediaUsage.HomepagePreview]: "Homepage preview",
-  [EventMediaUsage.PreviousEventPreview]: "Previous event preview",
 };
 
 export function MediaUploadQueue({
@@ -215,7 +206,7 @@ export function MediaUploadQueue({
                 onChange={(event) => setUsage(Number(event.target.value) as EventMediaUsageValue)}
                 value={usage}
               >
-                {Object.entries(usageLabels).map(([value, label]) => (
+                {Object.entries(eventMediaUsageLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>

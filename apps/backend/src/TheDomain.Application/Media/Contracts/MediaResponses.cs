@@ -9,3 +9,5 @@ public sealed record AdminMediaResponse(Guid Id, string FileName, string Origina
     MediaOrientation Orientation, string? Category, string? Caption, string? AltText,
     MediaApprovalStatus ApprovalStatus, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
 public sealed record EventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage, int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc);
+public sealed record AdminEventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage,
+    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, AdminMediaResponse Media);

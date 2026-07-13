@@ -24,6 +24,12 @@ public sealed class MediaRepository(TheDomainDbContext dbContext) : IMediaReposi
     }
     public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => dbContext.MediaAssets.SingleOrDefaultAsync(item => item.Id == id, token);
     public Task<EntertainmentEvent?> FindEventAsync(Guid id, CancellationToken token) => dbContext.Events.SingleOrDefaultAsync(item => item.Id == id, token);
+    public async Task<IReadOnlyList<EventMedia>> ListEventMediaAsync(Guid eventId, CancellationToken token) =>
+        await dbContext.EventMedia
+            .AsNoTracking()
+            .Include(item => item.MediaAsset)
+            .Where(item => item.EventId == eventId)
+            .ToListAsync(token);
     public Task<EventMedia?> FindEventMediaAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => dbContext.EventMedia.SingleOrDefaultAsync(item => item.EventId == eventId && item.Id == eventMediaId, token);
     public Task<bool> AssignmentExistsAsync(Guid eventId, Guid mediaAssetId, EventMediaUsage usage, Guid? excludingId, CancellationToken token) => dbContext.EventMedia.AnyAsync(item => item.EventId == eventId && item.MediaAssetId == mediaAssetId && item.Usage == usage && (!excludingId.HasValue || item.Id != excludingId.Value), token);
     public void AddMedia(MediaAsset media) => dbContext.MediaAssets.Add(media);
