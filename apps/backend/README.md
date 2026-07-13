@@ -22,7 +22,7 @@ dotnet run --project src/TheDomain.Api
 dotnet test --no-build
 ```
 
-In Development, Swagger UI is available at `/swagger`, health status at `/health`, and API metadata at `/api/info`. Default launch URLs are defined in `src/TheDomain.Api/Properties/launchSettings.json`.
+In Development, Swagger UI is available at `http://localhost:5000/swagger`, health status at `/health`, and API metadata at `/api/info`. The local HTTP port is defined in `src/TheDomain.Api/Properties/launchSettings.json`.
 
 ## Configuration
 
@@ -46,6 +46,16 @@ dotnet ef database update --project src/TheDomain.Infrastructure --startup-proje
 
 The first migration, `AddIdentitySchema`, contains only the approved internal identity tables and indexes.
 
+For the complete local PostgreSQL and environment-variable sequence, follow `docs/development/setup.md`. The abbreviated migration workflow from `apps/backend` is:
+
+```powershell
+dotnet tool restore
+dotnet ef database update --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
+dotnet run --project src/TheDomain.Api
+```
+
+The shell running these commands must already contain the values from the root `.env.local`; ASP.NET Core does not load that dotenv file automatically.
+
 ## Admin authentication
 
 Admin authentication is disabled by default. Enable it only with untracked configuration containing an issuer, audience, and signing key of at least 32 UTF-8 bytes:
@@ -60,6 +70,8 @@ $env:Authentication__SigningKey = '<strong-random-local-key>'
 Access tokens default to 15 minutes. Refresh tokens default to 14 days, are rotated on use, and are stored only as SHA-256 hashes. Authentication endpoints are `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`, and protected `/api/auth/me`. Public registration is not available.
 
 Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged.
+
+For local provisioning, apply migrations before the first API startup. Once the SuperAdmin exists, set `InitialAdmin__Enabled=false` for subsequent runs. The local password must be changed before any shared or real deployment.
 
 The committed local tool manifest pins `dotnet-ef` 8.0.11. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
 

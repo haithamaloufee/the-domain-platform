@@ -1,0 +1,23 @@
+name: the-domain-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-the_domain}
+      POSTGRES_USER: ${POSTGRES_USER:-the_domain}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-the_domain_local_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - the_domain_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  the_domain_postgres_data:

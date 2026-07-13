@@ -30,3 +30,9 @@ Do not commit production images, videos, uploads, database volumes, or secrets. 
 Frontend setup and validation commands are documented in `docs/development/setup.md`. Run `pnpm install` before using either Next.js application.
 
 The backend foundation is now available under `apps/backend`; its restore, build, run, and test commands are documented in `apps/backend/README.md`.
+
+## Local runtime
+
+The full local sequence is documented in `docs/development/setup.md`: install prerequisites, copy and replace the example environment values, start PostgreSQL with `docker/compose/docker-compose.local.yml`, apply the existing EF migrations, then start the API, admin, and website. Local ports are PostgreSQL 5432, API 5000, website 3000, and admin 3001.
+
+Committed defaults and examples contain no production secrets. Cloudinary remains disabled, and the local initial-admin credentials must never be reused outside an isolated development environment.

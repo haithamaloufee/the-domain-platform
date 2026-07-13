@@ -1,4 +1,7 @@
-const fallbackApiUrl = "http://localhost:5276";
-export const publicEnvironment = {
-  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? fallbackApiUrl,
-} as const;
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+if (!apiBaseUrl) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is required.");
+}
+
+export const publicEnvironment = { apiBaseUrl } as const;

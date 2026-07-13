@@ -1,4 +1,4 @@
-@TheDomain.Api_HostAddress = http://localhost:5276
+@TheDomain.Api_HostAddress = http://localhost:5000
 
 GET {{TheDomain.Api_HostAddress}}/health
 Accept: text/plain
