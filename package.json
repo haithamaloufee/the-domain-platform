@@ -1,0 +1,21 @@
+{
+  "name": "the-domain-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.12.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present build",
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "format": "prettier --write package.json pnpm-workspace.yaml prettier.config.mjs tsconfig.json \"apps/{admin,website}/**/*.{ts,tsx,css,json,mjs,md}\" \"packages/{config,types,ui,utils}/**/*.{ts,tsx,css,json,mjs,md}\" README.md docs/architecture/frontend-architecture.md docs/development/setup.md docs/development/coding-standards.md docs/performance/performance-checklist.md",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml prettier.config.mjs tsconfig.json \"apps/{admin,website}/**/*.{ts,tsx,css,json,mjs,md}\" \"packages/{config,types,ui,utils}/**/*.{ts,tsx,css,json,mjs,md}\" README.md docs/architecture/frontend-architecture.md docs/development/setup.md docs/development/coding-standards.md docs/performance/performance-checklist.md",
+    "lint": "pnpm --recursive --if-present lint",
+    "typecheck": "pnpm --recursive --if-present typecheck"
+  },
+  "devDependencies": {
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,8 @@
+packages:
+  - "apps/admin"
+  - "apps/website"
+  - "packages/*"
+
+allowBuilds:
+  sharp: true
+  unrs-resolver: true

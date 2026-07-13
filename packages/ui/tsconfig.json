@@ -1,0 +1,4 @@
+{
+  "extends": "@the-domain/config/typescript/react-library.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

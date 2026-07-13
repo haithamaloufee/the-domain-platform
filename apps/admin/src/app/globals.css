@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import "@the-domain/ui/styles/tokens.css";
+@source "../../../../packages/ui/src";
+@theme inline {
+  --color-canvas: var(--td-color-canvas);
+  --color-surface: var(--td-color-surface);
+  --color-surface-raised: var(--td-color-surface-raised);
+  --color-surface-high: var(--td-color-surface-high);
+  --color-ink: var(--td-color-ink);
+  --color-ink-muted: var(--td-color-ink-muted);
+  --color-gold: var(--td-color-gold);
+  --color-gold-bright: var(--td-color-gold-bright);
+  --color-line: var(--td-color-line);
+  --color-error: var(--td-color-error);
+  --font-display: var(--td-font-display);
+  --font-body: var(--td-font-body);
+  --font-label: var(--td-font-label);
+  --spacing-container: var(--td-container-max);
+  --spacing-gutter: var(--td-gutter);
+  --spacing-section: var(--td-section-space);
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--td-color-canvas);
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--td-color-canvas);
+  color: var(--td-color-ink);
+  font-family: var(--td-font-body);
+  text-rendering: optimizeLegibility;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+::selection {
+  background: var(--td-color-gold);
+  color: var(--td-color-canvas);
+}
+:focus-visible {
+  outline-color: var(--td-color-gold);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

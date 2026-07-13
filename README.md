@@ -2,7 +2,7 @@
 
 The Domain Platform is the planned digital platform for The Domain Entertainment Company in Jordan. It will comprise a premium public events website, a separate content-management dashboard, and an ASP.NET Core API. The engineering and product source of truth is [THE_DOMAIN_DEVELOPER_BIBLE.md](THE_DOMAIN_DEVELOPER_BIBLE.md).
 
-This repository currently contains the Sprint 0 foundation only. No application, backend, database, authentication, or production UI has been generated yet.
+The repository now includes the Clean Architecture backend and Sprint 5 Next.js foundations for the public website and separate admin application. Frontend routes remain structural shells; business features and API integration will proceed incrementally.
 
 ## Repository layout
 
@@ -27,6 +27,6 @@ Stitch exports are visual references only. Their HTML must not be copied into pr
 
 Do not commit production images, videos, uploads, database volumes, or secrets. Production media belongs in Cloudinary or approved object storage; the database stores metadata and URLs only. `assets/sample-media` is limited to a few lightweight, license-safe test assets, while `assets/raw-media` remains ignored.
 
-Setup commands will be documented in `docs/development/setup.md` after the application foundations and toolchain are approved.
+Frontend setup and validation commands are documented in `docs/development/setup.md`. Run `pnpm install` before using either Next.js application.
 
 The backend foundation is now available under `apps/backend`; its restore, build, run, and test commands are documented in `apps/backend/README.md`.

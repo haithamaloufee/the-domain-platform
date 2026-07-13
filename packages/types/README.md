@@ -1,3 +1,3 @@
 # Shared types
 
-Reserved for framework-independent TypeScript contracts shared by frontend applications.
+Framework-independent TypeScript contracts shared by the frontend applications. API models added here must match the documented backend contract and must not depend on React or browser APIs.

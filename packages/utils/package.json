@@ -1,0 +1,22 @@
+{
+  "name": "@the-domain/utils",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./api": "./src/api/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@the-domain/types": "workspace:*",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.5.0"
+  },
+  "devDependencies": {
+    "@the-domain/config": "workspace:*",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,3 +1,3 @@
 # Shared utilities
 
-Reserved for tested, framework-independent TypeScript utilities. Application-specific logic should remain in its owning app.
+Tested, framework-independent utilities, including class composition and the typed API request foundation. Application-specific behavior and secrets remain in their owning app.
