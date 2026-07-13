@@ -1,8 +1,8 @@
 # The Domain Platform
 
-The Domain Platform is the planned digital platform for The Domain Entertainment Company in Jordan. It will comprise a premium public events website, a separate content-management dashboard, and an ASP.NET Core API. The engineering and product source of truth is [THE_DOMAIN_DEVELOPER_BIBLE.md](THE_DOMAIN_DEVELOPER_BIBLE.md).
+The Domain Platform is the digital platform for The Domain Entertainment Company in Jordan. It comprises a premium public events website, a separate content-management dashboard, and an ASP.NET Core API. The engineering and product source of truth is [THE_DOMAIN_DEVELOPER_BIBLE.md](THE_DOMAIN_DEVELOPER_BIBLE.md).
 
-The repository now includes the Clean Architecture backend and Sprint 5 Next.js foundations for the public website and separate admin application. Frontend routes remain structural shells; business features and API integration will proceed incrementally.
+The repository includes the Clean Architecture backend, public event/gallery/homepage APIs, the private admin BFF and management workflows, and the production-polished public website. Provider-neutral launch preparation is documented in [docs/deployment/production-readiness.md](docs/deployment/production-readiness.md).
 
 ## Repository layout
 

@@ -33,6 +33,12 @@ Sprint 13 keeps cinematic polish at the presentation boundary. Reusable shell co
 
 Scroll reveals use progressive CSS view timelines and degrade to fully visible content where unsupported. Reduced-motion preferences remove transforms, filtering, and loader movement. The only new stateful homepage behavior is the numeric statistic counter, isolated in a small client component and driven by `IntersectionObserver`; arbitrary CMS text is never coerced into an animation. Mobile navigation is a separate accessible disclosure inside the public header and does not expose admin routes.
 
+## Public SEO and discovery boundary
+
+The public application uses `NEXT_PUBLIC_WEBSITE_URL` as its single canonical origin and validates supplied website/API origins as absolute HTTP(S) URLs. A shared metadata helper keeps canonicals, Open Graph, and Twitter fields consistent. Dynamic event and album metadata comes only from the runtime-validated anonymous public API and uses approved image URLs or video thumbnails; failed metadata reads return a non-indexable fallback.
+
+`sitemap.ts` combines static public routes with the existing upcoming, previous, featured, and gallery-album projections. Each request settles independently, so API unavailability leaves a valid static sitemap and does not break the build. `robots.ts` blocks all crawling in development or when the canonical origin is missing; configured production builds permit public routes, disallow admin-like/API paths, and advertise the sitemap. JSON-LD is serialized with `<` escaped and contains only Organization/WebSite identity plus real public event fields. No admin data, credentials, unverified contact details, or invented offers enter SEO output.
+
 ## Admin authentication boundary
 
 Admin authentication uses a lightweight BFF. Browser requests target same-origin Next.js route handlers under `/api/auth`; those handlers call the ASP.NET API through the server-only `THE_DOMAIN_API_BASE_URL`. Raw access and refresh tokens are stored only in HttpOnly, SameSite=Lax cookies and are never exposed to React components or Web Storage.

@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
 import { PublicEventCard } from "@/components/events/public-event-card";
 import { getPreviousEvents, getUpcomingEvents } from "@/lib/public-api";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Events",
+export const metadata: Metadata = createPageMetadata({
+  title: "Events in Jordan",
   description: "Discover upcoming Domain experiences and revisit previous events in Jordan.",
-};
+  path: "/events",
+});
 
 export const revalidate = 60;
 

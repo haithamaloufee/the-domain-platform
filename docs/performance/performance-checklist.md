@@ -29,3 +29,14 @@
 - [x] Cinematic card and media effects run only on fine pointers and are disabled for reduced-motion preferences.
 - [x] The expanded gallery dialog preserves batched thumbnails and mounts video only after an explicit open action.
 - [ ] Design resumable/background bulk import before ingesting the full media archive.
+
+## Production launch verification
+
+- [ ] Run clean production builds for website and admin from the reviewed lockfile with zero warnings.
+- [ ] Measure Lighthouse and Core Web Vitals on homepage, event detail, and media-heavy gallery routes using production-like content and mobile throttling.
+- [ ] Confirm list/grid videos never autoplay, gallery players mount only after intent, and posters/thumbnails are available for production videos.
+- [ ] Confirm non-priority images remain lazy, responsive sizes are correct, and hero media does not exceed the approved mobile budget.
+- [ ] Verify gallery batches remain bounded at 24 items and public API list caps remain effective with production-scale data.
+- [ ] Verify development uses no-store while production public reads and sitemap-backed collections use the documented 60-second revalidation behavior.
+- [ ] Establish image/video upload guidance and validate Cloudinary delivery formats, responsive transformations, and poster/thumbnail generation before bulk ingestion.
+- [ ] Record frontend bundle budgets, API latency targets, cache-hit behavior, and monitoring alerts before launch.

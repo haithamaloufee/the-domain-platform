@@ -23,3 +23,9 @@ To test CMS locally, apply the approved backend migrations, start the API on por
 Cloudinary configuration is needed only for media upload testing, not CMS text/statistic/partner management. Dashboard metrics, password management, user administration, rich text, partner logo upload, final cinematic animation polish, and bulk media migration remain out of scope.
 
 The frontend workspace does not yet include a test runner. The admin integration is validated through strict TypeScript, zero-warning ESLint, and production builds rather than introducing an unplanned testing stack; route-level integration tests should be added with the dedicated frontend testing foundation.
+
+## Production configuration
+
+Deploy admin on a dedicated HTTPS origin. `THE_DOMAIN_API_BASE_URL` must be an absolute HTTP(S) URL available only to the Next.js server; no API credentials, signing keys, or Cloudinary values belong in this app. Production auth cookies are automatically Secure as well as HttpOnly and SameSite=Lax. Keep `THE_DOMAIN_REFRESH_COOKIE_MAX_AGE_SECONDS` aligned with the backend refresh-token lifetime.
+
+The root metadata prevents indexing, unauthenticated dashboard routes remain protected by the server proxy, and the public website contains no admin link. Follow `docs/deployment/production-readiness.md` for CORS, provisioning, smoke testing, and rollback.

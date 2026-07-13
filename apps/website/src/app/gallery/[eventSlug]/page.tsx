@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { formatEventDate } from "@/components/events/event-presentation";
 import { GalleryMediaGrid } from "@/components/gallery/gallery-media-grid";
 import { getGalleryAlbumByEventSlug, PublicApiError } from "@/lib/public-api";
+import { createPageMetadata, getFirstPublicMediaSeoImage } from "@/lib/seo";
 
 interface GalleryAlbumPageProps {
   params: Promise<{ eventSlug: string }>;
@@ -14,12 +15,19 @@ export async function generateMetadata({ params }: GalleryAlbumPageProps): Promi
   const { eventSlug } = await params;
   try {
     const album = await getGalleryAlbumByEventSlug(eventSlug);
-    return {
+    return createPageMetadata({
       title: `${album.title} Gallery`,
       description: `Approved highlights from ${album.title}.`,
-    };
+      path: `/gallery/${encodeURIComponent(album.eventSlug)}`,
+      image: getFirstPublicMediaSeoImage(album.media),
+    });
   } catch {
-    return { title: "Event Gallery" };
+    return createPageMetadata({
+      title: "Event Gallery",
+      description: "Approved event highlights from The Domain Entertainment.",
+      path: `/gallery/${encodeURIComponent(eventSlug)}`,
+      noIndex: true,
+    });
   }
 }
 

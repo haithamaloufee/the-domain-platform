@@ -35,3 +35,19 @@
 - [x] Protected dashboard navigation rotates an expired access token at most once before rendering.
 - [x] Logout clears local auth cookies even when backend revocation is unavailable.
 - [ ] Add CSRF tokens if future deployment topology or cookie policy allows cross-site admin requests.
+
+## Production launch verification
+
+- [ ] Confirm Git history, release artifacts, logs, and browser bundles contain no `.env.local`, database password, JWT signing key, initial-admin password, Cloudinary secret, or token.
+- [ ] Generate a deployment-specific JWT signing key with at least 32 UTF-8 bytes of cryptographically random material and store it in the API secret manager.
+- [ ] Require HTTPS for website, admin, API, PostgreSQL connections, and external media delivery.
+- [ ] Verify admin access/refresh cookies are Secure, HttpOnly, SameSite=Lax, and scoped to the admin host.
+- [ ] Restrict production CORS to the exact approved website/admin HTTPS origins; reject wildcard origins.
+- [ ] Disable `InitialAdmin__Enabled` and remove the plaintext bootstrap password immediately after the first administrator is verified.
+- [ ] Confirm Cloudinary keys remain API-server-only and no Cloudinary secret uses a `NEXT_PUBLIC_` variable.
+- [ ] Confirm the public website remains login-free and contains no admin navigation or token handling.
+- [ ] Confirm unauthenticated dashboard access is blocked and every admin API mutation remains policy-protected.
+- [ ] Verify automated encrypted PostgreSQL backups, retention, restore ownership, and a tested recovery procedure.
+- [ ] Confirm production media and database volumes are absent from Git and release images.
+- [ ] Verify public APIs and SEO output expose only published/approved/visible/verified projections.
+- [ ] Complete dependency/container scanning, rate-limit review, secure response-header review, and incident-response sign-off.

@@ -1,5 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Page Not Found",
+  description: "The requested page is not available on The Domain website.",
+  path: "/404",
+  noIndex: true,
+});
 
 export default function NotFound() {
   return (

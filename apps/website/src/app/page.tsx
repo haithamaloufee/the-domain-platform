@@ -5,6 +5,7 @@ import type {
   PublicPartner,
   PublicStatisticItem,
 } from "@the-domain/types";
+import type { Metadata } from "next";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
@@ -15,6 +16,7 @@ import { ServicesSection } from "@/components/home/services-section";
 import { StatsSection } from "@/components/home/stats-section";
 import { WhyDomainSection } from "@/components/home/why-domain-section";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
+import { JsonLd } from "@/components/seo/json-ld";
 import {
   getFeaturedEvents,
   getGalleryAlbums,
@@ -24,6 +26,13 @@ import {
   getPreviousEvents,
   getUpcomingEvents,
 } from "@/lib/public-api";
+import { createPageMetadata, defaultDescription, getWebsiteUrl, siteName } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Entertainment and Events in Jordan",
+  description: defaultDescription,
+  path: "/",
+});
 
 export const revalidate = 60;
 
@@ -34,6 +43,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={createHomepageStructuredData()} />
       <HomeHero content={data.content} featuredEvent={heroEvent} />
       <CinematicReveal>
         <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
@@ -67,6 +77,28 @@ export default async function HomePage() {
       </CinematicReveal>
     </>
   );
+}
+
+function createHomepageStructuredData(): Record<string, unknown> {
+  const websiteUrl = getWebsiteUrl().toString();
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${websiteUrl}#organization`,
+        name: siteName,
+        url: websiteUrl,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${websiteUrl}#website`,
+        name: siteName,
+        url: websiteUrl,
+        publisher: { "@id": `${websiteUrl}#organization` },
+      },
+    ],
+  };
 }
 
 interface HomepageData {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Inter, Syne } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { defaultDescription, getWebsiteUrl, siteName } from "@/lib/seo";
 import "./globals.css";
 
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap" });
@@ -9,9 +10,24 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_WEBSITE_URL ?? "http://localhost:3000"),
+  metadataBase: getWebsiteUrl(),
   title: { default: "The Domain Entertainment", template: "%s | The Domain" },
-  description: "Premium entertainment experiences and events in Jordan.",
+  description: defaultDescription,
+  applicationName: siteName,
+  category: "entertainment",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName,
+    title: siteName,
+    description: defaultDescription,
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: siteName,
+    description: defaultDescription,
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

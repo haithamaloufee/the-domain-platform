@@ -13,7 +13,14 @@ import {
   selectEventMedia,
 } from "@/components/events/event-presentation";
 import { PublicMediaThumbnail } from "@/components/gallery/public-media-thumbnail";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getEventBySlug, PublicApiError } from "@/lib/public-api";
+import {
+  createPageMetadata,
+  getFirstPublicMediaSeoImage,
+  getWebsiteUrl,
+  siteName,
+} from "@/lib/seo";
 
 interface EventPageProps {
   params: Promise<{ slug: string }>;
@@ -23,9 +30,20 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
   const { slug } = await params;
   try {
     const event = await getEventBySlug(slug);
-    return { title: event.title, description: event.shortDescription };
+    const heroMedia = selectEventMedia(event.media);
+    return createPageMetadata({
+      title: event.title,
+      description: event.shortDescription.trim() || `Event details for ${event.title}.`,
+      path: `/events/${encodeURIComponent(event.slug)}`,
+      image: getFirstPublicMediaSeoImage([heroMedia, ...event.media]),
+    });
   } catch {
-    return { title: "Event" };
+    return createPageMetadata({
+      title: "Event",
+      description: "Event details from The Domain Entertainment.",
+      path: `/events/${encodeURIComponent(slug)}`,
+      noIndex: true,
+    });
   }
 }
 
@@ -48,6 +66,12 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <article>
+      <JsonLd
+        data={createEventStructuredData(
+          event,
+          getFirstPublicMediaSeoImage([heroMedia, ...event.media]),
+        )}
+      />
       <section className="relative min-h-[82svh] overflow-hidden border-b border-line">
         <EventHeroMedia media={heroMedia} title={event.title} />
         <Container className="relative flex min-h-[82svh] items-end pb-12 pt-32 sm:pb-20">
@@ -179,6 +203,47 @@ export default async function EventPage({ params }: EventPageProps) {
       )}
     </article>
   );
+}
+
+function createEventStructuredData(
+  event: Awaited<ReturnType<typeof getEventBySlug>>,
+  image: string | null,
+): Record<string, unknown> {
+  const url = new URL(`/events/${encodeURIComponent(event.slug)}`, getWebsiteUrl()).toString();
+  const eventStatus: Record<EventDisplayStatus, string> = {
+    [EventDisplayStatus.Upcoming]: "https://schema.org/EventScheduled",
+    [EventDisplayStatus.Live]: "https://schema.org/EventScheduled",
+    [EventDisplayStatus.Finished]: "https://schema.org/EventCompleted",
+    [EventDisplayStatus.Cancelled]: "https://schema.org/EventCancelled",
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.shortDescription.trim() || `Event details for ${event.title}.`,
+    startDate: event.startAtUtc,
+    endDate: event.endAtUtc,
+    eventStatus: eventStatus[event.displayStatus],
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    url,
+    image: image ? [image] : undefined,
+    location: {
+      "@type": "Place",
+      name: event.venueName,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: event.venueAddress ?? undefined,
+        addressLocality: event.city,
+        addressCountry: "JO",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: siteName,
+      url: getWebsiteUrl().toString(),
+    },
+  };
 }
 
 function Detail({ label, value }: { label: string; value: string }) {

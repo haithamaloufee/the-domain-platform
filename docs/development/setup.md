@@ -80,3 +80,5 @@ For event gallery testing, create or select an event, approve at least one dispo
 For homepage CMS testing, sign in to admin and open `/dashboard/homepage`. Save a Draft first and confirm the public website continues using its safe local copy; then publish and refresh `/`. Under `/dashboard/statistics`, use only approved factual values and confirm that a record must be both Visible and Verified before it appears publicly. Under `/dashboard/partners`, use only real approved identities, confirm that Hidden records stay private, and confirm that logo preview requires a valid absolute URL. Hide and DELETE actions are reversible soft-hide operations. Never create fake business content in a shared or production database.
 
 Repository checks are `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `dotnet test apps/backend/TheDomain.Backend.sln`.
+
+Local values are not production templates. Before launch, follow `docs/deployment/production-readiness.md` for HTTPS origins, secret ownership, exact CORS configuration, migration ordering, initial-admin shutdown, backup/rollback planning, sitemap/robots checks, and the full smoke test.

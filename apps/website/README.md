@@ -6,6 +6,10 @@ No animation library or additional public data request was introduced. Gallery m
 
 Launch QA still requires final review on physical 360/390px phones, tablet and large-desktop hardware with production CMS/media content, followed by Core Web Vitals measurement and assistive-technology smoke testing.
 
+Sprint 14 adds canonical, Open Graph, Twitter, sitemap, robots, and safe JSON-LD output through Next.js metadata APIs. `NEXT_PUBLIC_WEBSITE_URL` is the single browser-visible canonical origin; `THE_DOMAIN_API_BASE_URL` remains server-only. Dynamic metadata uses runtime-validated public event/gallery data and approved media only. Sitemap collection requests settle independently and fall back to static routes when the API is unavailable. Development and unconfigured builds disallow crawling; a production build with the website origin configured allows the public site, disallows admin-like/API paths, and references the sitemap.
+
+No official icon is committed. Add an approved lightweight icon/manifest only after brand sign-off. Production setup and SEO smoke testing are documented in `docs/deployment/production-readiness.md`.
+
 Next.js App Router application for The Domain's public experience. The Events and Gallery journeys read live public data from the ASP.NET API through a server-only, runtime-validated boundary. The website has no authentication or admin navigation.
 
 Run `pnpm --filter @the-domain/website dev` from the repository root for local development on port 3000. The corresponding `build`, `lint`, and `typecheck` scripts validate this workspace.

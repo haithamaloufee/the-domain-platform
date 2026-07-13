@@ -2,6 +2,8 @@
 
 The backend exposes an OpenAPI document and Swagger UI in the Development environment only.
 
+Production monitoring should use `GET /health`; when persistence is enabled its result includes PostgreSQL connectivity. `GET /api/info` is the safe release smoke endpoint. Swagger remains unavailable outside Development, and unexpected production errors omit exception messages and stack traces while retaining a trace identifier for log correlation.
+
 Current foundation endpoints:
 
 - `GET /health` returns process health.

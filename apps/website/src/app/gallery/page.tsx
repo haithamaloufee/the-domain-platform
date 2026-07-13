@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
 import { AlbumCard } from "@/components/gallery/album-card";
 import { getGalleryAlbums } from "@/lib/public-api";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Gallery",
+export const metadata: Metadata = createPageMetadata({
+  title: "Event Gallery",
   description: "Explore approved photography and film from previous Domain events.",
-};
+  path: "/gallery",
+});
 
 export const revalidate = 60;
 

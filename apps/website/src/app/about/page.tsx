@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { RouteIntro } from "@/components/layout/route-intro";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = createPageMetadata({
+  title: "About",
+  description:
+    "Discover The Domain's considered approach to entertainment, production, people, and place in Jordan.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

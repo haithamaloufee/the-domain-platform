@@ -79,6 +79,12 @@ The committed local tool manifest pins `dotnet-ef` 8.0.11. Run `dotnet tool rest
 
 Serilog writes structured events to the console only. Production exceptions return RFC-style Problem Details without exception messages or stack traces.
 
+## Production operations
+
+Swagger and Swagger UI are registered only in Development. Production must configure exact `Cors__AllowedOrigins__0..n` HTTPS origins, a TLS-enabled PostgreSQL connection, deployment-specific JWT issuer/audience/signing key, and server-only Cloudinary credentials. Apply committed migrations from a controlled release job before starting the new API version; never generate migrations during deployment.
+
+Use `/health` for health monitoring and `/api/info` for release smoke checks. After the first controlled SuperAdmin provisioning succeeds, disable `InitialAdmin__Enabled` and remove the plaintext bootstrap password from runtime configuration. See `docs/deployment/production-readiness.md` for the full release, backup, rollback, and smoke-test sequence.
+
 ## Intentionally not implemented
 
 Public registration, full user CRUD, campaigns, contact submission, homepage CMS administration UI, frontend CMS consumption, and public authentication remain outside this sprint.

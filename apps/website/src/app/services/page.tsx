@@ -3,8 +3,14 @@ import Link from "next/link";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import { RouteIntro } from "@/components/layout/route-intro";
 import { homepageContent } from "@/content/homepage-content";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Services" };
+export const metadata: Metadata = createPageMetadata({
+  title: "Entertainment and Event Services",
+  description:
+    "Explore The Domain's event management, corporate entertainment, production, and private experience capabilities.",
+  path: "/services",
+});
 
 export default function ServicesPage() {
   return (

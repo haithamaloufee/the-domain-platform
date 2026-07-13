@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { RouteIntro } from "@/components/layout/route-intro";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Contact" };
+export const metadata: Metadata = createPageMetadata({
+  title: "Contact",
+  description:
+    "Find the approved public contact path for The Domain Entertainment when it is published.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (
