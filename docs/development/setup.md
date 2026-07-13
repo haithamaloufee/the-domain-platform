@@ -26,7 +26,7 @@ Get-Content .env.local |
   }
 ```
 
-Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. Only `NEXT_PUBLIC_` values belong in those frontend files; they are visible to browsers and must never contain secrets.
+Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. The admin file also contains `THE_DOMAIN_API_BASE_URL` and refresh-cookie lifetime configuration; those unprefixed values remain server-only.
 
 ## 3. Start PostgreSQL
 
@@ -69,6 +69,6 @@ pnpm --filter @the-domain/admin dev
 pnpm --filter @the-domain/website dev
 ```
 
-Admin runs at `http://localhost:3001`; the website runs at `http://localhost:3000`. Sprint 6A configures connectivity only—the admin login form is not yet connected.
+Admin runs at `http://localhost:3001`; the website runs at `http://localhost:3000`. Visit `http://localhost:3001/login` and use the SuperAdmin provisioned during the first configured API startup. After successful login, the admin BFF sets HttpOnly cookies and redirects to `/dashboard`. Neither token is available through JavaScript or browser Web Storage.
 
 Repository checks are `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `dotnet test apps/backend/TheDomain.Backend.sln`.

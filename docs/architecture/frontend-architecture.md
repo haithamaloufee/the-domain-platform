@@ -11,4 +11,10 @@ Shared boundaries are deliberate:
 
 Both apps default to React Server Components. Client components are introduced only where browser interaction requires them. API work uses the shared client factory with app-owned environment configuration; Sprint 5 placeholders perform no requests.
 
-Public routes are `/`, `/events`, `/events/[slug]`, `/gallery`, `/gallery/[eventSlug]`, `/about`, `/services`, and `/contact`. Admin uses `/login` and dashboard modules. Real protection must be implemented with authentication integration rather than simulated in the frontend.
+Public routes are `/`, `/events`, `/events/[slug]`, `/gallery`, `/gallery/[eventSlug]`, `/about`, `/services`, and `/contact`. The public website remains authentication-free.
+
+## Admin authentication boundary
+
+Admin authentication uses a lightweight BFF. Browser requests target same-origin Next.js route handlers under `/api/auth`; those handlers call the ASP.NET API through the server-only `THE_DOMAIN_API_BASE_URL`. Raw access and refresh tokens are stored only in HttpOnly, SameSite=Lax cookies and are never exposed to React components or Web Storage.
+
+The login and dashboard pages validate the current user server-side. The dashboard layout requires a successful backend `/api/auth/me` response before rendering user identity. The BFF `me` endpoint may rotate the refresh token once and retry identity once. Feature API integration should reuse this server boundary rather than sending refresh tokens to the browser.

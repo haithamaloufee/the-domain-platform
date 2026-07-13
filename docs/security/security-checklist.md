@@ -20,3 +20,8 @@
 - [x] Cloudinary credentials are configuration-gated, startup validated, and absent from responses/logging.
 - [x] Media deletion defaults to Hidden; external deletion occurs only as failed-save compensation.
 - [ ] Add malware scanning before high-volume production ingestion.
+- [x] Admin access and refresh tokens are confined to HttpOnly, SameSite=Lax cookies.
+- [x] Admin auth browser requests use same-origin BFF routes; refresh tokens never enter client components or Web Storage.
+- [x] Dashboard identity is validated against the backend and is not inferred from cookie presence.
+- [x] Logout clears local auth cookies even when backend revocation is unavailable.
+- [ ] Add CSRF tokens if future deployment topology or cookie policy allows cross-site admin requests.
