@@ -20,4 +20,8 @@
 - [x] Assignment updates use controlled sequential requests for the expected per-event media volume.
 - [x] Public event and gallery list contracts return one cover rather than full media collections.
 - [x] Public album pages reveal media in client-side batches of 24 and never render every video player up front.
+- [x] Homepage public requests run concurrently and degrade independently when one endpoint is unavailable.
+- [x] Homepage event and album collections are bounded before rendering and reuse cover projections only.
+- [x] Homepage hero uses an optimized approved image/thumbnail or a media-free fallback; it never eagerly loads video.
+- [x] Homepage editorial sections remain Server Components with no animation-library or client-state cost.
 - [ ] Design resumable/background bulk import before ingesting the full media archive.

@@ -19,6 +19,12 @@ The public Events and Gallery pages are Server Components backed only by anonymo
 
 Gallery album summaries expose cover and media counts. Full ordered gallery metadata is fetched only for `/gallery/[eventSlug]`, where the client grid filters the already-bounded album data and reveals it in batches of 24. Image optimization, inert video thumbnails, metadata-only playback, and a shared accessible dialog keep media-heavy pages responsive without introducing browser-side API calls.
 
+## Public homepage composition
+
+The `/` route composes `getFeaturedEvents`, `getUpcomingEvents`, `getPreviousEvents`, and `getGalleryAlbums` in one Server Component boundary. Requests run concurrently and settle independently, allowing an unavailable public endpoint to degrade only its own section. Featured and upcoming results are deduplicated before a bounded preview is rendered; previous events and albums are separately limited. The hero uses an approved cover or thumbnail when available and falls back to a media-free branded surface without requesting a video source.
+
+Homepage presentation is split into small server components under `apps/website/src/components/home`. Non-API editorial content is typed and centralized in `apps/website/src/content/homepage-content.ts`. This file is an explicit temporary adapter for statistics, services, partners, and section copy; a future homepage CMS can replace its values while retaining the section components and public data boundary.
+
 ## Admin authentication boundary
 
 Admin authentication uses a lightweight BFF. Browser requests target same-origin Next.js route handlers under `/api/auth`; those handlers call the ASP.NET API through the server-only `THE_DOMAIN_API_BASE_URL`. Raw access and refresh tokens are stored only in HttpOnly, SameSite=Lax cookies and are never exposed to React components or Web Storage.

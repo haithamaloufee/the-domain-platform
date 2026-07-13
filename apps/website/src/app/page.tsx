@@ -1,32 +1,85 @@
-import Link from "next/link";
-import { Container, Section, Badge, buttonClasses } from "@the-domain/ui";
-export default function HomePage() {
+import type { PublicEventListItem, PublicGalleryAlbum } from "@the-domain/types";
+import { ContactCtaSection } from "@/components/home/contact-cta-section";
+import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
+import { HomeHero } from "@/components/home/home-hero";
+import { HomepageEventsSection } from "@/components/home/homepage-events-section";
+import { PartnersPreviewSection } from "@/components/home/partners-preview-section";
+import { PreviousEventsSection } from "@/components/home/previous-events-section";
+import { ServicesSection } from "@/components/home/services-section";
+import { StatsSection } from "@/components/home/stats-section";
+import { WhyDomainSection } from "@/components/home/why-domain-section";
+import {
+  getFeaturedEvents,
+  getGalleryAlbums,
+  getPreviousEvents,
+  getUpcomingEvents,
+} from "@/lib/public-api";
+
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const data = await loadHomepageData();
+  const heroEvent = data.featured[0] ?? data.upcoming[0] ?? null;
+  const programme = uniqueEvents([...data.featured, ...data.upcoming]).slice(0, 2);
+
   return (
-    <Section className="relative isolate min-h-[70vh] overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_20%,rgba(212,175,55,0.12),transparent_35%)]"
+    <>
+      <HomeHero featuredEvent={heroEvent} />
+      <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
+      <StatsSection />
+      <WhyDomainSection />
+      <PreviousEventsSection
+        events={data.previous.slice(0, 2)}
+        unavailable={data.unavailable.previous}
       />
-      <Container>
-        <Badge>Amman · Jordan</Badge>
-        <h1 className="mt-8 max-w-5xl font-display text-5xl font-extrabold leading-[0.98] tracking-[-0.05em] text-ink sm:text-7xl lg:text-8xl">
-          Entertainment,
-          <br />
-          <span className="text-gold">framed differently.</span>
-        </h1>
-        <p className="mt-8 max-w-2xl text-lg leading-8 text-ink-muted">
-          The frontend foundation for The Domain’s premium event platform—built around cinematic
-          content, precise interaction, and editorial space.
-        </p>
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link className={buttonClasses()} href="/events">
-            Explore events
-          </Link>
-          <Link className={buttonClasses("secondary")} href="/gallery">
-            View gallery
-          </Link>
-        </div>
-      </Container>
-    </Section>
+      <GalleryPreviewSection
+        albums={data.albums.slice(0, 3)}
+        unavailable={data.unavailable.gallery}
+      />
+      <ServicesSection />
+      <PartnersPreviewSection />
+      <ContactCtaSection />
+    </>
   );
+}
+
+interface HomepageData {
+  featured: PublicEventListItem[];
+  upcoming: PublicEventListItem[];
+  previous: PublicEventListItem[];
+  albums: PublicGalleryAlbum[];
+  unavailable: {
+    events: boolean;
+    previous: boolean;
+    gallery: boolean;
+  };
+}
+
+async function loadHomepageData(): Promise<HomepageData> {
+  const [featured, upcoming, previous, albums] = await Promise.allSettled([
+    getFeaturedEvents(),
+    getUpcomingEvents(),
+    getPreviousEvents(),
+    getGalleryAlbums(),
+  ]);
+
+  return {
+    featured: settledValue(featured),
+    upcoming: settledValue(upcoming),
+    previous: settledValue(previous),
+    albums: settledValue(albums),
+    unavailable: {
+      events: featured.status === "rejected" && upcoming.status === "rejected",
+      previous: previous.status === "rejected",
+      gallery: albums.status === "rejected",
+    },
+  };
+}
+
+function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
+  return result.status === "fulfilled" ? result.value : [];
+}
+
+function uniqueEvents(events: PublicEventListItem[]): PublicEventListItem[] {
+  return [...new Map(events.map((event) => [event.id, event])).values()];
 }

@@ -1,25 +1,34 @@
 import type { PublicGalleryAlbum } from "@the-domain/types";
 import { MediaFrame, buttonClasses } from "@the-domain/ui";
+import { cn } from "@the-domain/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { formatEventDate, mediaImageSource } from "@/components/events/event-presentation";
 
 export function AlbumCard({
   album,
+  compact = false,
+  headingLevel = "h2",
   priority = false,
 }: {
   album: PublicGalleryAlbum;
+  compact?: boolean;
+  headingLevel?: "h2" | "h3";
   priority?: boolean;
 }) {
   const cover = album.coverMedia;
   const source = mediaImageSource(cover);
+  const Heading = headingLevel;
+  const minimumHeight = compact ? "min-h-[28rem]" : "min-h-[32rem]";
 
   return (
-    <article className="group relative min-h-[32rem] overflow-hidden border border-line bg-surface">
-      <MediaFrame className="absolute inset-0">
+    <article
+      className={cn("group relative overflow-hidden border border-line bg-surface", minimumHeight)}
+    >
+      <MediaFrame className="absolute inset-0 border-0">
         {source ? (
           <Image
-            alt={cover?.altText ?? ""}
+            alt={cover.altText ?? ""}
             className="object-cover transition duration-500 group-hover:scale-[1.02]"
             fill
             priority={priority}
@@ -35,13 +44,18 @@ export function AlbumCard({
         )}
       </MediaFrame>
       <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/40 to-transparent" />
-      <div className="relative flex min-h-[32rem] flex-col justify-end p-6 sm:p-9">
+      <div className={cn("relative flex flex-col justify-end p-6 sm:p-9", minimumHeight)}>
         <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
           {formatEventDate(album.eventStartAtUtc, album.timeZoneId)}
         </p>
-        <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-5xl">
+        <Heading
+          className={cn(
+            "mt-3 font-display font-bold tracking-[-0.03em] text-ink",
+            compact ? "text-3xl sm:text-4xl" : "text-3xl sm:text-5xl",
+          )}
+        >
           {album.title}
-        </h2>
+        </Heading>
         <p className="mt-3 text-sm text-ink-muted">
           {album.city} / {album.venueName}
         </p>
