@@ -1,6 +1,6 @@
 import type { AuthErrorResponse, AuthSessionResponse } from "@the-domain/types";
 import { NextRequest, NextResponse } from "next/server";
-import { readTokens, refreshWithBackend } from "@/lib/auth/backend-auth";
+import { isAuthenticationFailure, readTokens, refreshWithBackend } from "@/lib/auth/backend-auth";
 import { clearAuthCookies, readAuthTokens, setAuthCookies } from "@/lib/auth/auth-cookies";
 import { isSameOriginRequest } from "@/lib/auth/route-security";
 
@@ -18,8 +18,11 @@ export async function POST(request: NextRequest) {
   try {
     const response = await refreshWithBackend(refreshToken);
     if (!response.ok) {
-      await clearAuthCookies();
-      return expiredResponse();
+      if (isAuthenticationFailure(response)) {
+        await clearAuthCookies();
+        return expiredResponse();
+      }
+      return unavailableResponse();
     }
 
     const tokens = await readTokens(response);
@@ -29,11 +32,15 @@ export async function POST(request: NextRequest) {
       expiresAtUtc: tokens.expiresAtUtc,
     });
   } catch {
-    return NextResponse.json<AuthErrorResponse>(
-      { message: "Unable to connect to the server. Please try again." },
-      { status: 503 },
-    );
+    return unavailableResponse();
   }
+}
+
+function unavailableResponse() {
+  return NextResponse.json<AuthErrorResponse>(
+    { message: "Unable to connect to the server. Please try again." },
+    { status: 503 },
+  );
 }
 
 function expiredResponse() {

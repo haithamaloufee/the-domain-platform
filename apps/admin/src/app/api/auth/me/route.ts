@@ -2,6 +2,7 @@ import type { AuthErrorResponse, AuthSessionResponse } from "@the-domain/types";
 import { NextResponse } from "next/server";
 import {
   getCurrentUserFromBackend,
+  isAuthenticationFailure,
   readTokens,
   readUser,
   refreshWithBackend,
@@ -27,15 +28,21 @@ export async function GET() {
 
     const refreshed = await refreshWithBackend(refreshToken);
     if (!refreshed.ok) {
-      await clearAuthCookies();
-      return unauthorizedResponse();
+      if (isAuthenticationFailure(refreshed)) {
+        await clearAuthCookies();
+        return unauthorizedResponse();
+      }
+      return unavailableResponse();
     }
 
     const tokens = await readTokens(refreshed);
     const retried = await getCurrentUserFromBackend(tokens.accessToken);
     if (!retried.ok) {
-      await clearAuthCookies();
-      return unauthorizedResponse();
+      if (retried.status === 401) {
+        await clearAuthCookies();
+        return unauthorizedResponse();
+      }
+      return unavailableResponse();
     }
 
     await setAuthCookies(tokens);

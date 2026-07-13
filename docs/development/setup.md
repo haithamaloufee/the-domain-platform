@@ -26,7 +26,7 @@ Get-Content .env.local |
   }
 ```
 
-Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. The admin file also contains `THE_DOMAIN_API_BASE_URL` and refresh-cookie lifetime configuration; those unprefixed values remain server-only.
+Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. The admin file also contains `THE_DOMAIN_API_BASE_URL` and refresh-cookie lifetime configuration; those unprefixed values remain server-only. Keep the cookie lifetime aligned with the backend refresh-token lifetime (14 days by default).
 
 ## 3. Start PostgreSQL
 

@@ -1,6 +1,7 @@
 import { Card } from "@the-domain/ui";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { readAuthTokens } from "@/lib/auth/auth-cookies";
 import { getAdminSession } from "@/lib/auth/session";
 
 const reasonMessages: Readonly<Record<string, string>> = {
@@ -13,8 +14,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ reason?: string }>;
 }) {
-  if (await getAdminSession()) redirect("/dashboard");
   const { reason } = await searchParams;
+  if (await getAdminSession()) redirect("/dashboard");
+
+  const { refreshToken } = await readAuthTokens();
+  if (refreshToken && !reason) redirect("/dashboard");
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-16">

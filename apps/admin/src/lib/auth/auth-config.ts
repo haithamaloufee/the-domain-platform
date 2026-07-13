@@ -1,6 +1,6 @@
 import "server-only";
 
-const defaultRefreshCookieMaxAgeSeconds = 60 * 60 * 24 * 7;
+const defaultRefreshCookieMaxAgeSeconds = 60 * 60 * 24 * 14;
 
 export function getAdminAuthConfig() {
   const apiBaseUrl = process.env.THE_DOMAIN_API_BASE_URL?.replace(/\/$/, "");

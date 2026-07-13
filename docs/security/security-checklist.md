@@ -23,5 +23,6 @@
 - [x] Admin access and refresh tokens are confined to HttpOnly, SameSite=Lax cookies.
 - [x] Admin auth browser requests use same-origin BFF routes; refresh tokens never enter client components or Web Storage.
 - [x] Dashboard identity is validated against the backend and is not inferred from cookie presence.
+- [x] Protected dashboard navigation rotates an expired access token at most once before rendering.
 - [x] Logout clears local auth cookies even when backend revocation is unavailable.
 - [ ] Add CSRF tokens if future deployment topology or cookie policy allows cross-site admin requests.

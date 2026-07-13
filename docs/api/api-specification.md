@@ -15,7 +15,7 @@ Unexpected errors use `application/problem+json` Problem Details responses. Prod
 
 There is no public registration endpoint. Password hashes and persisted refresh-token records are never serialized. Invalid login responses are intentionally generic. Login rate limiting is scheduled for the security-hardening sprint.
 
-The admin frontend exposes same-origin BFF routes with the same `/api/auth/login`, `/refresh`, `/logout`, and `/me` paths on the admin origin. They translate the backend token response into HttpOnly cookies and return only safe session/user fields. BFF errors intentionally hide backend Problem Details, token parsing information, and credential-specific failures.
+The admin frontend exposes same-origin BFF routes with the same `/api/auth/login`, `/refresh`, `/logout`, and `/me` paths on the admin origin. They translate the backend token response into HttpOnly cookies and return only safe session/user fields. Protected dashboard navigation also validates identity server-side and performs at most one refresh-token rotation. BFF errors intentionally hide backend Problem Details, token parsing information, and credential-specific failures.
 
 Public event endpoints are `/api/public/events/upcoming`, `/previous`, `/featured`, `/{slug}`, and `/api/public/gallery/albums[/{eventSlug}]`. They return only Published or Cancelled events and only Approved media metadata.
 
