@@ -68,6 +68,8 @@ Cloudinary should use a production-specific folder prefix and restricted credent
 
 Use disposable test data and remove or hide it after verification.
 
+See `launch-checklist.md` for the latest recorded local evidence and unresolved launch gates.
+
 - [ ] `GET https://api.example.com/health` returns a healthy result, including PostgreSQL when enabled.
 - [ ] `GET https://api.example.com/api/info` reports the expected application/environment/version.
 - [ ] Swagger UI is unavailable in Production.
