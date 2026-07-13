@@ -12,7 +12,7 @@ Images default to JPEG, PNG, and WebP with a 15 MB limit. Videos default to MP4 
 
 Media begins as Draft or the explicitly supplied state, becomes publicly usable only when Approved, and can be removed from public projections by setting Hidden. Delete requests currently hide metadata; they do not hard-delete reusable Cloudinary assets.
 
-`EventMedia` assigns an asset to Hero, Cover, Gallery, HomepagePreview, or another approved usage with ordering and featured state. Removing an assignment does not remove the asset. Public event/gallery projections include only Published events and Approved media.
+`EventMedia` assigns an asset to Hero, Cover, Gallery, HomepagePreview, or another approved usage with ordering and featured state. Removing an assignment does not remove the asset. Public event/gallery projections include only Published or Cancelled events and Approved media.
 
 ## Event gallery management
 
@@ -20,7 +20,7 @@ The admin event media page groups real assignments into Hero, Cover, Poster, Gal
 
 Removing an assignment deletes only the `EventMedia` relationship. It never hides the `MediaAsset`, removes another event's assignment, or deletes the Cloudinary file. The approved-media selector reads bounded pages from the reusable global library. The upload shortcut returns to the same upload queue with the event preselected, preserving the Browser-to-BFF-to-Backend-to-Cloudinary flow.
 
-These usage and ordering records prepare the future public event gallery, homepage previews, and Previous Events experience. Public gallery UI, drag-and-drop ordering, bulk migration, and direct browser-to-Cloudinary upload remain intentionally unimplemented.
+The public event list chooses one featured cover candidate by usage priority; full approved event media is loaded only on event detail. Gallery lists expose one cover and counts, while album detail preserves the approved Gallery assignment order. The public grid initially reveals 24 items, supports photo/video filters, and loads additional batches on request. Videos use poster metadata and never autoplay. Drag-and-drop ordering, bulk migration, and direct browser-to-Cloudinary upload remain intentionally unimplemented.
 
 A future bulk importer must use controlled concurrency, resumable/background processing, per-item validation, and audit reporting. The full production archive must never be committed to this repository.
 

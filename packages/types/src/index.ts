@@ -19,6 +19,8 @@ export type {
   CreateEventRequest,
   EventDisplayStatus as EventDisplayStatusValue,
   EventPublicationStatus as EventPublicationStatusValue,
+  PublicEventDetails,
+  PublicEventListItem,
   SaveEventRequest,
   UpdateEventRequest,
 } from "./events";
@@ -35,6 +37,9 @@ export type {
   MediaListQuery,
   MediaOrientation as MediaOrientationValue,
   MediaType as MediaTypeValue,
+  PublicGalleryAlbum,
+  PublicGalleryAlbumDetails,
+  PublicMediaItem,
   UpdateEventMediaRequest,
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,

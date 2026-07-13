@@ -17,7 +17,9 @@ There is no public registration endpoint. Password hashes and persisted refresh-
 
 The admin frontend exposes same-origin BFF routes with the same `/api/auth/login`, `/refresh`, `/logout`, and `/me` paths on the admin origin. They translate the backend token response into HttpOnly cookies and return only safe session/user fields. Protected dashboard navigation also validates identity server-side and performs at most one refresh-token rotation. BFF errors intentionally hide backend Problem Details, token parsing information, and credential-specific failures.
 
-Public event endpoints are `/api/public/events/upcoming`, `/previous`, `/featured`, `/{slug}`, and `/api/public/gallery/albums[/{eventSlug}]`. They return only Published or Cancelled events and only Approved media metadata.
+Public event endpoints are `/api/public/events/upcoming`, `/previous`, `/featured`, `/{slug}`, and `/api/public/gallery/albums[/{eventSlug}]`. They return only Published or Cancelled events and only Approved media metadata. Event lists return summary fields plus a single nullable cover projection; event detail returns long description, location/map fields, and the approved ordered media collection. The external booking URL is emitted only when backend-computed booking availability is Open.
+
+Gallery album lists return event identity, date/location metadata, photo/video counts, and one cover item. Album detail returns the full approved `Gallery` usage collection in persisted sort order. Events with no approved gallery item are omitted from the album list. Public lists are capped at 50 items; media binaries remain on external storage and are never returned by the API.
 
 Admin event endpoints under `/api/admin/events` support list, detail, create, update, publish, archive, and cancel. Every admin event route requires `AdminDashboardAccess`. Booking URLs are external redirects only; no ticketing or payment API exists.
 

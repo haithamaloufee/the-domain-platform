@@ -14,6 +14,8 @@
 - [x] Initial SuperAdmin provisioning is explicit, one-time, password-policy validated, and disabled by default.
 - [ ] Add rate limiting to login and refresh endpoints during security hardening.
 - [x] Public event queries exclude Draft and Archived records and Hidden/Draft media.
+- [x] Public website data fetching is server-only, uses anonymous public endpoints, and runtime-validates response URLs and enums.
+- [x] Public booking links use backend-approved absolute external URLs and are shown only when booking is Open.
 - [x] Admin event mutations require the AdminDashboardAccess policy.
 - [x] Event APIs use explicit DTOs rather than EF entities.
 - [x] Uploads validate emptiness, MIME/extension agreement, and configured size limits before storage.

@@ -9,9 +9,15 @@ Shared boundaries are deliberate:
 - `packages/utils` contains framework-neutral helpers and the typed fetch client foundation.
 - `packages/config` contains strict TypeScript and Next.js ESLint defaults.
 
-Both apps default to React Server Components. Client components are introduced only where browser interaction requires them. API work uses the shared client factory with app-owned environment configuration; Sprint 5 placeholders perform no requests.
+Both apps default to React Server Components. Client components are introduced only where browser interaction requires them. Public website API reads use a website-owned, server-only fetch boundary with runtime contract validation; browser components never receive an API origin. Development requests use `no-store`, while production requests revalidate every 60 seconds.
 
 Public routes are `/`, `/events`, `/events/[slug]`, `/gallery`, `/gallery/[eventSlug]`, `/about`, `/services`, and `/contact`. The public website remains authentication-free.
+
+## Public events and gallery boundary
+
+The public Events and Gallery pages are Server Components backed only by anonymous `/api/public/*` endpoints. Event summary requests expose one approved cover item instead of the event's media collection. Event details expose approved ordered media, long-form copy, location, map, computed status, and an external booking URL only while booking is open. The client countdown is isolated to a small component and stops when the event begins.
+
+Gallery album summaries expose cover and media counts. Full ordered gallery metadata is fetched only for `/gallery/[eventSlug]`, where the client grid filters the already-bounded album data and reveals it in batches of 24. Image optimization, inert video thumbnails, metadata-only playback, and a shared accessible dialog keep media-heavy pages responsive without introducing browser-side API calls.
 
 ## Admin authentication boundary
 

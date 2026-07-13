@@ -57,8 +57,30 @@ public sealed class MediaManagementServiceTests
         eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, draft.Id, EventMediaUsage.Gallery, 1, false, DateTimeOffset.UtcNow), draft);
         eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, hidden.Id, EventMediaUsage.Gallery, 2, false, DateTimeOffset.UtcNow), hidden);
         var events = new EventRepositoryFake(eventEntity);
-        var albums = await new TheDomain.Application.Events.EventService(events, TimeProvider.System).GetGalleryAlbumsAsync(CancellationToken.None);
-        Assert.Single(albums); Assert.Single(albums[0].Media); Assert.Equal(approved.Id, albums[0].Media[0].Id);
+        var service = new TheDomain.Application.Events.EventService(events, TimeProvider.System);
+        var albums = await service.GetGalleryAlbumsAsync(CancellationToken.None);
+        var album = await service.GetGalleryAlbumAsync(eventEntity.Slug, CancellationToken.None);
+        Assert.Single(albums); Assert.Equal(1, albums[0].MediaCount);
+        Assert.NotNull(album); Assert.Single(album.Media); Assert.Equal(approved.Id, album.Media[0].Id);
+    }
+
+    [Fact]
+    public async Task PublicEventListReturnsOneCoverWhileDetailsReturnApprovedMedia()
+    {
+        var eventEntity = CreateEvent(); eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
+        var hero = CreateMedia(MediaApprovalStatus.Approved);
+        var gallery = CreateMedia(MediaApprovalStatus.Approved);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, gallery.Id, EventMediaUsage.Gallery, 0, false, DateTimeOffset.UtcNow), gallery);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, hero.Id, EventMediaUsage.Hero, 10, false, DateTimeOffset.UtcNow), hero);
+        var service = new TheDomain.Application.Events.EventService(new EventRepositoryFake(eventEntity), TimeProvider.System);
+
+        var events = await service.GetUpcomingAsync(CancellationToken.None);
+        var details = await service.GetPublicBySlugAsync(eventEntity.Slug, CancellationToken.None);
+
+        Assert.Single(events);
+        Assert.Equal(hero.Id, events[0].CoverMedia?.Id);
+        Assert.NotNull(details);
+        Assert.Equal(2, details.Media.Count);
     }
 
     private static MediaManagementService CreateService(FakeRepository repository) => new(repository, new FakeStorage(), new MediaUploadPolicy(10, 20, new Dictionary<string, string[]> { ["image/jpeg"] = [".jpg"] }), TimeProvider.System);

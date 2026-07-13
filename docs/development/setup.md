@@ -26,7 +26,7 @@ Get-Content .env.local |
   }
 ```
 
-Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. The admin file also contains `THE_DOMAIN_API_BASE_URL` and refresh-cookie lifetime configuration; those unprefixed values remain server-only. Keep the cookie lifetime aligned with the backend refresh-token lifetime (14 days by default).
+Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. Both applications use the unprefixed, server-only `THE_DOMAIN_API_BASE_URL`; the admin file also contains refresh-cookie lifetime configuration. Keep the cookie lifetime aligned with the backend refresh-token lifetime (14 days by default).
 
 To exercise media uploads locally, set `Cloudinary__Enabled=true` and provide `Cloudinary__CloudName`, `Cloudinary__ApiKey`, and `Cloudinary__ApiSecret` in the backend process environment. Keep these values out of both Next.js applications and never use a `NEXT_PUBLIC_` prefix. The defaults accept JPEG, PNG, and WebP images up to 15 MB and MP4 or WebM videos up to 100 MB.
 
@@ -72,6 +72,8 @@ pnpm --filter @the-domain/website dev
 ```
 
 Admin runs at `http://localhost:3001`; the website runs at `http://localhost:3000`. Visit `http://localhost:3001/login` and use the SuperAdmin provisioned during the first configured API startup. After successful login, the admin BFF sets HttpOnly cookies and redirects to `/dashboard`. Neither token is available through JavaScript or browser Web Storage.
+
+With published event data available, verify the public website at `/events` and `/gallery`. Public pages call the API server-side through `THE_DOMAIN_API_BASE_URL`; they do not require login or expose that origin to client components. Booking links require an absolute external URL and backend-computed Open availability.
 
 For event gallery testing, create or select an event, approve at least one disposable media asset, and open `/dashboard/events/{id}/media`. Assignment listing and ordering work without Cloudinary once metadata exists; uploading additional files still requires the Cloudinary development configuration described above. Removing an event assignment preserves the reusable media asset.
 

@@ -117,3 +117,44 @@ export interface AdminEventMediaItem extends EventMediaResponse {
 export interface AdminMediaErrorResponse {
   message: string;
 }
+
+export interface PublicMediaItem {
+  id: string;
+  mediaType: MediaType;
+  url: string;
+  thumbnailUrl: string | null;
+  caption: string | null;
+  altText: string | null;
+  width: number | null;
+  height: number | null;
+  durationSeconds: number | null;
+  orientation: MediaOrientation;
+  usage: EventMediaUsage;
+  sortOrder: number;
+  isFeatured: boolean;
+}
+
+export interface PublicGalleryAlbum {
+  eventId: string;
+  eventSlug: string;
+  title: string;
+  eventStartAtUtc: string;
+  timeZoneId: string;
+  city: string;
+  venueName: string;
+  mediaCount: number;
+  photoCount: number;
+  videoCount: number;
+  coverMedia: PublicMediaItem;
+}
+
+export interface PublicGalleryAlbumDetails {
+  eventId: string;
+  eventSlug: string;
+  title: string;
+  eventStartAtUtc: string;
+  timeZoneId: string;
+  city: string;
+  venueName: string;
+  media: PublicMediaItem[];
+}

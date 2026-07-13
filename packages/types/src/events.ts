@@ -1,3 +1,5 @@
+import type { PublicMediaItem } from "./media";
+
 export const EventPublicationStatus = {
   Draft: 1,
   Published: 2,
@@ -64,4 +66,28 @@ export type AdminEventListItem = AdminEventDetails;
 
 export interface AdminEventErrorResponse {
   message: string;
+}
+
+export interface PublicEventListItem {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string;
+  eventType: string;
+  startAtUtc: string;
+  endAtUtc: string;
+  timeZoneId: string;
+  city: string;
+  venueName: string;
+  displayStatus: EventDisplayStatus;
+  bookingAvailability: BookingAvailability;
+  externalBookingUrl: string | null;
+  coverMedia: PublicMediaItem | null;
+}
+
+export interface PublicEventDetails extends Omit<PublicEventListItem, "coverMedia"> {
+  longDescription: string;
+  venueAddress: string | null;
+  mapUrl: string | null;
+  media: PublicMediaItem[];
 }

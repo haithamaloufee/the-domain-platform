@@ -7,28 +7,28 @@ namespace TheDomain.Application.Events;
 public sealed class EventService(IEventRepository repository, TimeProvider timeProvider) : IEventService
 {
     private const int MaximumPublicItems = 50;
-    public async Task<IReadOnlyList<PublicEventResponse>> GetUpcomingAsync(CancellationToken cancellationToken) =>
+    public async Task<IReadOnlyList<PublicEventListResponse>> GetUpcomingAsync(CancellationToken cancellationToken) =>
         await GetPublicListAsync(status => status is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, false, cancellationToken);
-    public async Task<IReadOnlyList<PublicEventResponse>> GetPreviousAsync(CancellationToken cancellationToken) =>
+    public async Task<IReadOnlyList<PublicEventListResponse>> GetPreviousAsync(CancellationToken cancellationToken) =>
         await GetPublicListAsync(status => status == EventDisplayStatus.Finished, false, cancellationToken);
-    public async Task<IReadOnlyList<PublicEventResponse>> GetFeaturedAsync(CancellationToken cancellationToken) =>
+    public async Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) =>
         await GetPublicListAsync(_ => true, true, cancellationToken);
 
-    public async Task<PublicEventResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
+    public async Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
     {
         var item = await repository.FindBySlugAsync(slug, cancellationToken);
-        return item is not null && IsPublic(item) ? MapPublic(item, timeProvider.GetUtcNow()) : null;
+        return item is not null && IsPublic(item) ? MapPublicDetails(item, timeProvider.GetUtcNow()) : null;
     }
 
-    public async Task<IReadOnlyList<GalleryAlbumResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<GalleryAlbumListResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken)
     {
         var events = await repository.ListAsync(cancellationToken);
-        return events.Where(IsPublic).Select(MapAlbum).Where(album => album.Media.Count > 0).Take(MaximumPublicItems).ToArray();
+        return events.Where(IsPublic).Select(MapAlbumList).OfType<GalleryAlbumListResponse>().Take(MaximumPublicItems).ToArray();
     }
-    public async Task<GalleryAlbumResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken)
+    public async Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken)
     {
         var item = await repository.FindBySlugAsync(slug, cancellationToken);
-        return item is not null && IsPublic(item) ? MapAlbum(item) : null;
+        return item is not null && IsPublic(item) ? MapAlbumDetails(item) : null;
     }
     public async Task<IReadOnlyList<AdminEventResponse>> GetAdminEventsAsync(CancellationToken cancellationToken)
     {
@@ -61,11 +61,11 @@ public sealed class EventService(IEventRepository repository, TimeProvider timeP
     public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(Guid id, CancellationToken cancellationToken) => ChangeStatus(id, (item, now) => item.Archive(now), cancellationToken);
     public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) => ChangeStatus(id, (item, now) => item.Cancel(now), cancellationToken);
 
-    private async Task<IReadOnlyList<PublicEventResponse>> GetPublicListAsync(Func<EventDisplayStatus, bool> statusFilter, bool featuredOnly, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<PublicEventListResponse>> GetPublicListAsync(Func<EventDisplayStatus, bool> statusFilter, bool featuredOnly, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow(); var events = await repository.ListAsync(cancellationToken);
         return events.Where(IsPublic).Where(item => !featuredOnly || item.IsFeatured).Where(item => statusFilter(item.GetDisplayStatus(now)))
-            .OrderBy(item => item.StartAtUtc).Take(MaximumPublicItems).Select(item => MapPublic(item, now)).ToArray();
+            .OrderBy(item => item.StartAtUtc).Take(MaximumPublicItems).Select(item => MapPublicList(item, now)).ToArray();
     }
     private async Task<EventOperationResult<AdminEventResponse>> ChangeStatus(Guid id, Action<EntertainmentEvent, DateTimeOffset> change, CancellationToken cancellationToken)
     {
@@ -73,7 +73,7 @@ public sealed class EventService(IEventRepository repository, TimeProvider timeP
         var now = timeProvider.GetUtcNow();
         change(item, now); await repository.SaveChangesAsync(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
     }
-    private static bool IsPublic(EntertainmentEvent item) => item.PublicationStatus == EventPublicationStatus.Published;
+    private static bool IsPublic(EntertainmentEvent item) => item.PublicationStatus is EventPublicationStatus.Published or EventPublicationStatus.Cancelled;
     private static List<string> Validate(SaveEventRequest request)
     {
         List<string> errors = [];
@@ -92,8 +92,44 @@ public sealed class EventService(IEventRepository repository, TimeProvider timeP
     private static void ValidateUrl(string? value, string name, List<string> errors) { if (!string.IsNullOrWhiteSpace(value) && (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))) errors.Add($"{name} must be an absolute HTTP or HTTPS URL."); }
     private static EntertainmentEvent CreateEvent(Guid id, SaveEventRequest r, DateTimeOffset now) => new(id, r.Slug, r.Title, r.ShortDescription, r.LongDescription, r.EventType, r.StartAtUtc, r.EndAtUtc, r.TimeZoneId, r.City, r.VenueName, r.VenueAddress, r.MapUrl, r.ExternalBookingUrl, r.IsBookingEnabled, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now);
     private static void Apply(EntertainmentEvent item, SaveEventRequest r, DateTimeOffset now) => item.Update(r.Slug, r.Title, r.ShortDescription, r.LongDescription, r.EventType, r.StartAtUtc, r.EndAtUtc, r.TimeZoneId, r.City, r.VenueName, r.VenueAddress, r.MapUrl, r.ExternalBookingUrl, r.IsBookingEnabled, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now);
-    private static PublicEventResponse MapPublic(EntertainmentEvent item, DateTimeOffset now) { var booking = item.GetBookingAvailability(now); return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.EventType, item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.GetDisplayStatus(now), booking, booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, MapMedia(item)); }
-    private static PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media.Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved).OrderBy(link => link.SortOrder).Select(link => new PublicMediaResponse(link.MediaAsset.Id, link.MediaAsset.MediaType, link.MediaAsset.Url, link.MediaAsset.ThumbnailUrl, link.MediaAsset.AltText, link.Usage, link.SortOrder, link.IsFeatured)).ToArray();
-    private static GalleryAlbumResponse MapAlbum(EntertainmentEvent item) => new(item.Id, item.Slug, item.Title, item.StartAtUtc, MapMedia(item).Where(media => media.Usage == EventMediaUsage.Gallery).ToArray());
+    private static PublicEventListResponse MapPublicList(EntertainmentEvent item, DateTimeOffset now)
+    {
+        var booking = item.GetBookingAvailability(now);
+        return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.EventType, item.StartAtUtc,
+            item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.GetDisplayStatus(now), booking,
+            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, SelectCoverMedia(item));
+    }
+    private static PublicEventDetailsResponse MapPublicDetails(EntertainmentEvent item, DateTimeOffset now)
+    {
+        var booking = item.GetBookingAvailability(now);
+        return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType,
+            item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress,
+            item.MapUrl, item.GetDisplayStatus(now), booking,
+            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, MapMedia(item));
+    }
+    private static PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media.Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved).OrderBy(link => link.SortOrder).Select(link => new PublicMediaResponse(link.MediaAsset.Id, link.MediaAsset.MediaType, link.MediaAsset.Url, link.MediaAsset.ThumbnailUrl, link.MediaAsset.Caption, link.MediaAsset.AltText, link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation, link.Usage, link.SortOrder, link.IsFeatured)).ToArray();
+    private static PublicMediaResponse? SelectCoverMedia(EntertainmentEvent item)
+    {
+        var media = MapMedia(item);
+        EventMediaUsage[] priority = [EventMediaUsage.Hero, EventMediaUsage.Cover, EventMediaUsage.Poster,
+            EventMediaUsage.Thumbnail, EventMediaUsage.Gallery];
+        foreach (var usage in priority)
+        {
+            var featured = media.FirstOrDefault(value => value.Usage == usage && value.IsFeatured);
+            if (featured is not null) return featured;
+            var fallback = media.FirstOrDefault(value => value.Usage == usage);
+            if (fallback is not null) return fallback;
+        }
+        return media.FirstOrDefault();
+    }
+    private static GalleryAlbumListResponse? MapAlbumList(EntertainmentEvent item)
+    {
+        var media = GalleryMedia(item); if (media.Length == 0) return null;
+        return new(item.Id, item.Slug, item.Title, item.StartAtUtc, item.TimeZoneId, item.City, item.VenueName,
+            media.Length, media.Count(value => value.MediaType == MediaType.Image), media.Count(value => value.MediaType == MediaType.Video),
+            media.FirstOrDefault(value => value.IsFeatured) ?? media[0]);
+    }
+    private static GalleryAlbumDetailsResponse MapAlbumDetails(EntertainmentEvent item) => new(item.Id, item.Slug, item.Title, item.StartAtUtc, item.TimeZoneId, item.City, item.VenueName, GalleryMedia(item));
+    private static PublicMediaResponse[] GalleryMedia(EntertainmentEvent item) => MapMedia(item).Where(media => media.Usage == EventMediaUsage.Gallery).ToArray();
     private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now) => new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType, item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress, item.MapUrl, item.ExternalBookingUrl, item.IsBookingEnabled, item.BookingOpensAtUtc, item.BookingClosesAtUtc, item.PublicationStatus, item.GetDisplayStatus(now), item.GetBookingAvailability(now), item.IsFeatured, item.ShowOnHomepage, item.CreatedAtUtc, item.UpdatedAtUtc);
 }

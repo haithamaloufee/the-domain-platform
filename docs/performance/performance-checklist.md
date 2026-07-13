@@ -1,11 +1,11 @@
 # Performance checklist
 
-- [ ] Media uses optimized posters, responsive images, and lazy loading.
+- [x] Public event/gallery media uses responsive images, poster metadata, and lazy loading outside priority covers.
 - [x] Admin media browsing uses server-side bounded pagination rather than loading the library at once.
-- [ ] Only intentional videos play, with reduced-data and reduced-motion concerns respected.
+- [x] Public gallery videos mount and play only after an explicit lightbox action; autoplay is disabled.
 - [ ] Frontend bundles and third-party scripts are budgeted.
 - [ ] API queries are bounded, paginated, and indexed.
-- [ ] Caching behavior is explicit and observable.
+- [x] Public website reads use no-store in development and a documented 60-second production revalidation window.
 - [ ] Core Web Vitals and backend latency are measured before release.
 - [x] Frontend foundations use Server Components by default and isolate client-only behavior.
 - [x] Google fonts are self-hosted through `next/font` with swap behavior.
@@ -18,4 +18,6 @@
 - [x] Event gallery management loads only one event's assignments and uses thumbnail previews without autoplay.
 - [x] The assign-existing workflow searches approved media with bounded pagination instead of loading the global library.
 - [x] Assignment updates use controlled sequential requests for the expected per-event media volume.
+- [x] Public event and gallery list contracts return one cover rather than full media collections.
+- [x] Public album pages reveal media in client-side batches of 24 and never render every video player up front.
 - [ ] Design resumable/background bulk import before ingesting the full media archive.

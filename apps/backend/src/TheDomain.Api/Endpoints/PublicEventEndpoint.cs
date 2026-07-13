@@ -20,12 +20,12 @@ public static class PublicEventEndpoint
         return endpoints;
     }
 
-    private static async Task<Results<Ok<PublicEventResponse>, NotFound<ProblemDetails>>> GetEventAsync(string slug, [FromServices] IEventService service, CancellationToken token)
+    private static async Task<Results<Ok<PublicEventDetailsResponse>, NotFound<ProblemDetails>>> GetEventAsync(string slug, [FromServices] IEventService service, CancellationToken token)
     {
         var item = await service.GetPublicBySlugAsync(slug, token);
         return item is null ? TypedResults.NotFound(NotFoundProblem()) : TypedResults.Ok(item);
     }
-    private static async Task<Results<Ok<GalleryAlbumResponse>, NotFound<ProblemDetails>>> GetAlbumAsync(string eventSlug, [FromServices] IEventService service, CancellationToken token)
+    private static async Task<Results<Ok<GalleryAlbumDetailsResponse>, NotFound<ProblemDetails>>> GetAlbumAsync(string eventSlug, [FromServices] IEventService service, CancellationToken token)
     {
         var item = await service.GetGalleryAlbumAsync(eventSlug, token);
         return item is null ? TypedResults.NotFound(NotFoundProblem()) : TypedResults.Ok(item);

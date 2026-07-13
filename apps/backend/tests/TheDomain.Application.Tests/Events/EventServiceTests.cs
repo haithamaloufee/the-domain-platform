@@ -28,6 +28,22 @@ public sealed class EventServiceTests
     }
 
     [Fact]
+    public async Task PublicDetailsIncludeCancelledEventsButExcludeArchivedEvents()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var cancelled = Create("cancelled", now.AddDays(1), now.AddDays(2)); cancelled.Cancel(now);
+        var archived = Create("archived", now.AddDays(1), now.AddDays(2)); archived.Archive(now);
+        var service = new EventService(new FakeRepository(cancelled, archived), TimeProvider.System);
+
+        var cancelledResult = await service.GetPublicBySlugAsync(cancelled.Slug, CancellationToken.None);
+        var archivedResult = await service.GetPublicBySlugAsync(archived.Slug, CancellationToken.None);
+
+        Assert.NotNull(cancelledResult);
+        Assert.Equal(EventDisplayStatus.Cancelled, cancelledResult.DisplayStatus);
+        Assert.Null(archivedResult);
+    }
+
+    [Fact]
     public async Task CreateRejectsEndBeforeStart()
     {
         var now = DateTimeOffset.UtcNow;

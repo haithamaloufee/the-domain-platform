@@ -4,15 +4,15 @@ namespace TheDomain.Application.Events;
 
 public sealed class DisabledEventService : IEventService
 {
-    private static readonly IReadOnlyList<PublicEventResponse> NoPublicEvents = [];
-    private static readonly IReadOnlyList<GalleryAlbumResponse> NoAlbums = [];
+    private static readonly IReadOnlyList<PublicEventListResponse> NoPublicEvents = [];
+    private static readonly IReadOnlyList<GalleryAlbumListResponse> NoAlbums = [];
     private static readonly IReadOnlyList<AdminEventResponse> NoAdminEvents = [];
-    public Task<IReadOnlyList<PublicEventResponse>> GetUpcomingAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
-    public Task<IReadOnlyList<PublicEventResponse>> GetPreviousAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
-    public Task<IReadOnlyList<PublicEventResponse>> GetFeaturedAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
-    public Task<PublicEventResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<PublicEventResponse?>(null);
-    public Task<IReadOnlyList<GalleryAlbumResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken) => Task.FromResult(NoAlbums);
-    public Task<GalleryAlbumResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<GalleryAlbumResponse?>(null);
+    public Task<IReadOnlyList<PublicEventListResponse>> GetUpcomingAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
+    public Task<IReadOnlyList<PublicEventListResponse>> GetPreviousAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
+    public Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
+    public Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<PublicEventDetailsResponse?>(null);
+    public Task<IReadOnlyList<GalleryAlbumListResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken) => Task.FromResult(NoAlbums);
+    public Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<GalleryAlbumDetailsResponse?>(null);
     public Task<IReadOnlyList<AdminEventResponse>> GetAdminEventsAsync(CancellationToken cancellationToken) => Task.FromResult(NoAdminEvents);
     public Task<AdminEventResponse?> GetAdminByIdAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<AdminEventResponse?>(null);
     public Task<EventOperationResult<AdminEventResponse>> CreateAsync(SaveEventRequest request, CancellationToken cancellationToken) => Disabled();
