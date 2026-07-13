@@ -30,3 +30,23 @@ Admin media endpoints under `/api/admin/media` support paginated/filterable list
 `GET /api/admin/events/{eventId}/media` returns every assignment for the event ordered by usage, sort order, and creation date. Each row includes the real assignment ID, event and media IDs, usage, sort order, featured state, creation date, and a nested `AdminMediaResponse` with safe asset metadata. Ordering writes continue to use the existing per-assignment PUT route; no separate reorder endpoint exists.
 
 The admin frontend mirrors these endpoints with same-origin BFF routes. Media routes authenticate from HttpOnly cookies, perform at most one token refresh, allowlist query and multipart fields, validate mutation bodies, and reduce backend errors to safe `{ message }` responses. Browser code never calls Cloudinary or the ASP.NET origin directly.
+
+Homepage CMS public endpoints are:
+
+- `GET /api/public/homepage` returns nullable published homepage content, visible verified statistics, and visible partners.
+- `GET /api/public/statistics` returns the same ordered safe statistic projection.
+- `GET /api/public/partners` returns the same ordered safe partner projection.
+
+Empty arrays and `content: null` are valid before administrators publish verified records. Public DTOs omit IDs, audit timestamps, draft/publish flags, verification flags, visibility flags, sort controls, and storage-provider data.
+
+Homepage CMS admin endpoints require `AdminDashboardAccess`:
+
+- `GET|PUT /api/admin/homepage`
+- `GET|POST /api/admin/statistics`
+- `PUT|DELETE /api/admin/statistics/{id}`
+- `POST /api/admin/statistics/{id}/show|hide`
+- `GET|POST /api/admin/partners`
+- `PUT|DELETE /api/admin/partners/{id}`
+- `POST /api/admin/partners/{id}/show|hide`
+
+Homepage PUT creates or updates the singleton record. Statistic verification remains an explicit admin-controlled field; visibility alone does not make an unverified value public. Partner slugs are unique. DELETE for statistics and partners performs the same reversible hide operation as the hide endpoint.

@@ -30,9 +30,11 @@ public static class WebApplicationExtensions
         endpoints.MapApiInfoEndpoint();
         endpoints.MapAuthenticationEndpoints();
         endpoints.MapPublicEventEndpoints();
+        endpoints.MapPublicHomepageEndpoints();
         endpoints.MapAdminEventEndpoints();
         endpoints.MapAdminMediaEndpoints();
         endpoints.MapAdminEventMediaEndpoints();
+        endpoints.MapAdminHomepageCmsEndpoints();
 
         return endpoints;
     }

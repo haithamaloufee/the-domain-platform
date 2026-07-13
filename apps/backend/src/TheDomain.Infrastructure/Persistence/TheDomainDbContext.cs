@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TheDomain.Domain.Identity;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
+using TheDomain.Domain.Homepage;
 
 namespace TheDomain.Infrastructure.Persistence;
 
@@ -13,6 +14,9 @@ public sealed class TheDomainDbContext(DbContextOptions<TheDomainDbContext> opti
     public DbSet<EntertainmentEvent> Events => Set<EntertainmentEvent>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<EventMedia> EventMedia => Set<EventMedia>();
+    public DbSet<HomepageContent> HomepageContent => Set<HomepageContent>();
+    public DbSet<StatisticItem> HomepageStatistics => Set<StatisticItem>();
+    public DbSet<Partner> Partners => Set<Partner>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

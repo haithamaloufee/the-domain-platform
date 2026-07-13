@@ -16,6 +16,8 @@
 - [x] Public event queries exclude Draft and Archived records and Hidden/Draft media.
 - [x] Public website data fetching is server-only, uses anonymous public endpoints, and runtime-validates response URLs and enums.
 - [x] Public booking links use backend-approved absolute external URLs and are shown only when booking is Open.
+- [x] Public homepage CMS projections exclude drafts, unverified statistics, hidden records, admin flags, IDs, and audit timestamps.
+- [x] Homepage CMS mutations use explicit DTOs, validated safe URLs/slugs, and `AdminDashboardAccess` authorization.
 - [x] Admin event mutations require the AdminDashboardAccess policy.
 - [x] Event APIs use explicit DTOs rather than EF entities.
 - [x] Uploads validate emptiness, MIME/extension agreement, and configured size limits before storage.

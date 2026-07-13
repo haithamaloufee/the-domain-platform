@@ -1,6 +1,6 @@
 # The Domain Backend
 
-ASP.NET Core Web API foundation for The Domain Platform, targeting .NET 8. This sprint establishes boundaries and operational fundamentals only; it contains no business modules.
+ASP.NET Core Web API for The Domain Platform, targeting .NET 8. The solution contains authentication, events, media metadata, gallery projections, and the homepage CMS foundation while preserving Clean Architecture boundaries.
 
 ## Solution structure
 
@@ -81,7 +81,7 @@ Serilog writes structured events to the console only. Production exceptions retu
 
 ## Intentionally not implemented
 
-Public registration, full user CRUD, Cloudinary, uploads, campaigns, contact forms, and frontend authentication UI remain outside this sprint.
+Public registration, full user CRUD, campaigns, contact submission, homepage CMS administration UI, frontend CMS consumption, and public authentication remain outside this sprint.
 
 ## Events and media metadata
 
@@ -94,3 +94,9 @@ The event aggregate supports Draft, Published, Cancelled, and Archived lifecycle
 Cloudinary integration is disabled by default. Configure `Cloudinary__Enabled`, cloud name, API key, API secret, folder prefix, and size/MIME policy through untracked environment values. Images default to JPEG/PNG/WebP up to 15 MB; videos default to MP4/WebM up to 100 MB.
 
 Admin media APIs provide single-file upload, bounded pagination, metadata editing, approve/hide lifecycle, safe deletion by hiding, and event-media assignment. PostgreSQL stores metadata and URLs only. Cloudinary deletion is limited to compensation when an upload succeeds but metadata persistence fails.
+
+## Homepage CMS
+
+The homepage CMS stores one application-identified content record, verified statistics, and partner/sponsor metadata. `GET /api/public/homepage` returns published content plus visible verified statistics and visible partners. Standalone reads are available at `/api/public/statistics` and `/api/public/partners`. Before content is published, the aggregate response contains `content: null`; empty statistic and partner arrays are valid.
+
+Protected `/api/admin/homepage`, `/api/admin/statistics`, and `/api/admin/partners` routes prepare the Sprint 12B admin workflow. They require `AdminDashboardAccess`, validate explicit DTOs, enforce unique partner slugs, and implement statistic/partner deletion as soft hide. The `AddHomepageCms` migration creates the three tables and indexes without seeding content, metrics, partners, logos, or media.

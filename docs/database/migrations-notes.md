@@ -8,6 +8,8 @@ EF Core migrations will live in `src/TheDomain.Infrastructure/Persistence/Migrat
 
 Sprint 6C creates no migration. The authentication persistence repair declares application-assigned refresh-token GUIDs as non-generated EF keys; it changes change-tracking metadata only and does not alter the existing PostgreSQL schema.
 
+`AddHomepageCms` creates `homepage_content`, `homepage_statistics`, and `partners`. It adds the homepage singleton check constraint, partner-slug unique index, and published/visibility/verification/order indexes. The migration contains no seed copy, statistics, partners, logo metadata, media, or credentials.
+
 Production migrations must not run implicitly during ordinary API startup. Deployment automation, backups, rollback procedures, and migration ownership must be defined before production release.
 
 ## Local workflow

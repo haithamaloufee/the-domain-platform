@@ -13,3 +13,13 @@ events 1 ───── * event_media * ───── 1 media_assets
 ```
 
 Events store lifecycle, UTC scheduling, location, external booking configuration, and homepage flags. Media assets store URLs and metadata only. The association stores usage, ordering, and featured state and prevents duplicate event/asset/usage assignments.
+
+```text
+homepage_content (singleton)
+homepage_statistics
+partners
+```
+
+`homepage_content` stores editable section copy, CTA configuration, publication state, and UTC audit timestamps. Its application-owned primary key is constrained to the singleton identifier; no default content is seeded.
+
+`homepage_statistics` stores display text plus independent visibility and verification flags. Only rows where both flags are true enter public projections. `partners` stores names, unique slugs, external logo/website metadata URLs, visibility/featured flags, ordering, and UTC audit timestamps. It contains no image binaries or seeded organizations.

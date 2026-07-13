@@ -25,6 +25,20 @@ export type {
   UpdateEventRequest,
 } from "./events";
 export type {
+  AdminHomepageContent,
+  AdminPartner,
+  AdminStatisticItem,
+  CreatePartnerRequest,
+  CreateStatisticRequest,
+  PublicHomepageContent,
+  PublicHomepageResponse,
+  PublicPartner,
+  PublicStatisticItem,
+  UpdateHomepageContentRequest,
+  UpdatePartnerRequest,
+  UpdateStatisticRequest,
+} from "./homepage";
+export type {
   AdminEventMediaItem,
   AdminMediaDetails,
   AdminMediaErrorResponse,

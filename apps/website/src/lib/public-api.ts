@@ -5,11 +5,17 @@ import type {
   PublicEventListItem,
   PublicGalleryAlbum,
   PublicGalleryAlbumDetails,
+  PublicHomepageResponse,
+  PublicPartner,
+  PublicStatisticItem,
 } from "@the-domain/types";
 import { getPublicApiBaseUrl } from "./environment";
 import {
   parseGalleryAlbumDetails,
   parseGalleryAlbums,
+  parsePublicHomepage,
+  parsePublicPartners,
+  parsePublicStatistics,
   parsePublicEvent,
   parsePublicEvents,
 } from "./public-contract";
@@ -51,6 +57,18 @@ export function getGalleryAlbumByEventSlug(eventSlug: string): Promise<PublicGal
     `/api/public/gallery/albums/${encodeURIComponent(eventSlug)}`,
     parseGalleryAlbumDetails,
   );
+}
+
+export function getPublicHomepage(): Promise<PublicHomepageResponse> {
+  return request("/api/public/homepage", parsePublicHomepage);
+}
+
+export function getPublicStatistics(): Promise<PublicStatisticItem[]> {
+  return request("/api/public/statistics", parsePublicStatistics);
+}
+
+export function getPublicPartners(): Promise<PublicPartner[]> {
+  return request("/api/public/partners", parsePublicPartners);
 }
 
 async function request<T>(path: `/${string}`, parse: (value: unknown) => T): Promise<T> {

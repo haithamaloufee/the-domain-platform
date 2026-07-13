@@ -25,6 +25,8 @@ The `/` route composes `getFeaturedEvents`, `getUpcomingEvents`, `getPreviousEve
 
 Homepage presentation is split into small server components under `apps/website/src/components/home`. Non-API editorial content is typed and centralized in `apps/website/src/content/homepage-content.ts`. This file is an explicit temporary adapter for statistics, services, partners, and section copy; a future homepage CMS can replace its values while retaining the section components and public data boundary.
 
+Sprint 12A adds shared frontend-safe CMS contracts and validated server helpers for `getPublicHomepage`, `getPublicStatistics`, and `getPublicPartners`. The homepage deliberately continues using its local editorial adapter until Sprint 12B/12C wires deliberate field-level fallback behavior. Services remain local because service management is a separate future module rather than part of the homepage CMS persistence model.
+
 ## Admin authentication boundary
 
 Admin authentication uses a lightweight BFF. Browser requests target same-origin Next.js route handlers under `/api/auth`; those handlers call the ASP.NET API through the server-only `THE_DOMAIN_API_BASE_URL`. Raw access and refresh tokens are stored only in HttpOnly, SameSite=Lax cookies and are never exposed to React components or Web Storage.

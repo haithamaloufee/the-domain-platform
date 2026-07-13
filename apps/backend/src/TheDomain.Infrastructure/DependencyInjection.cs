@@ -9,6 +9,7 @@ using TheDomain.Infrastructure.Authentication;
 using TheDomain.Application.Events;
 using TheDomain.Application.Media;
 using TheDomain.Infrastructure.Media;
+using TheDomain.Application.Homepage;
 
 namespace TheDomain.Infrastructure;
 
@@ -65,6 +66,7 @@ public static class DependencyInjection
             services.AddScoped<DisabledMediaService>();
             services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<DisabledMediaService>());
             services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<DisabledMediaService>());
+            services.AddScoped<IHomepageCmsService, DisabledHomepageCmsService>();
             return services;
         }
 
@@ -79,6 +81,8 @@ public static class DependencyInjection
         services.AddScoped<MediaManagementService>();
         services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<MediaManagementService>());
         services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<MediaManagementService>());
+        services.AddScoped<IHomepageCmsRepository, HomepageCmsRepository>();
+        services.AddScoped<IHomepageCmsService, HomepageCmsService>();
         if (jwtOptions.Enabled && initialAdminOptions.Enabled)
         {
             services.AddHostedService<InitialAdminProvisioner>();

@@ -8,8 +8,73 @@ import {
   type PublicEventListItem,
   type PublicGalleryAlbum,
   type PublicGalleryAlbumDetails,
+  type PublicHomepageContent,
+  type PublicHomepageResponse,
   type PublicMediaItem,
+  type PublicPartner,
+  type PublicStatisticItem,
 } from "@the-domain/types";
+
+export function parsePublicHomepage(value: unknown): PublicHomepageResponse {
+  if (!isRecord(value)) throw new Error("The server returned invalid homepage content.");
+  return {
+    content: value.content === null ? null : parsePublicHomepageContent(value.content),
+    statistics: parsePublicStatistics(value.statistics),
+    partners: parsePublicPartners(value.partners),
+  };
+}
+
+export function parsePublicStatistics(value: unknown): PublicStatisticItem[] {
+  if (!Array.isArray(value)) throw new Error("The server returned invalid statistics.");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("The server returned an invalid statistic.");
+    return {
+      label: requiredString(item.label),
+      value: requiredString(item.value),
+      suffix: nullableString(item.suffix),
+      description: nullableString(item.description),
+    };
+  });
+}
+
+export function parsePublicPartners(value: unknown): PublicPartner[] {
+  if (!Array.isArray(value)) throw new Error("The server returned invalid partners.");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("The server returned an invalid partner.");
+    return {
+      name: requiredString(item.name),
+      slug: requiredString(item.slug),
+      logoUrl: nullableUrl(item.logoUrl),
+      websiteUrl: nullableUrl(item.websiteUrl),
+      description: nullableString(item.description),
+      isFeatured: booleanValue(item.isFeatured),
+    };
+  });
+}
+
+function parsePublicHomepageContent(value: unknown): PublicHomepageContent {
+  if (!isRecord(value)) throw new Error("The server returned invalid homepage copy.");
+  return {
+    heroEyebrow: stringValue(value.heroEyebrow),
+    heroTitle: requiredString(value.heroTitle),
+    heroAccent: nullableString(value.heroAccent),
+    heroDescription: requiredString(value.heroDescription),
+    primaryCtaLabel: requiredString(value.primaryCtaLabel),
+    primaryCtaHref: safeHref(value.primaryCtaHref),
+    secondaryCtaLabel: nullableString(value.secondaryCtaLabel),
+    secondaryCtaHref: nullableHref(value.secondaryCtaHref),
+    whyTitle: requiredString(value.whyTitle),
+    whyDescription: requiredString(value.whyDescription),
+    servicesTitle: requiredString(value.servicesTitle),
+    servicesDescription: requiredString(value.servicesDescription),
+    partnersTitle: requiredString(value.partnersTitle),
+    partnersDescription: requiredString(value.partnersDescription),
+    contactTitle: requiredString(value.contactTitle),
+    contactDescription: requiredString(value.contactDescription),
+    contactCtaLabel: requiredString(value.contactCtaLabel),
+    contactCtaHref: safeHref(value.contactCtaHref),
+  };
+}
 
 export function parsePublicEvents(value: unknown): PublicEventListItem[] {
   if (!Array.isArray(value)) throw new Error("The server returned an invalid event list.");
@@ -165,6 +230,16 @@ function absoluteUrl(value: unknown): string {
 
 function nullableUrl(value: unknown): string | null {
   return value === null ? null : absoluteUrl(value);
+}
+
+function safeHref(value: unknown): string {
+  const result = requiredString(value);
+  if (result.startsWith("/") && !result.startsWith("//")) return result;
+  return absoluteUrl(result);
+}
+
+function nullableHref(value: unknown): string | null {
+  return value === null ? null : safeHref(value);
 }
 
 function enumValue<T extends Record<string, number>>(value: unknown, values: T): T[keyof T] {
