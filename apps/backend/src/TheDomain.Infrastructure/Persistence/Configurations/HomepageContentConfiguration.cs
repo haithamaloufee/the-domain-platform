@@ -9,7 +9,7 @@ public sealed class HomepageContentConfiguration : IEntityTypeConfiguration<Home
     public void Configure(EntityTypeBuilder<HomepageContent> builder)
     {
         builder.ToTable("homepage_content", table => table.HasCheckConstraint(
-            "ck_homepage_content_singleton", $"id = '{HomepageContent.SingletonId}'"));
+            "ck_homepage_content_singleton", $"\"Id\" = '{HomepageContent.SingletonId}'"));
         builder.HasKey(item => item.Id);
         builder.Property(item => item.Id).ValueGeneratedNever();
         builder.Property(item => item.HeroEyebrow).HasMaxLength(100).IsRequired();

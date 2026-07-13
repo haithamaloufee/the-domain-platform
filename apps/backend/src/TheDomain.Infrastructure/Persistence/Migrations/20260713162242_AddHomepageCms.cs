@@ -44,7 +44,7 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_homepage_content", x => x.Id);
-                    table.CheckConstraint("ck_homepage_content_singleton", "id = '6f44ac8f-0cc7-4caf-988d-5e666469f48e'");
+                    table.CheckConstraint("ck_homepage_content_singleton", "\"Id\" = '6f44ac8f-0cc7-4caf-988d-5e666469f48e'");
                 });
 
             migrationBuilder.CreateTable(

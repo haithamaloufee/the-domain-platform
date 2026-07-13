@@ -235,7 +235,7 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
                     b.ToTable("homepage_content", null, t =>
                         {
-                            t.HasCheckConstraint("ck_homepage_content_singleton", "id = '6f44ac8f-0cc7-4caf-988d-5e666469f48e'");
+                            t.HasCheckConstraint("ck_homepage_content_singleton", "\"Id\" = '6f44ac8f-0cc7-4caf-988d-5e666469f48e'");
                         });
                 });
 

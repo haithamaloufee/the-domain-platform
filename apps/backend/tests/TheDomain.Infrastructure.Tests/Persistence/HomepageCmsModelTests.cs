@@ -26,9 +26,11 @@ public sealed class HomepageCmsModelTests
         using var context = CreateContext();
         var entity = context.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(HomepageContent));
         var id = entity!.FindProperty(nameof(HomepageContent.Id));
+        var constraint = Assert.Single(entity.GetCheckConstraints(), candidate =>
+            candidate.Name == "ck_homepage_content_singleton");
 
         Assert.Equal(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.Never, id!.ValueGenerated);
-        Assert.Contains(entity.GetCheckConstraints(), constraint => constraint.Name == "ck_homepage_content_singleton");
+        Assert.Equal($"\"Id\" = '{HomepageContent.SingletonId}'", constraint.Sql);
     }
 
     private static TheDomainDbContext CreateContext()
