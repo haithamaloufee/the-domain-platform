@@ -28,6 +28,8 @@ Get-Content .env.local |
 
 Copy `apps/website/.env.example` and `apps/admin/.env.example` to `.env.local` inside their respective app folders. `NEXT_PUBLIC_` values are visible to browsers and must never contain secrets. The admin file also contains `THE_DOMAIN_API_BASE_URL` and refresh-cookie lifetime configuration; those unprefixed values remain server-only. Keep the cookie lifetime aligned with the backend refresh-token lifetime (14 days by default).
 
+To exercise media uploads locally, set `Cloudinary__Enabled=true` and provide `Cloudinary__CloudName`, `Cloudinary__ApiKey`, and `Cloudinary__ApiSecret` in the backend process environment. Keep these values out of both Next.js applications and never use a `NEXT_PUBLIC_` prefix. The defaults accept JPEG, PNG, and WebP images up to 15 MB and MP4 or WebM videos up to 100 MB.
+
 ## 3. Start PostgreSQL
 
 From the repository root:

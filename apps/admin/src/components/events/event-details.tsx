@@ -176,6 +176,12 @@ export function EventDetails({ eventId }: { eventId: string }) {
               <Detail label="Featured" value={event.isFeatured ? "Yes" : "No"} />
               <Detail label="Homepage" value={event.showOnHomepage ? "Visible" : "Hidden"} />
             </dl>
+            <Link
+              className={buttonClasses("secondary", "mt-6 w-full")}
+              href={`/dashboard/media?eventId=${encodeURIComponent(event.id)}`}
+            >
+              Manage event media
+            </Link>
           </Card>
           <Card className="p-6">
             <h2 className="font-display text-xl font-bold text-ink">Record history</h2>

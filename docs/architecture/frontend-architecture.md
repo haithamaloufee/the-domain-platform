@@ -23,4 +23,10 @@ The login and dashboard pages validate the current user server-side. A Next.js p
 
 Authenticated event pages live under `/dashboard/events`. Interactive components call only the admin application's same-origin `/api/admin/events/*` handlers. A reusable server-only authorized request helper reads HttpOnly cookies, retries once after refresh when necessary, and never serializes tokens into a page or client response.
 
-Shared event contracts live in `packages/types`. The admin app validates backend event responses at its boundary and sanitizes backend errors before returning them to browser components. Create and edit share one form component, while event display status and booking availability remain backend-computed values. Media assignment is deliberately deferred to the media-management feature.
+Shared event contracts live in `packages/types`. The admin app validates backend event responses at its boundary and sanitizes backend errors before returning them to browser components. Create and edit share one form component, while event display status and booking availability remain backend-computed values.
+
+## Admin media boundary
+
+Authenticated media pages live under `/dashboard/media`. Browser components call only same-origin handlers under `/api/admin/media/*` and `/api/admin/events/*/media`; Cloudinary credentials and bearer tokens remain server-side. The BFF reconstructs uploads as multipart requests, permits only known metadata fields and filters, validates response shapes, and returns sanitized failures.
+
+Media contracts are shared through `packages/types`. The library requests one bounded page at a time, images use the Next.js image pipeline, grid videos use thumbnails or inert placeholders, and the details player loads metadata only until the operator starts playback. Multi-file uploads run sequentially to control memory and network pressure. Event assignment is available during upload and from item details; cross-assignment reordering is reserved for the gallery-management workflow.

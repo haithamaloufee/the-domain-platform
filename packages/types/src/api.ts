@@ -10,8 +10,10 @@ export interface ApiProblem {
 
 export interface PagedResponse<TItem> {
   items: readonly TItem[];
-  page: number;
+  pageNumber: number;
   pageSize: number;
   totalCount: number;
   totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
