@@ -18,6 +18,7 @@
 - [x] Public booking links use backend-approved absolute external URLs and are shown only when booking is Open.
 - [x] Public homepage CMS projections exclude drafts, unverified statistics, hidden records, admin flags, IDs, and audit timestamps.
 - [x] Homepage CMS mutations use explicit DTOs, validated safe URLs/slugs, and `AdminDashboardAccess` authorization.
+- [x] Admin homepage, statistics, and partners browser requests use same-origin BFF routes with one-refresh session handling, mutation origin checks, runtime contract validation, and sanitized errors.
 - [x] Admin event mutations require the AdminDashboardAccess policy.
 - [x] Event APIs use explicit DTOs rather than EF entities.
 - [x] Uploads validate emptiness, MIME/extension agreement, and configured size limits before storage.

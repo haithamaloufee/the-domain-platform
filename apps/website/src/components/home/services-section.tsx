@@ -3,14 +3,17 @@ import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
 import { HomeSectionHeader } from "./home-section-header";
 
-export function ServicesSection() {
+export function ServicesSection({ content }: { content: PublicHomepageContent | null }) {
   return (
     <Section className="border-y border-line bg-surface/45">
       <Container>
         <HomeSectionHeader
-          description="A flexible service framework for public, corporate, and private briefs. Detailed service content remains locally editable until its CMS module is introduced."
+          description={
+            content?.servicesDescription ??
+            "A flexible service framework for public, corporate, and private briefs. Detailed service content remains locally editable until its CMS module is introduced."
+          }
           eyebrow="Capabilities"
-          title="From first idea to final atmosphere."
+          title={content?.servicesTitle ?? "From first idea to final atmosphere."}
         />
         <ol className="mt-10 border-t border-line">
           {homepageContent.services.map((service, index) => (
@@ -37,3 +40,4 @@ export function ServicesSection() {
     </Section>
   );
 }
+import type { PublicHomepageContent } from "@the-domain/types";

@@ -1,7 +1,16 @@
+import type { PublicStatisticItem } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import { homepageContent } from "@/content/homepage-content";
 
-export function StatsSection() {
+export function StatsSection({ statistics }: { statistics: PublicStatisticItem[] }) {
+  const items = statistics.length
+    ? statistics.map((statistic) => ({
+        label: statistic.label,
+        value: `${statistic.value}${statistic.suffix ?? ""}`,
+        note: statistic.description,
+      }))
+    : homepageContent.statistics;
+
   return (
     <section aria-labelledby="homepage-statistics" className="border-y border-line bg-surface/45">
       <Container className="py-12 sm:py-16">
@@ -12,7 +21,7 @@ export function StatsSection() {
           The record
         </p>
         <dl className="grid grid-cols-2 border-l border-t border-line lg:grid-cols-4">
-          {homepageContent.statistics.map((stat) => (
+          {items.map((stat) => (
             <div className="border-b border-r border-line p-5 sm:p-7" key={stat.label}>
               <dt className="font-label text-xs uppercase tracking-[0.14em] text-ink">
                 {stat.label}
@@ -20,7 +29,9 @@ export function StatsSection() {
               <dd className="mt-4 font-display text-4xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">
                 {stat.value}
               </dd>
-              <p className="mt-2 text-xs leading-5 text-ink-muted">{stat.note}</p>
+              <p className="mt-2 text-xs leading-5 text-ink-muted">
+                {stat.note || "Verified by The Domain"}
+              </p>
             </div>
           ))}
         </dl>

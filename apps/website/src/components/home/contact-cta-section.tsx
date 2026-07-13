@@ -2,8 +2,16 @@ import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
 
-export function ContactCtaSection() {
-  const content = homepageContent.contact;
+export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageContent | null }) {
+  const content = cmsContent
+    ? {
+        eyebrow: homepageContent.contact.eyebrow,
+        title: cmsContent.contactTitle,
+        description: cmsContent.contactDescription,
+        label: cmsContent.contactCtaLabel,
+        href: cmsContent.contactCtaHref,
+      }
+    : { ...homepageContent.contact, label: "Contact The Domain", href: "/contact" };
   return (
     <Section className="relative isolate overflow-hidden border-t border-line bg-surface">
       <div
@@ -20,10 +28,14 @@ export function ContactCtaSection() {
           </h2>
           <p className="mt-7 max-w-2xl text-base leading-8 text-ink-muted">{content.description}</p>
         </div>
-        <Link className={buttonClasses("primary", "w-full sm:w-auto sm:min-w-48")} href="/contact">
-          Contact The Domain
+        <Link
+          className={buttonClasses("primary", "w-full sm:w-auto sm:min-w-48")}
+          href={content.href}
+        >
+          {content.label}
         </Link>
       </Container>
     </Section>
   );
 }
+import type { PublicHomepageContent } from "@the-domain/types";

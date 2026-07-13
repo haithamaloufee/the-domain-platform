@@ -1,12 +1,36 @@
-import type { PublicEventListItem } from "@the-domain/types";
+import type { PublicEventListItem, PublicHomepageContent } from "@the-domain/types";
 import { Badge, Container, buttonClasses } from "@the-domain/ui";
 import Image from "next/image";
 import Link from "next/link";
 import { formatEventDate, mediaImageSource } from "@/components/events/event-presentation";
 import { homepageContent } from "@/content/homepage-content";
 
-export function HomeHero({ featuredEvent }: { featuredEvent: PublicEventListItem | null }) {
+export function HomeHero({
+  content,
+  featuredEvent,
+}: {
+  content: PublicHomepageContent | null;
+  featuredEvent: PublicEventListItem | null;
+}) {
   const source = mediaImageSource(featuredEvent?.coverMedia ?? null);
+  const hero = content
+    ? {
+        eyebrow: content.heroEyebrow,
+        headline: content.heroTitle,
+        accent: content.heroAccent,
+        description: content.heroDescription,
+        primaryLabel: content.primaryCtaLabel,
+        primaryHref: content.primaryCtaHref,
+        secondaryLabel: content.secondaryCtaLabel,
+        secondaryHref: content.secondaryCtaHref,
+      }
+    : {
+        ...homepageContent.hero,
+        primaryLabel: "Explore Events",
+        primaryHref: "/events",
+        secondaryLabel: "View Gallery",
+        secondaryHref: "/gallery",
+      };
 
   return (
     <section className="relative isolate flex min-h-[calc(100svh-5rem)] items-end overflow-hidden border-b border-line">
@@ -29,21 +53,23 @@ export function HomeHero({ featuredEvent }: { featuredEvent: PublicEventListItem
 
       <Container className="pb-16 pt-28 sm:pb-20 lg:pb-24">
         <div className="max-w-5xl">
-          <Badge>{homepageContent.hero.eyebrow}</Badge>
+          <Badge>{hero.eyebrow}</Badge>
           <h1 className="mt-7 font-display text-5xl font-extrabold leading-[0.92] tracking-[-0.055em] text-ink sm:text-7xl lg:text-[6.5rem]">
-            {homepageContent.hero.headline}
-            <span className="block text-gold">{homepageContent.hero.accent}</span>
+            {hero.headline}
+            {hero.accent && <span className="block text-gold">{hero.accent}</span>}
           </h1>
           <p className="mt-7 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg sm:leading-8">
-            {homepageContent.hero.description}
+            {hero.description}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link className={buttonClasses("primary", "sm:min-w-44")} href="/events">
-              Explore Events
+            <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryHref}>
+              {hero.primaryLabel}
             </Link>
-            <Link className={buttonClasses("secondary", "sm:min-w-44")} href="/gallery">
-              View Gallery
-            </Link>
+            {hero.secondaryLabel && hero.secondaryHref && (
+              <Link className={buttonClasses("secondary", "sm:min-w-44")} href={hero.secondaryHref}>
+                {hero.secondaryLabel}
+              </Link>
+            )}
           </div>
         </div>
 

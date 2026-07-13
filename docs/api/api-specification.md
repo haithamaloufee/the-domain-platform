@@ -50,3 +50,5 @@ Homepage CMS admin endpoints require `AdminDashboardAccess`:
 - `POST /api/admin/partners/{id}/show|hide`
 
 Homepage PUT creates or updates the singleton record. Statistic verification remains an explicit admin-controlled field; visibility alone does not make an unverified value public. Partner slugs are unique. DELETE for statistics and partners performs the same reversible hide operation as the hide endpoint.
+
+The admin frontend mirrors these CMS endpoints on the admin origin with the same route shapes. BFF handlers authenticate from HttpOnly cookies, rotate an expired access token at most once, enforce same-origin mutations, runtime-validate the shared CMS contracts, and reduce backend failures to safe `{ message }` responses. They never return tokens, raw Problem Details, exception data, or backend configuration.

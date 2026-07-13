@@ -1,4 +1,10 @@
-import type { PublicEventListItem, PublicGalleryAlbum } from "@the-domain/types";
+import type {
+  PublicEventListItem,
+  PublicGalleryAlbum,
+  PublicHomepageContent,
+  PublicPartner,
+  PublicStatisticItem,
+} from "@the-domain/types";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
@@ -11,6 +17,9 @@ import { WhyDomainSection } from "@/components/home/why-domain-section";
 import {
   getFeaturedEvents,
   getGalleryAlbums,
+  getPublicHomepage,
+  getPublicPartners,
+  getPublicStatistics,
   getPreviousEvents,
   getUpcomingEvents,
 } from "@/lib/public-api";
@@ -24,10 +33,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <HomeHero featuredEvent={heroEvent} />
+      <HomeHero content={data.content} featuredEvent={heroEvent} />
       <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
-      <StatsSection />
-      <WhyDomainSection />
+      <StatsSection statistics={data.statistics} />
+      <WhyDomainSection cmsContent={data.content} />
       <PreviousEventsSection
         events={data.previous.slice(0, 2)}
         unavailable={data.unavailable.previous}
@@ -36,9 +45,9 @@ export default async function HomePage() {
         albums={data.albums.slice(0, 3)}
         unavailable={data.unavailable.gallery}
       />
-      <ServicesSection />
-      <PartnersPreviewSection />
-      <ContactCtaSection />
+      <ServicesSection content={data.content} />
+      <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />
+      <ContactCtaSection cmsContent={data.content} />
     </>
   );
 }
@@ -48,6 +57,9 @@ interface HomepageData {
   upcoming: PublicEventListItem[];
   previous: PublicEventListItem[];
   albums: PublicGalleryAlbum[];
+  content: PublicHomepageContent | null;
+  statistics: PublicStatisticItem[];
+  partners: PublicPartner[];
   unavailable: {
     events: boolean;
     previous: boolean;
@@ -56,18 +68,28 @@ interface HomepageData {
 }
 
 async function loadHomepageData(): Promise<HomepageData> {
-  const [featured, upcoming, previous, albums] = await Promise.allSettled([
-    getFeaturedEvents(),
-    getUpcomingEvents(),
-    getPreviousEvents(),
-    getGalleryAlbums(),
-  ]);
+  const [featured, upcoming, previous, albums, homepage, statistics, partners] =
+    await Promise.allSettled([
+      getFeaturedEvents(),
+      getUpcomingEvents(),
+      getPreviousEvents(),
+      getGalleryAlbums(),
+      getPublicHomepage(),
+      getPublicStatistics(),
+      getPublicPartners(),
+    ]);
+
+  const homepageValue = homepage.status === "fulfilled" ? homepage.value : null;
 
   return {
     featured: settledValue(featured),
     upcoming: settledValue(upcoming),
     previous: settledValue(previous),
     albums: settledValue(albums),
+    content: homepageValue?.content ?? null,
+    statistics:
+      statistics.status === "fulfilled" ? statistics.value : (homepageValue?.statistics ?? []),
+    partners: partners.status === "fulfilled" ? partners.value : (homepageValue?.partners ?? []),
     unavailable: {
       events: featured.status === "rejected" && upcoming.status === "rejected",
       previous: previous.status === "rejected",

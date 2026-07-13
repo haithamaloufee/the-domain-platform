@@ -77,4 +77,6 @@ With published event data available, verify the public website at `/events` and 
 
 For event gallery testing, create or select an event, approve at least one disposable media asset, and open `/dashboard/events/{id}/media`. Assignment listing and ordering work without Cloudinary once metadata exists; uploading additional files still requires the Cloudinary development configuration described above. Removing an event assignment preserves the reusable media asset.
 
+For homepage CMS testing, sign in to admin and open `/dashboard/homepage`. Save a Draft first and confirm the public website continues using its safe local copy; then publish and refresh `/`. Under `/dashboard/statistics`, use only approved factual values and confirm that a record must be both Visible and Verified before it appears publicly. Under `/dashboard/partners`, use only real approved identities, confirm that Hidden records stay private, and confirm that logo preview requires a valid absolute URL. Hide and DELETE actions are reversible soft-hide operations. Never create fake business content in a shared or production database.
+
 Repository checks are `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `dotnet test apps/backend/TheDomain.Backend.sln`.

@@ -25,7 +25,7 @@ The `/` route composes `getFeaturedEvents`, `getUpcomingEvents`, `getPreviousEve
 
 Homepage presentation is split into small server components under `apps/website/src/components/home`. Non-API editorial content is typed and centralized in `apps/website/src/content/homepage-content.ts`. This file is an explicit temporary adapter for statistics, services, partners, and section copy; a future homepage CMS can replace its values while retaining the section components and public data boundary.
 
-Sprint 12A adds shared frontend-safe CMS contracts and validated server helpers for `getPublicHomepage`, `getPublicStatistics`, and `getPublicPartners`. The homepage deliberately continues using its local editorial adapter until Sprint 12B/12C wires deliberate field-level fallback behavior. Services remain local because service management is a separate future module rather than part of the homepage CMS persistence model.
+Sprint 12B composes `getPublicHomepage`, `getPublicStatistics`, and `getPublicPartners` alongside the existing event/gallery requests. Each CMS request settles independently. Published content replaces only matching editorial fields; missing or unpublished content keeps the Sprint 11 adapter. Empty statistic and partner collections preserve their non-fabricated awaiting-data states. Services remain local because service management is a separate future module rather than part of the homepage CMS persistence model.
 
 ## Admin authentication boundary
 
@@ -50,3 +50,9 @@ Media contracts are shared through `packages/types`. The library requests one bo
 The dedicated `/dashboard/events/[id]/media` route combines existing event details with an event-scoped assignment list. The backend read DTO nests safe media metadata beneath each real assignment identifier; the BFF validates that shape before browser code receives it. No EF entities, bearer tokens, Cloudinary identifiers, or storage credentials cross the boundary.
 
 The editor groups assignments by usage and keeps draft changes in component state. Move controls normalize sort order within one usage group, while usage, sort order, and featured changes persist sequentially through the existing assignment update route. The approved-media picker requests one bounded global-library page at a time. Uploading reuses the global upload queue with the event preselected rather than duplicating file handling.
+
+## Admin homepage CMS boundary
+
+Authenticated editors manage homepage copy, statistics, and partners at `/dashboard/homepage`, `/dashboard/statistics`, and `/dashboard/partners`. Client components call only same-origin BFF handlers under `/api/admin/homepage`, `/api/admin/statistics/*`, and `/api/admin/partners/*`. A CMS route layer reuses the authorized backend request helper, rejects cross-site mutations, validates request and response contracts, and sanitizes backend failures.
+
+Homepage content has an explicit Draft/Published state. Statistics require both Visible and Verified to enter public projections. Partners require Visible; Featured affects presentation priority but does not bypass visibility. DELETE is documented and presented as reversible soft-hide. Partner logos remain URL references in this sprint, so the media upload architecture is unchanged.
