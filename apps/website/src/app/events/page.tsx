@@ -28,7 +28,7 @@ export default async function EventsPage() {
   const { previous, upcoming } = data;
   return (
     <>
-      <Section className="pb-12 sm:pb-16">
+      <Section className="architectural-grid border-b border-line pb-12 sm:pb-16">
         <Container>
           <SectionHeader
             description="Discover what is next, then step back into the nights that shaped The Domain."
@@ -38,7 +38,7 @@ export default async function EventsPage() {
         </Container>
       </Section>
 
-      <Section className="pt-0">
+      <Section className="cinematic-reveal">
         <Container>
           <SectionHeader
             description="Live and upcoming experiences with external booking when availability is open."
@@ -62,7 +62,7 @@ export default async function EventsPage() {
         </Container>
       </Section>
 
-      <Section className="border-t border-line">
+      <Section className="cinematic-reveal border-t border-line">
         <Container>
           <SectionHeader
             description="Finished events remain part of the archive through their approved highlights."

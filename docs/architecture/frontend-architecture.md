@@ -27,6 +27,12 @@ Homepage presentation is split into small server components under `apps/website/
 
 Sprint 12B composes `getPublicHomepage`, `getPublicStatistics`, and `getPublicPartners` alongside the existing event/gallery requests. Each CMS request settles independently. Published content replaces only matching editorial fields; missing or unpublished content keeps the Sprint 11 adapter. Empty statistic and partner collections preserve their non-fabricated awaiting-data states. Services remain local because service management is a separate future module rather than part of the homepage CMS persistence model.
 
+## Public presentation and motion layer
+
+Sprint 13 keeps cinematic polish at the presentation boundary. Reusable shell components own navigation, footer, and branded loading treatment; route components retain their existing server-side API ownership. The shared `cinematic-card`, `cinematic-media`, `architectural-grid`, and `cinematic-reveal` classes provide a consistent Noir language without moving business data into client components.
+
+Scroll reveals use progressive CSS view timelines and degrade to fully visible content where unsupported. Reduced-motion preferences remove transforms, filtering, and loader movement. The only new stateful homepage behavior is the numeric statistic counter, isolated in a small client component and driven by `IntersectionObserver`; arbitrary CMS text is never coerced into an animation. Mobile navigation is a separate accessible disclosure inside the public header and does not expose admin routes.
+
 ## Admin authentication boundary
 
 Admin authentication uses a lightweight BFF. Browser requests target same-origin Next.js route handlers under `/api/auth`; those handlers call the ASP.NET API through the server-only `THE_DOMAIN_API_BASE_URL`. Raw access and refresh tokens are stored only in HttpOnly, SameSite=Lax cookies and are never exposed to React components or Web Storage.

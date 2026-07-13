@@ -23,13 +23,16 @@ export function AlbumCard({
 
   return (
     <article
-      className={cn("group relative overflow-hidden border border-line bg-surface", minimumHeight)}
+      className={cn(
+        "cinematic-card group relative overflow-hidden border border-line bg-surface",
+        minimumHeight,
+      )}
     >
       <MediaFrame className="absolute inset-0 border-0">
         {source ? (
           <Image
             alt={cover.altText ?? ""}
-            className="object-cover transition duration-500 group-hover:scale-[1.02]"
+            className="cinematic-media object-cover"
             fill
             priority={priority}
             sizes="(max-width: 1024px) 100vw, 50vw"

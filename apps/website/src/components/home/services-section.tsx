@@ -1,3 +1,4 @@
+import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
@@ -18,7 +19,7 @@ export function ServicesSection({ content }: { content: PublicHomepageContent | 
         <ol className="mt-10 border-t border-line">
           {homepageContent.services.map((service, index) => (
             <li
-              className="grid gap-3 border-b border-line py-7 sm:grid-cols-[4rem_minmax(14rem,0.7fr)_minmax(0,1fr)] sm:items-start sm:gap-6 sm:py-9"
+              className="cinematic-card grid gap-3 border-b border-line px-3 py-7 sm:grid-cols-[4rem_minmax(14rem,0.7fr)_minmax(0,1fr)] sm:items-start sm:gap-6 sm:px-5 sm:py-9"
               key={service.title}
             >
               <span className="font-label text-xs tracking-[0.14em] text-gold">
@@ -40,4 +41,3 @@ export function ServicesSection({ content }: { content: PublicHomepageContent | 
     </Section>
   );
 }
-import type { PublicHomepageContent } from "@the-domain/types";

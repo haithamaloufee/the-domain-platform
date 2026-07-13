@@ -48,9 +48,9 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <article>
-      <section className="relative min-h-[78svh] overflow-hidden">
+      <section className="relative min-h-[82svh] overflow-hidden border-b border-line">
         <EventHeroMedia media={heroMedia} title={event.title} />
-        <Container className="relative flex min-h-[78svh] items-end pb-12 pt-32 sm:pb-20">
+        <Container className="relative flex min-h-[82svh] items-end pb-12 pt-32 sm:pb-20">
           <div className="max-w-5xl">
             <div className="flex flex-wrap gap-2">
               <Badge
@@ -66,7 +66,7 @@ export default async function EventPage({ params }: EventPageProps) {
               </Badge>
               <Badge>{event.eventType}</Badge>
             </div>
-            <h1 className="mt-6 font-display text-5xl font-extrabold leading-[0.95] tracking-[-0.05em] text-ink sm:text-7xl lg:text-8xl">
+            <h1 className="mt-6 break-words font-display text-5xl font-extrabold leading-[0.9] tracking-[-0.05em] text-ink sm:text-7xl lg:text-8xl">
               {event.title}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg">
@@ -93,7 +93,7 @@ export default async function EventPage({ params }: EventPageProps) {
         </Container>
       </section>
 
-      <Section className="pt-16 sm:pt-24">
+      <Section className="cinematic-reveal pt-16 sm:pt-24">
         <Container>
           {event.displayStatus === EventDisplayStatus.Upcoming && (
             <div className="mb-12 max-w-3xl">
@@ -127,7 +127,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 {event.longDescription || event.shortDescription}
               </div>
             </div>
-            <dl className="grid gap-6 border-l-0 border-line lg:border-l lg:pl-10">
+            <dl className="architectural-grid grid gap-6 border border-line bg-surface/35 p-6 lg:p-8">
               <Detail label="Date" value={formatEventDate(event.startAtUtc, event.timeZoneId)} />
               <Detail label="Time" value={formatEventTime(event.startAtUtc, event.timeZoneId)} />
               <Detail label="Location" value={`${event.venueName}, ${event.city}`} />
@@ -152,7 +152,7 @@ export default async function EventPage({ params }: EventPageProps) {
       </Section>
 
       {gallery.length > 0 && (
-        <Section className="border-t border-line">
+        <Section className="cinematic-reveal border-t border-line">
           <Container>
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
               <div>

@@ -54,7 +54,10 @@ export function EventCountdown({ startAtUtc }: { startAtUtc: string }) {
   }
 
   return (
-    <div aria-label="Time until event starts" className="grid grid-cols-4 border-y border-line">
+    <div
+      aria-label="Time until event starts"
+      className="architectural-grid grid grid-cols-4 border-y border-line bg-surface/40"
+    >
       <CountdownUnit label="Days" value={remaining.days} />
       <CountdownUnit label="Hours" value={remaining.hours} />
       <CountdownUnit label="Minutes" value={remaining.minutes} />
@@ -65,7 +68,7 @@ export function EventCountdown({ startAtUtc }: { startAtUtc: string }) {
 
 function CountdownUnit({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-r border-line px-2 py-4 text-center last:border-r-0 sm:px-4">
+    <div className="border-r border-line px-2 py-5 text-center last:border-r-0 sm:px-4 sm:py-7">
       <span className="block font-display text-2xl font-bold tabular-nums text-ink sm:text-4xl">
         {String(value).padStart(2, "0")}
       </span>

@@ -14,7 +14,7 @@ export default async function GalleryPage() {
   const albums = await loadAlbums();
   return (
     <>
-      <Section className="pb-12 sm:pb-16">
+      <Section className="architectural-grid border-b border-line pb-12 sm:pb-16">
         <Container>
           <SectionHeader
             description="Photography and film from the experiences that continue to define The Domain."
@@ -23,7 +23,7 @@ export default async function GalleryPage() {
           />
         </Container>
       </Section>
-      <Section className="pt-0">
+      <Section className="cinematic-reveal">
         <Container>
           {albums === null ? (
             <EmptyState

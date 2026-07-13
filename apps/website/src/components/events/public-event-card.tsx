@@ -30,12 +30,12 @@ export function PublicEventCard({
 
   if (variant === "compact") {
     return (
-      <article className="group relative min-h-[30rem] overflow-hidden border border-line bg-surface">
+      <article className="cinematic-card group relative min-h-[30rem] overflow-hidden border border-line bg-surface">
         <MediaFrame className="absolute inset-0 border-0">
           {source ? (
             <Image
               alt={media?.altText ?? ""}
-              className="object-cover transition duration-500 group-hover:scale-[1.02]"
+              className="cinematic-media object-cover"
               fill
               priority={priority}
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -70,12 +70,12 @@ export function PublicEventCard({
   }
 
   return (
-    <article className="group grid overflow-hidden border border-line bg-surface lg:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.1fr)]">
+    <article className="cinematic-card group grid overflow-hidden border border-line bg-surface lg:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.1fr)]">
       <MediaFrame className="min-h-80 lg:min-h-[30rem]">
         {source ? (
           <Image
             alt={media?.altText ?? ""}
-            className="object-cover transition duration-500 group-hover:scale-[1.02]"
+            className="cinematic-media object-cover"
             fill
             priority={priority}
             sizes="(max-width: 1024px) 100vw, 45vw"

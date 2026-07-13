@@ -1,3 +1,4 @@
+import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
@@ -13,7 +14,7 @@ export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageCo
       }
     : { ...homepageContent.contact, label: "Contact The Domain", href: "/contact" };
   return (
-    <Section className="relative isolate overflow-hidden border-t border-line bg-surface">
+    <Section className="architectural-grid relative isolate overflow-hidden border-t border-line bg-surface">
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_85%_20%,rgba(212,175,55,0.1),transparent_32%)]"
@@ -38,4 +39,3 @@ export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageCo
     </Section>
   );
 }
-import type { PublicHomepageContent } from "@the-domain/types";

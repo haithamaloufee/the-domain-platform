@@ -70,6 +70,7 @@ export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
                     <PublicMediaThumbnail media={item} priority={index < 4} />
                   </button>
                 }
+                variant="media"
               >
                 <MediaDialogContent media={item} />
               </Dialog>
@@ -95,7 +96,7 @@ export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
 function MediaDialogContent({ media }: { media: PublicMediaItem }) {
   return (
     <div>
-      <div className="relative aspect-[4/5] overflow-hidden bg-canvas">
+      <div className="relative h-[min(68svh,52rem)] overflow-hidden bg-canvas">
         {media.mediaType === MediaType.Video ? (
           <video
             className="h-full w-full object-contain"
@@ -112,7 +113,7 @@ function MediaDialogContent({ media }: { media: PublicMediaItem }) {
             alt={media.altText ?? ""}
             className="object-contain"
             fill
-            sizes="(max-width: 640px) 100vw, 36rem"
+            sizes="(max-width: 640px) 100vw, 64rem"
             src={media.url}
           />
         )}

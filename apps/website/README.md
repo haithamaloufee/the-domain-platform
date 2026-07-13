@@ -1,5 +1,11 @@
 # Public website
 
+Sprint 13 completes the Cinematic Noir presentation layer across the public shell and every public route. The sticky header now has active-route treatment, a compact scroll state, and an accessible mobile menu; the footer, editorial routes, loading, error, and not-found states share the same architectural visual language. Motion is intentionally lightweight: CSS view-timeline reveals progressively enhance supported browsers, hover treatments are limited to fine pointers, and `prefers-reduced-motion` removes decorative movement. Verified numeric statistics use one small client island that begins counting only when visible; non-numeric values render unchanged.
+
+No animation library or additional public data request was introduced. Gallery media remains batched at 24 items, lightbox video remains user-initiated, and the wider media dialog is an additive shared-UI variant. Text-only brand treatments are intentional until an approved production logo asset is available.
+
+Launch QA still requires final review on physical 360/390px phones, tablet and large-desktop hardware with production CMS/media content, followed by Core Web Vitals measurement and assistive-technology smoke testing.
+
 Next.js App Router application for The Domain's public experience. The Events and Gallery journeys read live public data from the ASP.NET API through a server-only, runtime-validated boundary. The website has no authentication or admin navigation.
 
 Run `pnpm --filter @the-domain/website dev` from the repository root for local development on port 3000. The corresponding `build`, `lint`, and `typecheck` scripts validate this workspace.

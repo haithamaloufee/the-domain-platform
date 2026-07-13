@@ -35,10 +35,10 @@ export default async function EventGalleryPage({ params }: GalleryAlbumPageProps
 
   return (
     <article>
-      <Section className="border-b border-line pb-12 sm:pb-16">
+      <Section className="architectural-grid relative overflow-hidden border-b border-line pb-12 sm:pb-16">
         <Container>
           <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Event album</p>
-          <h1 className="mt-4 max-w-5xl font-display text-5xl font-extrabold leading-[0.95] tracking-[-0.05em] text-ink sm:text-7xl">
+          <h1 className="mt-4 max-w-5xl break-words font-display text-5xl font-extrabold leading-[0.9] tracking-[-0.05em] text-ink sm:text-7xl lg:text-8xl">
             {album.title}
           </h1>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
@@ -57,7 +57,7 @@ export default async function EventGalleryPage({ params }: GalleryAlbumPageProps
           </div>
         </Container>
       </Section>
-      <Section>
+      <Section className="cinematic-reveal">
         <Container>
           {album.media.length > 0 ? (
             <GalleryMediaGrid media={album.media} />

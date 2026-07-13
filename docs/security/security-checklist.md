@@ -29,6 +29,8 @@
 - [x] Admin auth browser requests use same-origin BFF routes; refresh tokens never enter client components or Web Storage.
 - [x] Admin media browser requests use same-origin BFF routes; bearer tokens and Cloudinary credentials never enter client components or Web Storage.
 - [x] Admin media BFF handlers allowlist filters and multipart metadata, validate mutation bodies, enforce same-origin mutations, and sanitize backend errors.
+- [x] Sprint 13 public presentation changes add no authentication surface, credential handling, admin navigation, or direct browser API access.
+- [x] Public contact presentation does not invent or expose unverified email addresses, phone numbers, or submission endpoints.
 - [x] Dashboard identity is validated against the backend and is not inferred from cookie presence.
 - [x] Protected dashboard navigation rotates an expired access token at most once before rendering.
 - [x] Logout clears local auth cookies even when backend revocation is unavailable.

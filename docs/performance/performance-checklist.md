@@ -24,4 +24,8 @@
 - [x] Homepage event and album collections are bounded before rendering and reuse cover projections only.
 - [x] Homepage hero uses an optimized approved image/thumbnail or a media-free fallback; it never eagerly loads video.
 - [x] Homepage editorial sections remain Server Components with no animation-library or client-state cost.
+- [x] Sprint 13 motion uses CSS and one intersection-observed numeric counter client island; no animation dependency was added.
+- [x] Branded route loading is text/CSS only and introduces no image or video request.
+- [x] Cinematic card and media effects run only on fine pointers and are disabled for reduced-motion preferences.
+- [x] The expanded gallery dialog preserves batched thumbnails and mounts video only after an explicit open action.
 - [ ] Design resumable/background bulk import before ingesting the full media archive.

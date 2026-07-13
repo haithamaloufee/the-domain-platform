@@ -14,6 +14,7 @@ import { PreviousEventsSection } from "@/components/home/previous-events-section
 import { ServicesSection } from "@/components/home/services-section";
 import { StatsSection } from "@/components/home/stats-section";
 import { WhyDomainSection } from "@/components/home/why-domain-section";
+import { CinematicReveal } from "@/components/motion/cinematic-reveal";
 import {
   getFeaturedEvents,
   getGalleryAlbums,
@@ -34,20 +35,36 @@ export default async function HomePage() {
   return (
     <>
       <HomeHero content={data.content} featuredEvent={heroEvent} />
-      <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
-      <StatsSection statistics={data.statistics} />
-      <WhyDomainSection cmsContent={data.content} />
-      <PreviousEventsSection
-        events={data.previous.slice(0, 2)}
-        unavailable={data.unavailable.previous}
-      />
-      <GalleryPreviewSection
-        albums={data.albums.slice(0, 3)}
-        unavailable={data.unavailable.gallery}
-      />
-      <ServicesSection content={data.content} />
-      <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />
-      <ContactCtaSection cmsContent={data.content} />
+      <CinematicReveal>
+        <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
+      </CinematicReveal>
+      <CinematicReveal>
+        <StatsSection statistics={data.statistics} />
+      </CinematicReveal>
+      <CinematicReveal>
+        <WhyDomainSection cmsContent={data.content} />
+      </CinematicReveal>
+      <CinematicReveal>
+        <PreviousEventsSection
+          events={data.previous.slice(0, 2)}
+          unavailable={data.unavailable.previous}
+        />
+      </CinematicReveal>
+      <CinematicReveal>
+        <GalleryPreviewSection
+          albums={data.albums.slice(0, 3)}
+          unavailable={data.unavailable.gallery}
+        />
+      </CinematicReveal>
+      <CinematicReveal>
+        <ServicesSection content={data.content} />
+      </CinematicReveal>
+      <CinematicReveal>
+        <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />
+      </CinematicReveal>
+      <CinematicReveal>
+        <ContactCtaSection cmsContent={data.content} />
+      </CinematicReveal>
     </>
   );
 }

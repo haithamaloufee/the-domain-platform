@@ -22,7 +22,7 @@ export function PublicMediaThumbnail({
       {source ? (
         <Image
           alt={media.altText ?? ""}
-          className="object-cover transition duration-500 group-hover:scale-[1.02]"
+          className="cinematic-media object-cover"
           fill
           priority={priority}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

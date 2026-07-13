@@ -35,6 +35,17 @@ body {
   color: var(--td-color-ink);
   font-family: var(--td-font-body);
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(circle at 12% 8%, rgb(212 175 55 / 5%), transparent 24rem),
+    radial-gradient(circle at 88% 44%, rgb(227 226 231 / 2%), transparent 30rem);
 }
 a {
   color: inherit;
@@ -47,6 +58,98 @@ a {
 :focus-visible {
   outline-color: var(--td-color-gold);
 }
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+@keyframes td-loader-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(210%);
+  }
+}
+
+@keyframes td-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes td-view-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.brand-loader-sweep {
+  animation: td-loader-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.brand-loader-pulse {
+  animation: td-loader-pulse 1.8s ease-in-out infinite;
+}
+
+.cinematic-card {
+  transition:
+    border-color 320ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 320ms cubic-bezier(0.2, 0, 0, 1),
+    transform 420ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.cinematic-media {
+  filter: saturate(0.82) contrast(1.05);
+  transition:
+    filter 700ms cubic-bezier(0.2, 0, 0, 1),
+    transform 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.architectural-grid {
+  background-image:
+    linear-gradient(to right, rgb(52 53 57 / 32%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(52 53 57 / 20%) 1px, transparent 1px);
+  background-size: min(12vw, 9rem) min(12vw, 9rem);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cinematic-card:hover,
+  .cinematic-card:focus-within {
+    border-color: color-mix(in srgb, var(--td-color-gold) 62%, var(--td-color-line));
+    transform: translateY(-0.25rem);
+  }
+
+  .cinematic-card:hover .cinematic-media,
+  .cinematic-card:focus-within .cinematic-media {
+    filter: saturate(1) contrast(1.08);
+    transform: scale(1.025);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .cinematic-reveal {
+    animation: td-view-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 4% cover 28%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -57,5 +160,13 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .cinematic-reveal,
+  .cinematic-card,
+  .cinematic-media {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
   }
 }

@@ -35,7 +35,7 @@ export function PartnersPreviewSection({
               <ul className="grid grid-cols-2 gap-px bg-line" aria-label="Partners and sponsors">
                 {partners.slice(0, 12).map((partner) => (
                   <li
-                    className="flex min-h-28 items-center justify-center bg-canvas p-4"
+                    className="cinematic-card group flex min-h-28 items-center justify-center bg-canvas p-4"
                     key={partner.slug}
                   >
                     {partner.websiteUrl ? (
@@ -74,7 +74,7 @@ function PartnerIdentity({ partner }: { partner: PublicPartner }) {
   return partner.logoUrl ? (
     <Image
       alt={`${partner.name} logo`}
-      className="max-h-16 w-auto object-contain grayscale transition hover:grayscale-0"
+      className="max-h-16 w-auto object-contain grayscale transition duration-500 group-hover:grayscale-0"
       height={64}
       loader={externalImageLoader}
       src={partner.logoUrl}

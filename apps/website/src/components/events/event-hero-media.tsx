@@ -9,7 +9,7 @@ export function EventHeroMedia({ media, title }: { media: PublicMediaItem | null
       {media?.mediaType === MediaType.Video ? (
         <video
           aria-label={`${title} event video`}
-          className="h-full w-full object-cover"
+          className="cinematic-media h-full w-full object-cover"
           controls
           playsInline
           poster={media.thumbnailUrl ?? undefined}
@@ -19,7 +19,7 @@ export function EventHeroMedia({ media, title }: { media: PublicMediaItem | null
       ) : source ? (
         <Image
           alt={media?.altText ?? ""}
-          className="object-cover"
+          className="cinematic-media object-cover"
           fill
           priority
           sizes="100vw"
@@ -32,7 +32,8 @@ export function EventHeroMedia({ media, title }: { media: PublicMediaItem | null
           </span>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-canvas via-canvas/45 to-canvas/15" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-canvas via-canvas/50 to-canvas/10" />
+      <div className="architectural-grid pointer-events-none absolute inset-0 opacity-25" />
     </div>
   );
 }

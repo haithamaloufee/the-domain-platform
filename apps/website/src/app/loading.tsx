@@ -1,10 +1,5 @@
-import { Container, LoadingLogo, Section } from "@the-domain/ui";
+import { BrandedLoader } from "@/components/layout/branded-loader";
+
 export default function Loading() {
-  return (
-    <Section>
-      <Container>
-        <LoadingLogo />
-      </Container>
-    </Section>
-  );
+  return <BrandedLoader />;
 }
