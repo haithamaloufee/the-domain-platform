@@ -1,4 +1,8 @@
+"use client";
+
+import { cn } from "@the-domain/utils";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/dashboard", label: "Overview" },
@@ -15,6 +19,8 @@ const items = [
 ] as const;
 
 export function AdminSidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="border-b border-line bg-surface lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r">
       <div className="border-b border-line px-6 py-6 font-display text-lg font-extrabold">
@@ -28,7 +34,13 @@ export function AdminSidebar() {
           {items.map((item) => (
             <li key={item.href}>
               <Link
-                className="block border-l border-transparent px-3 py-2.5 font-label text-xs uppercase tracking-[0.1em] text-ink-muted transition hover:border-gold hover:bg-surface-raised hover:text-ink"
+                aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                className={cn(
+                  "block border-l px-3 py-2.5 font-label text-xs uppercase tracking-[0.1em] transition",
+                  isActive(pathname, item.href)
+                    ? "border-gold bg-surface-raised text-gold"
+                    : "border-transparent text-ink-muted hover:border-gold hover:bg-surface-raised hover:text-ink",
+                )}
                 href={item.href}
               >
                 {item.label}
@@ -39,4 +51,10 @@ export function AdminSidebar() {
       </nav>
     </aside>
   );
+}
+
+function isActive(pathname: string, href: string): boolean {
+  return href === "/dashboard"
+    ? pathname === href
+    : pathname.startsWith(`${href}/`) || pathname === href;
 }

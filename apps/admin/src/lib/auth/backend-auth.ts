@@ -5,7 +5,7 @@ import { getAdminAuthConfig } from "./auth-config";
 
 const requestTimeoutMilliseconds = 10_000;
 
-async function backendFetch(path: `/${string}`, init: RequestInit): Promise<Response> {
+export async function fetchBackend(path: `/${string}`, init: RequestInit): Promise<Response> {
   const { apiBaseUrl } = getAdminAuthConfig();
   return fetch(`${apiBaseUrl}${path}`, {
     ...init,
@@ -16,7 +16,7 @@ async function backendFetch(path: `/${string}`, init: RequestInit): Promise<Resp
 }
 
 export function loginWithBackend(request: LoginRequest): Promise<Response> {
-  return backendFetch("/api/auth/login", {
+  return fetchBackend("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -24,7 +24,7 @@ export function loginWithBackend(request: LoginRequest): Promise<Response> {
 }
 
 export function refreshWithBackend(refreshToken: string): Promise<Response> {
-  return backendFetch("/api/auth/refresh", {
+  return fetchBackend("/api/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken }),
@@ -32,7 +32,7 @@ export function refreshWithBackend(refreshToken: string): Promise<Response> {
 }
 
 export function logoutWithBackend(refreshToken: string): Promise<Response> {
-  return backendFetch("/api/auth/logout", {
+  return fetchBackend("/api/auth/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken }),
@@ -40,7 +40,7 @@ export function logoutWithBackend(refreshToken: string): Promise<Response> {
 }
 
 export function getCurrentUserFromBackend(accessToken: string): Promise<Response> {
-  return backendFetch("/api/auth/me", {
+  return fetchBackend("/api/auth/me", {
     method: "GET",
     headers: { Authorization: `Bearer ${accessToken}` },
   });

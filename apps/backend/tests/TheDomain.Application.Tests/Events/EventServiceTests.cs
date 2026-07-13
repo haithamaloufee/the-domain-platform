@@ -36,6 +36,20 @@ public sealed class EventServiceTests
         Assert.False(result.IsSuccess); Assert.Contains(result.Errors, error => error.Contains("after event start", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task AdminResponseIncludesComputedDisplayAndBookingStatuses()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var upcoming = Create("upcoming", now.AddDays(1), now.AddDays(2));
+        var service = new EventService(new FakeRepository(upcoming), TimeProvider.System);
+
+        var result = await service.GetAdminEventsAsync(CancellationToken.None);
+
+        Assert.Single(result);
+        Assert.Equal(EventDisplayStatus.Upcoming, result[0].DisplayStatus);
+        Assert.Equal(BookingAvailability.Hidden, result[0].BookingAvailability);
+    }
+
     private static EntertainmentEvent Create(string slug, DateTimeOffset start, DateTimeOffset end) => new(Guid.NewGuid(), slug, "Title", "Short", "Long", "Concert", start, end, "Asia/Amman", "Amman", "Venue", null, null, null, false, null, null, false, false, start.AddDays(-10));
     private sealed class FakeRepository(params EntertainmentEvent[] events) : IEventRepository
     {

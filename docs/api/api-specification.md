@@ -21,4 +21,6 @@ Public event endpoints are `/api/public/events/upcoming`, `/previous`, `/feature
 
 Admin event endpoints under `/api/admin/events` support list, detail, create, update, publish, archive, and cancel. Every admin event route requires `AdminDashboardAccess`. Booking URLs are external redirects only; no ticketing or payment API exists.
 
+Admin event responses include publication status plus backend-computed display status and booking availability. The admin frontend mirrors these endpoints through same-origin `/api/admin/events/*` BFF handlers. Those handlers authenticate from HttpOnly cookies, refresh an expired access token at most once, and translate backend failures into safe `{ message }` responses rather than forwarding raw Problem Details.
+
 Admin media endpoints under `/api/admin/media` support paginated/filterable lists, detail, upload, metadata updates, approve, hide, and safe delete-by-hide. Event assignment endpoints live under `/api/admin/events/{eventId}/media`. They require `MediaManagerOrAbove`, cap page size at 50, and never expose Cloudinary credentials.
