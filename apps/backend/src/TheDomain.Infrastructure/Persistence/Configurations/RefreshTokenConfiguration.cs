@@ -10,6 +10,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
     {
         builder.ToTable("refresh_tokens");
         builder.HasKey(token => token.Id);
+        builder.Property(token => token.Id).ValueGeneratedNever();
         builder.Property(token => token.TokenHash).HasMaxLength(64).IsFixedLength().IsRequired();
         builder.HasIndex(token => token.TokenHash).IsUnique();
         builder.HasIndex(token => new { token.UserId, token.ExpiresAtUtc });

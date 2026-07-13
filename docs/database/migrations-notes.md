@@ -6,6 +6,8 @@ EF Core migrations will live in `src/TheDomain.Infrastructure/Persistence/Migrat
 
 `AddEventsAndMediaMetadata` creates `events`, `media_assets`, and `event_media` with schedule/publication/homepage indexes and association constraints. It stores no media binaries or seed content.
 
+Sprint 6C creates no migration. The authentication persistence repair declares application-assigned refresh-token GUIDs as non-generated EF keys; it changes change-tracking metadata only and does not alter the existing PostgreSQL schema.
+
 Production migrations must not run implicitly during ordinary API startup. Deployment automation, backups, rollback procedures, and migration ownership must be defined before production release.
 
 ## Local workflow
