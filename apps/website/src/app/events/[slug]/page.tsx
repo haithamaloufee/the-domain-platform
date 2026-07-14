@@ -99,7 +99,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 <a
                   className={buttonClasses("primary")}
                   href={event.externalBookingUrl ?? undefined}
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   target="_blank"
                 >
                   Book Now
@@ -162,7 +162,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 <a
                   className={buttonClasses("secondary")}
                   href={event.mapUrl}
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   target="_blank"
                 >
                   Open map

@@ -8,6 +8,7 @@ import {
   cancelAdminEvent,
   publishAdminEvent,
 } from "@/lib/events/admin-events-client";
+import { publishingWarnings } from "@/lib/events/event-lifecycle";
 import { listEventMedia } from "@/lib/media/admin-media-client";
 import { activeEventCover } from "@/lib/media/event-media-rules";
 
@@ -52,9 +53,9 @@ export function EventActions({
       }
     }
 
-    const confirmed = window.confirm(
-      confirmationMessage(action, event.title, coverIsEligible ?? true),
-    );
+    const warnings =
+      action === "publish" ? publishingWarnings(event, coverIsEligible ?? true) : [];
+    const confirmed = window.confirm(confirmationMessage(action, event.title, warnings));
     if (!confirmed) {
       setPendingAction(null);
       return;
@@ -108,9 +109,9 @@ function actionRequest(action: EventAction, id: string) {
   return cancelAdminEvent(id);
 }
 
-function confirmationMessage(action: EventAction, title: string, hasEligibleCover: boolean): string {
-  if (action === "publish" && !hasEligibleCover)
-    return `Publish "${title}" without an eligible event cover? Public cards and pages will show their artwork fallback.`;
+function confirmationMessage(action: EventAction, title: string, warnings: string[]): string {
+  if (action === "publish" && warnings.length > 0)
+    return `Publish “${title}” with these warnings?\n\n${warnings.map((warning) => `• ${warning}`).join("\n")}`;
   if (action === "publish") return `Publish “${title}” to the public website?`;
   if (action === "archive") return `Archive “${title}”? It will no longer be publicly visible.`;
   return `Cancel “${title}”? This will mark the event as cancelled.`;

@@ -18,7 +18,7 @@ public sealed record PublicEventDetailsResponse(Guid Id, string Slug, string Tit
 public sealed record AdminEventResponse(Guid Id, string Slug, string Title, string ShortDescription, string LongDescription,
     string EventType, DateTimeOffset StartAtUtc, DateTimeOffset EndAtUtc, string TimeZoneId, string City,
     string VenueName, string? VenueAddress, string? MapUrl, string? ExternalBookingUrl, bool IsBookingEnabled,
-    DateTimeOffset? BookingOpensAtUtc, DateTimeOffset? BookingClosesAtUtc, EventPublicationStatus PublicationStatus,
+    BookingAvailability BookingStatus, DateTimeOffset? BookingOpensAtUtc, DateTimeOffset? BookingClosesAtUtc, EventPublicationStatus PublicationStatus,
     EventDisplayStatus DisplayStatus, BookingAvailability BookingAvailability, bool IsFeatured, bool ShowOnHomepage,
     DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
 public sealed record GalleryAlbumListResponse(Guid EventId, string EventSlug, string Title,

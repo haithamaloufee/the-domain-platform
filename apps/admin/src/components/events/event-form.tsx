@@ -1,21 +1,41 @@
 "use client";
 
-import type { AdminEventDetails, SaveEventRequest } from "@the-domain/types";
-import { buttonClasses, Card, Input, Textarea } from "@the-domain/ui";
+import {
+  BookingAvailability,
+  EventPublicationStatus,
+  type AdminEventDetails,
+  type BookingAvailabilityValue,
+  type SaveEventRequest,
+} from "@the-domain/types";
+import { buttonClasses, Card, Input, Select, Textarea } from "@the-domain/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createAdminEvent, updateAdminEvent } from "@/lib/events/admin-events-client";
+import {
+  bookingPreview,
+  isSafeBookingUrl,
+  isValidTimeZone,
+  manualBookingOptions,
+  utcToZonedInput,
+  zonedInputToUtc,
+} from "@/lib/events/event-lifecycle";
 import { EventMediaEditorSection } from "./event-media-editor-section";
 
 type FormFields = Omit<
   SaveEventRequest,
-  "startAtUtc" | "endAtUtc" | "bookingOpensAtUtc" | "bookingClosesAtUtc"
+  | "startAtUtc"
+  | "endAtUtc"
+  | "bookingOpensAtUtc"
+  | "bookingClosesAtUtc"
+  | "isBookingEnabled"
+  | "bookingStatus"
 > & {
   startAtUtc: string;
   endAtUtc: string;
   bookingOpensAtUtc: string;
   bookingClosesAtUtc: string;
+  bookingStatus: BookingAvailabilityValue;
 };
 
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
@@ -32,6 +52,18 @@ export function EventForm({ event }: EventFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = Boolean(event);
+  const selectedBookingOption = manualBookingOptions.find(
+    (option) => option.value === fields.bookingStatus,
+  );
+  const effectiveBookingPreview = bookingPreview({
+    bookingClosesAt: fields.bookingClosesAtUtc,
+    bookingOpensAt: fields.bookingOpensAtUtc,
+    bookingStatus: fields.bookingStatus,
+    endAt: fields.endAtUtc,
+    externalBookingUrl: fields.externalBookingUrl,
+    publicationStatus: event?.publicationStatus ?? EventPublicationStatus.Draft,
+    timeZoneId: fields.timeZoneId,
+  });
 
   function update<K extends keyof FormFields>(name: K, value: FormFields[K]) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -139,7 +171,7 @@ export function EventForm({ event }: EventFormProps) {
 
       <Card className="p-6 sm:p-8">
         <FormSection
-          description="Times are entered in your device’s local time and stored as UTC."
+          description="Times are entered in the selected event timezone and stored as UTC."
           title="Schedule"
         >
           <div className="grid gap-6 md:grid-cols-2">
@@ -225,20 +257,34 @@ export function EventForm({ event }: EventFormProps) {
           description="Booking remains external. The Domain does not process tickets in this platform."
           title="External booking"
         >
-          <Checkbox
-            checked={fields.isBookingEnabled}
-            label="Enable booking CTA"
-            name="isBookingEnabled"
-            onChange={(value) => update("isBookingEnabled", value)}
-          />
           <div className="grid gap-6 md:grid-cols-2">
+            <Field
+              error={errors.bookingStatus}
+              hint={selectedBookingOption?.description}
+              label="Booking state"
+              name="bookingStatus"
+              required
+            >
+              <Select
+                id="bookingStatus"
+                onChange={(e) =>
+                  update("bookingStatus", Number(e.target.value) as BookingAvailabilityValue)
+                }
+                value={fields.bookingStatus}
+              >
+                {manualBookingOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             <Field
               error={errors.externalBookingUrl}
               label="External booking URL"
               name="externalBookingUrl"
             >
               <Input
-                disabled={!fields.isBookingEnabled}
                 id="externalBookingUrl"
                 onChange={(e) => update("externalBookingUrl", e.target.value)}
                 placeholder="https://…"
@@ -246,10 +292,8 @@ export function EventForm({ event }: EventFormProps) {
                 value={fields.externalBookingUrl ?? ""}
               />
             </Field>
-            <div aria-hidden="true" className="hidden md:block" />
             <Field error={errors.bookingOpensAtUtc} label="Booking opens" name="bookingOpensAtUtc">
               <Input
-                disabled={!fields.isBookingEnabled}
                 id="bookingOpensAtUtc"
                 onChange={(e) => update("bookingOpensAtUtc", e.target.value)}
                 type="datetime-local"
@@ -262,7 +306,6 @@ export function EventForm({ event }: EventFormProps) {
               name="bookingClosesAtUtc"
             >
               <Input
-                disabled={!fields.isBookingEnabled}
                 id="bookingClosesAtUtc"
                 onChange={(e) => update("bookingClosesAtUtc", e.target.value)}
                 type="datetime-local"
@@ -270,6 +313,13 @@ export function EventForm({ event }: EventFormProps) {
               />
             </Field>
           </div>
+          <p
+            className="border-l-2 border-gold/70 bg-gold/5 px-4 py-3 text-sm leading-6 text-ink-muted"
+            role="status"
+          >
+            <span className="font-semibold text-ink">Public preview: </span>
+            {effectiveBookingPreview}
+          </p>
         </FormSection>
       </Card>
 
@@ -403,23 +453,24 @@ function Checkbox({
 }
 
 function initialFields(event?: AdminEventDetails): FormFields {
+  const timeZoneId = event?.timeZoneId ?? "Asia/Amman";
   return {
     slug: event?.slug ?? "",
     title: event?.title ?? "",
     shortDescription: event?.shortDescription ?? "",
     longDescription: event?.longDescription ?? "",
     eventType: event?.eventType ?? "",
-    startAtUtc: toLocalInput(event?.startAtUtc),
-    endAtUtc: toLocalInput(event?.endAtUtc),
-    timeZoneId: event?.timeZoneId ?? "Asia/Amman",
+    startAtUtc: utcToZonedInput(event?.startAtUtc, timeZoneId),
+    endAtUtc: utcToZonedInput(event?.endAtUtc, timeZoneId),
+    timeZoneId,
     city: event?.city ?? "Amman",
     venueName: event?.venueName ?? "",
     venueAddress: event?.venueAddress ?? "",
     mapUrl: event?.mapUrl ?? "",
     externalBookingUrl: event?.externalBookingUrl ?? "",
-    isBookingEnabled: event?.isBookingEnabled ?? false,
-    bookingOpensAtUtc: toLocalInput(event?.bookingOpensAtUtc),
-    bookingClosesAtUtc: toLocalInput(event?.bookingClosesAtUtc),
+    bookingStatus: event?.bookingStatus ?? BookingAvailability.Hidden,
+    bookingOpensAtUtc: utcToZonedInput(event?.bookingOpensAtUtc, timeZoneId),
+    bookingClosesAtUtc: utcToZonedInput(event?.bookingClosesAtUtc, timeZoneId),
     isFeatured: event?.isFeatured ?? false,
     showOnHomepage: event?.showOnHomepage ?? false,
   };
@@ -433,23 +484,36 @@ function validate(fields: FormFields): FieldErrors {
   if (!fields.eventType.trim()) errors.eventType = "Event type is required.";
   if (!fields.startAtUtc) errors.startAtUtc = "Start date and time are required.";
   if (!fields.endAtUtc) errors.endAtUtc = "End date and time are required.";
-  if (
-    fields.startAtUtc &&
-    fields.endAtUtc &&
-    new Date(fields.endAtUtc) <= new Date(fields.startAtUtc)
-  )
+  const timeZoneId = fields.timeZoneId.trim();
+  const timeZoneIsValid = isValidTimeZone(timeZoneId);
+  if (!timeZoneId) errors.timeZoneId = "Time zone is required.";
+  else if (!timeZoneIsValid) errors.timeZoneId = "Enter a valid IANA time zone.";
+  const startAtUtc = timeZoneIsValid ? zonedInputToUtc(fields.startAtUtc, timeZoneId) : null;
+  const endAtUtc = timeZoneIsValid ? zonedInputToUtc(fields.endAtUtc, timeZoneId) : null;
+  if (fields.startAtUtc && timeZoneIsValid && !startAtUtc)
+    errors.startAtUtc = "Enter a valid local time in the selected timezone.";
+  if (fields.endAtUtc && timeZoneIsValid && !endAtUtc)
+    errors.endAtUtc = "Enter a valid local time in the selected timezone.";
+  if (startAtUtc && endAtUtc && new Date(endAtUtc) <= new Date(startAtUtc))
     errors.endAtUtc = "End must be after start.";
-  if (!fields.timeZoneId.trim()) errors.timeZoneId = "Time zone is required.";
   if (!fields.city.trim()) errors.city = "City is required.";
   if (!fields.venueName.trim()) errors.venueName = "Venue name is required.";
   if (!validOptionalUrl(fields.mapUrl)) errors.mapUrl = "Enter an absolute HTTP or HTTPS URL.";
-  if (!validOptionalUrl(fields.externalBookingUrl))
-    errors.externalBookingUrl = "Enter an absolute HTTP or HTTPS URL.";
-  if (
-    fields.bookingOpensAtUtc &&
-    fields.bookingClosesAtUtc &&
-    new Date(fields.bookingClosesAtUtc) < new Date(fields.bookingOpensAtUtc)
-  )
+  if (fields.externalBookingUrl?.trim() && !isSafeBookingUrl(fields.externalBookingUrl))
+    errors.externalBookingUrl = "Enter an absolute HTTPS URL.";
+  if (fields.bookingStatus === BookingAvailability.Open && !fields.externalBookingUrl?.trim())
+    errors.externalBookingUrl = "An HTTPS booking URL is required when booking is Open.";
+  const bookingOpensAtUtc = timeZoneIsValid
+    ? zonedInputToUtc(fields.bookingOpensAtUtc, timeZoneId)
+    : null;
+  const bookingClosesAtUtc = timeZoneIsValid
+    ? zonedInputToUtc(fields.bookingClosesAtUtc, timeZoneId)
+    : null;
+  if (fields.bookingOpensAtUtc && timeZoneIsValid && !bookingOpensAtUtc)
+    errors.bookingOpensAtUtc = "Enter a valid local time in the selected timezone.";
+  if (fields.bookingClosesAtUtc && timeZoneIsValid && !bookingClosesAtUtc)
+    errors.bookingClosesAtUtc = "Enter a valid local time in the selected timezone.";
+  if (bookingOpensAtUtc && bookingClosesAtUtc && bookingClosesAtUtc < bookingOpensAtUtc)
     errors.bookingClosesAtUtc = "Booking close cannot be before booking open.";
   return errors;
 }
@@ -465,6 +529,7 @@ function validOptionalUrl(value: string | null): boolean {
 }
 
 function toRequest(fields: FormFields): SaveEventRequest {
+  const timeZoneId = fields.timeZoneId.trim();
   return {
     ...fields,
     slug: fields.slug.trim(),
@@ -472,28 +537,23 @@ function toRequest(fields: FormFields): SaveEventRequest {
     shortDescription: fields.shortDescription.trim(),
     longDescription: fields.longDescription.trim(),
     eventType: fields.eventType.trim(),
-    startAtUtc: new Date(fields.startAtUtc).toISOString(),
-    endAtUtc: new Date(fields.endAtUtc).toISOString(),
-    timeZoneId: fields.timeZoneId.trim(),
+    startAtUtc: zonedInputToUtc(fields.startAtUtc, timeZoneId)!,
+    endAtUtc: zonedInputToUtc(fields.endAtUtc, timeZoneId)!,
+    timeZoneId,
     city: fields.city.trim(),
     venueName: fields.venueName.trim(),
     venueAddress: optional(fields.venueAddress),
     mapUrl: optional(fields.mapUrl),
     externalBookingUrl: optional(fields.externalBookingUrl),
-    bookingOpensAtUtc: optionalDate(fields.bookingOpensAtUtc),
-    bookingClosesAtUtc: optionalDate(fields.bookingClosesAtUtc),
+    bookingStatus: fields.bookingStatus,
+    bookingOpensAtUtc: optionalZonedDate(fields.bookingOpensAtUtc, timeZoneId),
+    bookingClosesAtUtc: optionalZonedDate(fields.bookingClosesAtUtc, timeZoneId),
   };
 }
 
 function optional(value: string | null): string | null {
   return value?.trim() || null;
 }
-function optionalDate(value: string): string | null {
-  return value ? new Date(value).toISOString() : null;
-}
-function toLocalInput(value?: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+function optionalZonedDate(value: string, timeZoneId: string): string | null {
+  return value ? zonedInputToUtc(value, timeZoneId) : null;
 }

@@ -34,6 +34,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("BookingOpensAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("BookingStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -53,9 +56,6 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<string>("ExternalBookingUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
-
-                    b.Property<bool>("IsBookingEnabled")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
@@ -125,7 +125,10 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("StartAtUtc");
 
-                    b.ToTable("events", (string)null);
+                    b.ToTable("events", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_events_BookingStatus_Manual", "\"BookingStatus\" IN (1, 3, 4, 5)");
+                        });
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Homepage.HomepageContent", b =>

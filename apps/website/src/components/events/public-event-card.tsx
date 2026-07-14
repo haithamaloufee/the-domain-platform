@@ -139,7 +139,7 @@ function EventActions({ canBook, event }: { canBook: boolean; event: PublicEvent
         <a
           className={buttonClasses("primary")}
           href={event.externalBookingUrl ?? undefined}
-          rel="noreferrer"
+          rel="noopener noreferrer"
           target="_blank"
         >
           Book Now

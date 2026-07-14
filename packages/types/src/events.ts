@@ -43,7 +43,8 @@ export interface SaveEventRequest {
   venueAddress: string | null;
   mapUrl: string | null;
   externalBookingUrl: string | null;
-  isBookingEnabled: boolean;
+  isBookingEnabled?: boolean | null;
+  bookingStatus?: BookingAvailability | null;
   bookingOpensAtUtc: string | null;
   bookingClosesAtUtc: string | null;
   isFeatured: boolean;
@@ -55,6 +56,8 @@ export type UpdateEventRequest = SaveEventRequest;
 
 export interface AdminEventDetails extends SaveEventRequest {
   id: string;
+  isBookingEnabled: boolean;
+  bookingStatus: BookingAvailability;
   publicationStatus: EventPublicationStatus;
   displayStatus: EventDisplayStatus;
   bookingAvailability: BookingAvailability;

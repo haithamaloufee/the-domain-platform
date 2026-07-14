@@ -5,6 +5,7 @@ import { buttonClasses, Card, EmptyState } from "@the-domain/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
+import { isSafeBookingUrl } from "@/lib/events/event-lifecycle";
 import { listEventMedia } from "@/lib/media/admin-media-client";
 import { activeEventCover } from "@/lib/media/event-media-rules";
 import { EventActions } from "./event-actions";
@@ -139,10 +140,17 @@ export function EventDetails({ eventId }: { eventId: string }) {
           <Card className="p-6 sm:p-8">
             <DetailSection title="External booking">
               <div className="grid gap-6 sm:grid-cols-2">
-                <Detail label="CTA enabled" value={event.isBookingEnabled ? "Yes" : "No"} />
                 <Detail
-                  label="Availability"
+                  label="Stored booking state"
+                  value={<BookingBadge status={event.bookingStatus} />}
+                />
+                <Detail
+                  label="Effective availability"
                   value={<BookingBadge status={event.bookingAvailability} />}
+                />
+                <Detail
+                  label="Public CTA actionable"
+                  value={event.isBookingEnabled ? "Yes" : "No"}
                 />
                 <Detail
                   label="Opens"
@@ -161,11 +169,16 @@ export function EventDetails({ eventId }: { eventId: string }) {
                   }
                 />
               </div>
-              {event.externalBookingUrl && (
+              {event.externalBookingUrl && isSafeBookingUrl(event.externalBookingUrl) && (
                 <ExternalLink
                   href={event.externalBookingUrl}
                   label="Open external ticketing page"
                 />
+              )}
+              {event.externalBookingUrl && !isSafeBookingUrl(event.externalBookingUrl) && (
+                <p className="mt-6 border-l-2 border-error bg-error/10 px-3 py-2 text-sm text-error">
+                  The stored booking URL is not safe HTTPS and will not be exposed publicly.
+                </p>
               )}
             </DetailSection>
           </Card>
@@ -252,7 +265,12 @@ function Detail({
 
 function ExternalLink({ href, label }: { href: string; label: string }) {
   return (
-    <a className={buttonClasses("secondary", "mt-6")} href={href} rel="noreferrer" target="_blank">
+    <a
+      className={buttonClasses("secondary", "mt-6")}
+      href={href}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
       {label}
     </a>
   );

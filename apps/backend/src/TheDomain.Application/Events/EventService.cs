@@ -12,27 +12,33 @@ public sealed class EventService(
 {
     private const int MaximumPublicItems = 50;
     public async Task<IReadOnlyList<PublicEventListResponse>> GetUpcomingAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(status => status is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, false, cancellationToken);
+        await GetPublicListAsync(state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, false, cancellationToken);
     public async Task<IReadOnlyList<PublicEventListResponse>> GetPreviousAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(status => status == EventDisplayStatus.Finished, false, cancellationToken);
+        await GetPublicListAsync(state => state.DisplayStatus == EventDisplayStatus.Finished, false, cancellationToken);
     public async Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(_ => true, true, cancellationToken);
+        await GetPublicListAsync(state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, true, cancellationToken);
 
     public async Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
     {
+        var now = timeProvider.GetUtcNow();
         var item = await repository.FindBySlugAsync(slug, cancellationToken);
-        return item is not null && IsPublic(item) ? MapPublicDetails(item, timeProvider.GetUtcNow()) : null;
+        return item is not null && item.EvaluateLifecycle(now).IsPublicDetailVisible
+            ? MapPublicDetails(item, now)
+            : null;
     }
 
     public async Task<IReadOnlyList<GalleryAlbumListResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken)
     {
+        var now = timeProvider.GetUtcNow();
         var events = await repository.ListAsync(cancellationToken);
-        return events.Where(IsPublic).Select(MapAlbumList).OfType<GalleryAlbumListResponse>().Take(MaximumPublicItems).ToArray();
+        return events.Where(item => item.EvaluateLifecycle(now).IsPublicDetailVisible)
+            .Select(MapAlbumList).OfType<GalleryAlbumListResponse>().Take(MaximumPublicItems).ToArray();
     }
     public async Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken)
     {
+        var now = timeProvider.GetUtcNow();
         var item = await repository.FindBySlugAsync(slug, cancellationToken);
-        return item is not null && IsPublic(item) ? MapAlbumDetails(item) : null;
+        return item is not null && item.EvaluateLifecycle(now).IsPublicDetailVisible ? MapAlbumDetails(item) : null;
     }
     public async Task<IReadOnlyList<AdminEventResponse>> GetAdminEventsAsync(CancellationToken cancellationToken)
     {
@@ -44,41 +50,56 @@ public sealed class EventService(
 
     public async Task<EventOperationResult<AdminEventResponse>> CreateAsync(SaveEventRequest request, CancellationToken cancellationToken)
     {
-        var errors = Validate(request);
+        var errors = Validate(request, out var bookingStatus);
         if (errors.Count > 0) return new(null, errors);
-        if (await repository.SlugExistsAsync(request.Slug, null, cancellationToken)) return EventOperationResult.Failure<AdminEventResponse>("Slug is already in use.");
+        if (await repository.SlugExistsAsync(request.Slug, null, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var now = timeProvider.GetUtcNow();
-        var item = CreateEvent(Guid.NewGuid(), request, now);
+        var item = CreateEvent(Guid.NewGuid(), request, bookingStatus, now);
         repository.Add(item); await repository.SaveChangesAsync(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
     public async Task<EventOperationResult<AdminEventResponse>> UpdateAsync(Guid id, SaveEventRequest request, CancellationToken cancellationToken)
     {
-        var errors = Validate(request); if (errors.Count > 0) return new(null, errors);
-        var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.Failure<AdminEventResponse>("Event was not found.");
-        if (await repository.SlugExistsAsync(request.Slug, id, cancellationToken)) return EventOperationResult.Failure<AdminEventResponse>("Slug is already in use.");
+        var errors = Validate(request, out var bookingStatus); if (errors.Count > 0) return new(null, errors);
+        var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.NotFound<AdminEventResponse>("Event was not found.");
+        if (await repository.SlugExistsAsync(request.Slug, id, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var now = timeProvider.GetUtcNow();
-        Apply(item, request, now); await repository.SaveChangesAsync(cancellationToken);
+        Apply(item, request, bookingStatus, now); await repository.SaveChangesAsync(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
-    public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) => ChangeStatus(id, (item, now) => item.Publish(now), cancellationToken);
-    public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(Guid id, CancellationToken cancellationToken) => ChangeStatus(id, (item, now) => item.Archive(now), cancellationToken);
-    public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) => ChangeStatus(id, (item, now) => item.Cancel(now), cancellationToken);
+    public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) =>
+        ChangeStatus(id, EventPublicationStatus.Published, cancellationToken);
+    public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(Guid id, CancellationToken cancellationToken) =>
+        ChangeStatus(id, EventPublicationStatus.Archived, cancellationToken);
+    public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) =>
+        ChangeStatus(id, EventPublicationStatus.Cancelled, cancellationToken);
 
-    private async Task<IReadOnlyList<PublicEventListResponse>> GetPublicListAsync(Func<EventDisplayStatus, bool> statusFilter, bool featuredOnly, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<PublicEventListResponse>> GetPublicListAsync(Func<EventLifecycleState, bool> stateFilter, bool featuredOnly, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow(); var events = await repository.ListAsync(cancellationToken);
-        return events.Where(IsPublic).Where(item => !featuredOnly || item.IsFeatured).Where(item => statusFilter(item.GetDisplayStatus(now)))
+        return events.Where(item => item.EvaluateLifecycle(now).IsPublicCollectionVisible)
+            .Where(item => !featuredOnly || item.IsFeatured)
+            .Where(item => stateFilter(item.EvaluateLifecycle(now)))
             .OrderBy(item => item.StartAtUtc).Take(MaximumPublicItems).Select(item => MapPublicList(item, now)).ToArray();
     }
-    private async Task<EventOperationResult<AdminEventResponse>> ChangeStatus(Guid id, Action<EntertainmentEvent, DateTimeOffset> change, CancellationToken cancellationToken)
+    private async Task<EventOperationResult<AdminEventResponse>> ChangeStatus(Guid id, EventPublicationStatus target, CancellationToken cancellationToken)
     {
-        var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.Failure<AdminEventResponse>("Event was not found.");
+        var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.NotFound<AdminEventResponse>("Event was not found.");
         var now = timeProvider.GetUtcNow();
-        change(item, now); await repository.SaveChangesAsync(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
+        if (item.PublicationStatus == target) return EventOperationResult.Success(MapAdmin(item, now));
+        if (!CanTransition(item.PublicationStatus, target))
+            return EventOperationResult.Failure<AdminEventResponse>($"An event cannot transition from {item.PublicationStatus} to {target}.");
+        if (target == EventPublicationStatus.Published)
+        {
+            var publishErrors = ValidateForPublish(item);
+            if (publishErrors.Count > 0) return new(null, publishErrors);
+            item.Publish(now);
+        }
+        else if (target == EventPublicationStatus.Archived) item.Archive(now);
+        else item.Cancel(now);
+        await repository.SaveChangesAsync(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
     }
-    private static bool IsPublic(EntertainmentEvent item) => item.PublicationStatus is EventPublicationStatus.Published or EventPublicationStatus.Cancelled;
-    private static List<string> Validate(SaveEventRequest request)
+    private static List<string> Validate(SaveEventRequest request, out BookingAvailability bookingStatus)
     {
         List<string> errors = [];
         if (string.IsNullOrWhiteSpace(request.Slug) || !request.Slug.All(character => char.IsAsciiLetterOrDigit(character) || character == '-') || request.Slug.StartsWith('-') || request.Slug.EndsWith('-')) errors.Add("Slug must be URL-safe lowercase letters, numbers, and hyphens.");
@@ -87,30 +108,83 @@ public sealed class EventService(
         if (string.IsNullOrWhiteSpace(request.EventType)) errors.Add("Event type is required.");
         if (string.IsNullOrWhiteSpace(request.City)) errors.Add("City is required.");
         if (string.IsNullOrWhiteSpace(request.VenueName)) errors.Add("Venue name is required.");
+        if (request.StartAtUtc == default) errors.Add("Event start is required.");
+        if (request.EndAtUtc == default) errors.Add("Event end is required.");
         if (request.EndAtUtc <= request.StartAtUtc) errors.Add("Event end must be after event start.");
-        if (string.IsNullOrWhiteSpace(request.TimeZoneId)) errors.Add("Time zone is required.");
-        ValidateUrl(request.ExternalBookingUrl, "External booking URL", errors); ValidateUrl(request.MapUrl, "Map URL", errors);
+        ValidateTimeZone(request.TimeZoneId, errors);
+        ValidateBookingUrl(request.ExternalBookingUrl, errors); ValidateUrl(request.MapUrl, "Map URL", errors);
         if (request.BookingOpensAtUtc is not null && request.BookingClosesAtUtc < request.BookingOpensAtUtc) errors.Add("Booking close must not precede booking open.");
+        bookingStatus = ResolveBookingStatus(request, errors);
+        if (bookingStatus == BookingAvailability.Open && string.IsNullOrWhiteSpace(request.ExternalBookingUrl))
+            errors.Add("Open booking requires a valid HTTPS booking URL.");
         return errors;
     }
     private static void ValidateUrl(string? value, string name, List<string> errors) { if (!string.IsNullOrWhiteSpace(value) && (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))) errors.Add($"{name} must be an absolute HTTP or HTTPS URL."); }
-    private static EntertainmentEvent CreateEvent(Guid id, SaveEventRequest r, DateTimeOffset now) => new(id, r.Slug, r.Title, r.ShortDescription, r.LongDescription, r.EventType, r.StartAtUtc, r.EndAtUtc, r.TimeZoneId, r.City, r.VenueName, r.VenueAddress, r.MapUrl, r.ExternalBookingUrl, r.IsBookingEnabled, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now);
-    private static void Apply(EntertainmentEvent item, SaveEventRequest r, DateTimeOffset now) => item.Update(r.Slug, r.Title, r.ShortDescription, r.LongDescription, r.EventType, r.StartAtUtc, r.EndAtUtc, r.TimeZoneId, r.City, r.VenueName, r.VenueAddress, r.MapUrl, r.ExternalBookingUrl, r.IsBookingEnabled, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now);
+    private static void ValidateBookingUrl(string? value, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            errors.Add("External booking URL must be an absolute HTTPS URL.");
+    }
+    private static void ValidateTimeZone(string? value, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value)) { errors.Add("Time zone is required."); return; }
+        try { _ = TimeZoneInfo.FindSystemTimeZoneById(value.Trim()); }
+        catch (TimeZoneNotFoundException) { errors.Add("Time zone must be a valid supported identifier."); }
+        catch (InvalidTimeZoneException) { errors.Add("Time zone must be a valid supported identifier."); }
+    }
+    private static BookingAvailability ResolveBookingStatus(SaveEventRequest request, List<string> errors)
+    {
+        if (request.BookingStatus is not { } explicitStatus)
+            return request.IsBookingEnabled == true ? BookingAvailability.Open : BookingAvailability.Hidden;
+        if (!EntertainmentEvent.IsManualBookingStatus(explicitStatus))
+        {
+            errors.Add("Booking status must be Hidden, Open, Closed, or SoldOut. NotOpenYet is derived automatically.");
+            return BookingAvailability.Hidden;
+        }
+        if (request.IsBookingEnabled is { } legacyEnabled && legacyEnabled != (explicitStatus == BookingAvailability.Open))
+            errors.Add("Booking status conflicts with the legacy booking-enabled value.");
+        return explicitStatus;
+    }
+    private static bool CanTransition(EventPublicationStatus current, EventPublicationStatus target) =>
+        (current, target) switch
+        {
+            (EventPublicationStatus.Draft, EventPublicationStatus.Published or EventPublicationStatus.Cancelled or EventPublicationStatus.Archived) => true,
+            (EventPublicationStatus.Published, EventPublicationStatus.Cancelled or EventPublicationStatus.Archived) => true,
+            (EventPublicationStatus.Cancelled, EventPublicationStatus.Archived) => true,
+            _ => false
+        };
+    private static List<string> ValidateForPublish(EntertainmentEvent item)
+    {
+        List<string> errors = [];
+        if (item.EndAtUtc <= item.StartAtUtc) errors.Add("Event end must be after event start.");
+        ValidateTimeZone(item.TimeZoneId, errors);
+        if (item.BookingStatus == BookingAvailability.Open)
+        {
+            ValidateBookingUrl(item.ExternalBookingUrl, errors);
+            if (string.IsNullOrWhiteSpace(item.ExternalBookingUrl))
+                errors.Add("Open booking requires a valid HTTPS booking URL.");
+        }
+        return errors;
+    }
+    private static EntertainmentEvent CreateEvent(Guid id, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => new(id, r.Slug.Trim(), r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
+    private static void Apply(EntertainmentEvent item, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => item.Update(r.Slug.Trim(), r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private PublicEventListResponse MapPublicList(EntertainmentEvent item, DateTimeOffset now)
     {
-        var booking = item.GetBookingAvailability(now);
+        var state = item.EvaluateLifecycle(now);
         return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.EventType, item.StartAtUtc,
-            item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.GetDisplayStatus(now), booking,
-            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, SelectCoverMedia(item));
+            item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, state.DisplayStatus,
+            state.BookingAvailability, state.SafeBookingUrl, SelectCoverMedia(item));
     }
     private PublicEventDetailsResponse MapPublicDetails(EntertainmentEvent item, DateTimeOffset now)
     {
-        var booking = item.GetBookingAvailability(now);
+        var state = item.EvaluateLifecycle(now);
         var media = MapMedia(item);
         return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType,
             item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress,
-            item.MapUrl, item.GetDisplayStatus(now), booking,
-            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, media, SelectCoverMedia(item));
+            item.MapUrl, state.DisplayStatus, state.BookingAvailability, state.SafeBookingUrl, media,
+            SelectCoverMedia(item));
     }
     private PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media
         .Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved && HasSafePublicUrl(link.MediaAsset))
@@ -146,5 +220,14 @@ public sealed class EventService(
     private static bool HasSafePublicUrl(MediaAsset item) => Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) &&
         uri.Scheme == Uri.UriSchemeHttps;
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
-    private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now) => new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType, item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress, item.MapUrl, item.ExternalBookingUrl, item.IsBookingEnabled, item.BookingOpensAtUtc, item.BookingClosesAtUtc, item.PublicationStatus, item.GetDisplayStatus(now), item.GetBookingAvailability(now), item.IsFeatured, item.ShowOnHomepage, item.CreatedAtUtc, item.UpdatedAtUtc);
+    private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now)
+    {
+        var state = item.EvaluateLifecycle(now);
+        return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription,
+            item.EventType, item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName,
+            item.VenueAddress, item.MapUrl, item.ExternalBookingUrl, state.IsBookingActionable,
+            item.BookingStatus, item.BookingOpensAtUtc, item.BookingClosesAtUtc,
+            item.PublicationStatus, state.DisplayStatus, state.BookingAvailability, item.IsFeatured,
+            item.ShowOnHomepage, item.CreatedAtUtc, item.UpdatedAtUtc);
+    }
 }

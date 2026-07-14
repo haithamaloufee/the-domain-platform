@@ -15,6 +15,9 @@ public sealed class EventConfiguration : IEntityTypeConfiguration<EntertainmentE
         builder.Property(item => item.EventType).HasMaxLength(100).IsRequired(); builder.Property(item => item.TimeZoneId).HasMaxLength(100).IsRequired();
         builder.Property(item => item.City).HasMaxLength(100).IsRequired(); builder.Property(item => item.VenueName).HasMaxLength(200).IsRequired();
         builder.Property(item => item.VenueAddress).HasMaxLength(500); builder.Property(item => item.MapUrl).HasMaxLength(2048); builder.Property(item => item.ExternalBookingUrl).HasMaxLength(2048);
+        builder.Ignore(item => item.IsBookingEnabled);
+        builder.Property(item => item.BookingStatus).HasConversion<int>();
+        builder.ToTable(table => table.HasCheckConstraint("CK_events_BookingStatus_Manual", "\"BookingStatus\" IN (1, 3, 4, 5)"));
         builder.Property(item => item.PublicationStatus).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(item => item.StartAtUtc).HasColumnType("timestamp with time zone"); builder.Property(item => item.EndAtUtc).HasColumnType("timestamp with time zone");
         builder.Property(item => item.BookingOpensAtUtc).HasColumnType("timestamp with time zone"); builder.Property(item => item.BookingClosesAtUtc).HasColumnType("timestamp with time zone");
