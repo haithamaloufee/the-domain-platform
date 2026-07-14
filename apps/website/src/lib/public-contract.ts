@@ -97,6 +97,7 @@ export function parsePublicEvent(value: unknown): PublicEventDetails {
     venueAddress: nullableString(value.venueAddress),
     mapUrl: nullableUrl(value.mapUrl),
     media: mediaList(value.media),
+    coverMedia: value.coverMedia === null ? null : mediaItem(value.coverMedia),
   };
 }
 

@@ -11,5 +11,7 @@ public interface IMediaManagementService
     Task<EventOperationResult<AdminMediaResponse>> HideAsync(Guid id, CancellationToken token);
     Task<EventOperationResult<EventMediaResponse>> AssignAsync(Guid eventId, AssignEventMediaRequest request, CancellationToken token);
     Task<EventOperationResult<EventMediaResponse>> UpdateAssignmentAsync(Guid eventId, Guid eventMediaId, UpdateEventMediaRequest request, CancellationToken token);
+    Task<EventOperationResult<EventMediaResponse>> SetCoverAsync(Guid eventId, Guid eventMediaId, CancellationToken token);
+    Task<EventOperationResult<IReadOnlyList<EventMediaResponse>>> ReorderAsync(Guid eventId, ReorderEventMediaRequest request, CancellationToken token);
     Task<bool> RemoveAssignmentAsync(Guid eventId, Guid eventMediaId, CancellationToken token);
 }

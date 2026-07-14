@@ -8,11 +8,14 @@ import {
   cancelAdminEvent,
   publishAdminEvent,
 } from "@/lib/events/admin-events-client";
+import { listEventMedia } from "@/lib/media/admin-media-client";
+import { activeEventCover } from "@/lib/media/event-media-rules";
 
 type EventAction = "publish" | "archive" | "cancel";
 
 interface EventActionsProps {
   event: AdminEventDetails;
+  hasEligibleCover?: boolean;
   onChanged: (event: AdminEventDetails) => void;
   onError?: (message: string) => void;
 }
@@ -23,13 +26,39 @@ const actionLabels: Record<EventAction, string> = {
   cancel: "Cancel event",
 };
 
-export function EventActions({ event, onChanged, onError }: EventActionsProps) {
+export function EventActions({
+  event,
+  hasEligibleCover,
+  onChanged,
+  onError,
+}: EventActionsProps) {
   const [pendingAction, setPendingAction] = useState<EventAction | null>(null);
   const actions = availableActions(event);
 
   async function run(action: EventAction) {
-    const confirmed = window.confirm(confirmationMessage(action, event.title));
-    if (!confirmed) return;
+    let coverIsEligible = hasEligibleCover;
+
+    if (action === "publish" && coverIsEligible === undefined) {
+      setPendingAction(action);
+      onError?.("");
+      try {
+        coverIsEligible = activeEventCover(await listEventMedia(event.id)) !== null;
+      } catch (error) {
+        onError?.(
+          error instanceof Error ? error.message : "Unable to verify this event's cover media.",
+        );
+        setPendingAction(null);
+        return;
+      }
+    }
+
+    const confirmed = window.confirm(
+      confirmationMessage(action, event.title, coverIsEligible ?? true),
+    );
+    if (!confirmed) {
+      setPendingAction(null);
+      return;
+    }
 
     setPendingAction(action);
     onError?.("");
@@ -79,7 +108,9 @@ function actionRequest(action: EventAction, id: string) {
   return cancelAdminEvent(id);
 }
 
-function confirmationMessage(action: EventAction, title: string): string {
+function confirmationMessage(action: EventAction, title: string, hasEligibleCover: boolean): string {
+  if (action === "publish" && !hasEligibleCover)
+    return `Publish "${title}" without an eligible event cover? Public cards and pages will show their artwork fallback.`;
   if (action === "publish") return `Publish “${title}” to the public website?`;
   if (action === "archive") return `Archive “${title}”? It will no longer be publicly visible.`;
   return `Cancel “${title}”? This will mark the event as cancelled.`;

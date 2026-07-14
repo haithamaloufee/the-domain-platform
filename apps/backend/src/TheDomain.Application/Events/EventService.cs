@@ -106,26 +106,30 @@ public sealed class EventService(
     private PublicEventDetailsResponse MapPublicDetails(EntertainmentEvent item, DateTimeOffset now)
     {
         var booking = item.GetBookingAvailability(now);
+        var media = MapMedia(item);
         return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType,
             item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress,
             item.MapUrl, item.GetDisplayStatus(now), booking,
-            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, MapMedia(item));
+            booking == BookingAvailability.Open ? item.ExternalBookingUrl : null, media, SelectCoverMedia(item));
     }
-    private PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media.Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved).OrderBy(link => link.SortOrder).Select(link => new PublicMediaResponse(link.MediaAsset.Id, link.MediaAsset.MediaType, link.MediaAsset.Url, ResolveThumbnailUrl(link.MediaAsset), link.MediaAsset.Caption, link.MediaAsset.AltText, link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation, link.Usage, link.SortOrder, link.IsFeatured)).ToArray();
+    private PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media
+        .Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved && HasSafePublicUrl(link.MediaAsset))
+        .OrderBy(link => link.SortOrder)
+        .ThenBy(link => link.CreatedAtUtc)
+        .ThenBy(link => link.Id)
+        .Select(MapMedia)
+        .ToArray();
     private PublicMediaResponse? SelectCoverMedia(EntertainmentEvent item)
-    {
-        var media = MapMedia(item);
-        EventMediaUsage[] priority = [EventMediaUsage.Hero, EventMediaUsage.Cover, EventMediaUsage.Poster,
-            EventMediaUsage.Thumbnail, EventMediaUsage.Gallery];
-        foreach (var usage in priority)
-        {
-            var featured = media.FirstOrDefault(value => value.Usage == usage && value.IsFeatured);
-            if (featured is not null) return featured;
-            var fallback = media.FirstOrDefault(value => value.Usage == usage);
-            if (fallback is not null) return fallback;
-        }
-        return media.FirstOrDefault();
-    }
+        => item.Media
+            .Where(link => link.Usage == EventMediaUsage.Cover &&
+                link.MediaAsset.MediaType == MediaType.Image &&
+                link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved &&
+                HasSafePublicUrl(link.MediaAsset))
+            .OrderBy(link => link.SortOrder)
+            .ThenBy(link => link.CreatedAtUtc)
+            .ThenBy(link => link.Id)
+            .Select(MapMedia)
+            .FirstOrDefault();
     private GalleryAlbumListResponse? MapAlbumList(EntertainmentEvent item)
     {
         var media = GalleryMedia(item); if (media.Length == 0) return null;
@@ -135,6 +139,12 @@ public sealed class EventService(
     }
     private GalleryAlbumDetailsResponse MapAlbumDetails(EntertainmentEvent item) => new(item.Id, item.Slug, item.Title, item.StartAtUtc, item.TimeZoneId, item.City, item.VenueName, GalleryMedia(item));
     private PublicMediaResponse[] GalleryMedia(EntertainmentEvent item) => MapMedia(item).Where(media => media.Usage == EventMediaUsage.Gallery).ToArray();
+    private PublicMediaResponse MapMedia(EventMedia link) => new(link.MediaAsset.Id, link.MediaAsset.MediaType,
+        link.MediaAsset.Url, ResolveThumbnailUrl(link.MediaAsset), link.MediaAsset.Caption, link.MediaAsset.AltText,
+        link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation,
+        link.Usage, link.SortOrder, link.IsFeatured);
+    private static bool HasSafePublicUrl(MediaAsset item) => Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) &&
+        uri.Scheme == Uri.UriSchemeHttps;
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
     private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now) => new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType, item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress, item.MapUrl, item.ExternalBookingUrl, item.IsBookingEnabled, item.BookingOpensAtUtc, item.BookingClosesAtUtc, item.PublicationStatus, item.GetDisplayStatus(now), item.GetBookingAvailability(now), item.IsFeatured, item.ShowOnHomepage, item.CreatedAtUtc, item.UpdatedAtUtc);
 }

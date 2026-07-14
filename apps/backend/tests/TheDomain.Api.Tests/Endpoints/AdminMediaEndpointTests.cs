@@ -14,6 +14,16 @@ public sealed class AdminMediaEndpointTests(ApiWebApplicationFactory factory) : 
     }
 
     [Theory]
+    [InlineData("/api/admin/events/00000000-0000-0000-0000-000000000001/media/reorder")]
+    [InlineData("/api/admin/events/00000000-0000-0000-0000-000000000001/media/00000000-0000-0000-0000-000000000002/cover")]
+    public async Task EventMediaWorkflowMutationsRequireAuthentication(string path)
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.PostAsync(path, null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
     [InlineData("/api/admin/media")]
     [InlineData("/api/admin/media/upload")]
     [InlineData("/api/admin/events/00000000-0000-0000-0000-000000000001/media")]

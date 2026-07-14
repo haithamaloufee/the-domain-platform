@@ -33,13 +33,9 @@ export function parseMediaDetails(value: unknown): AdminMediaDetails {
   if (!isRecord(value)) throw new Error("The server returned invalid media details.");
   return {
     ...parseMediaListItem(value),
-    fileName: requiredString(value.fileName),
-    originalFileName: requiredString(value.originalFileName),
     width: nullableNumber(value.width),
     height: nullableNumber(value.height),
     durationSeconds: nullableNumber(value.durationSeconds),
-    caption: nullableString(value.caption),
-    altText: nullableString(value.altText),
     updatedAtUtc: dateString(value.updatedAtUtc),
   };
 }
@@ -112,11 +108,15 @@ function parseMediaListItem(value: unknown): AdminMediaListItem {
   if (!isRecord(value)) throw new Error("Expected a media list item.");
   return {
     id: requiredString(value.id),
+    fileName: requiredString(value.fileName),
+    originalFileName: requiredString(value.originalFileName),
     mediaType: enumValue(value.mediaType, MediaType),
     url: absoluteUrl(value.url),
     thumbnailUrl: nullableUrl(value.thumbnailUrl),
     orientation: enumValue(value.orientation, MediaOrientation),
     category: nullableString(value.category),
+    caption: nullableString(value.caption),
+    altText: nullableString(value.altText),
     approvalStatus: enumValue(value.approvalStatus, MediaApprovalStatus),
     createdAtUtc: dateString(value.createdAtUtc),
   };

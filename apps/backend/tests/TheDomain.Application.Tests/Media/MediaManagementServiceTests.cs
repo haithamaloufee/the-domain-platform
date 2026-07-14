@@ -41,11 +41,180 @@ public sealed class MediaManagementServiceTests
     }
 
     [Fact]
-    public async Task AssignmentRejectsDuplicate()
+    public async Task RepeatingAssignmentIsIdempotent()
     {
-        var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent(), Duplicate = true };
+        var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent() };
+        var existing = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
         var result = await CreateService(repository).AssignAsync(repository.Event.Id, new AssignEventMediaRequest(repository.Media.Id, EventMediaUsage.Gallery, 0, false), CancellationToken.None);
-        Assert.False(result.IsSuccess); Assert.Contains(result.Errors, error => error.Contains("already exists", StringComparison.Ordinal));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(existing.Id, result.Value!.Id);
+        Assert.Single(repository.EventMediaItems);
+    }
+
+    [Fact]
+    public async Task FirstApprovedImageBecomesCoverAndSecondDoesNotReplaceIt()
+    {
+        var first = CreateMedia(MediaApprovalStatus.Approved);
+        var second = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = first, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(second);
+        var service = CreateService(repository);
+
+        var firstResult = await service.AssignAsync(repository.Event.Id,
+            new AssignEventMediaRequest(first.Id, EventMediaUsage.Gallery, 0, false), CancellationToken.None);
+        Assert.Single(repository.EventMediaItems);
+        var secondResult = await service.AssignAsync(repository.Event.Id,
+            new AssignEventMediaRequest(second.Id, EventMediaUsage.Gallery, 99, false), CancellationToken.None);
+
+        Assert.Equal(EventMediaUsage.Cover, firstResult.Value!.Usage);
+        Assert.Equal(EventMediaUsage.Gallery, secondResult.Value!.Usage);
+        Assert.Single(repository.EventMediaItems, item => item.Usage == EventMediaUsage.Cover);
+        Assert.Equal(first.Id, repository.EventMediaItems.Single(item => item.Usage == EventMediaUsage.Cover).MediaAssetId);
+        Assert.Equal([0, 1], repository.EventMediaItems.OrderBy(item => item.SortOrder).Select(item => item.SortOrder));
+    }
+
+    [Fact]
+    public async Task DraftMayBeAssignedButDoesNotBecomeCover()
+    {
+        var draft = CreateMedia(MediaApprovalStatus.Draft);
+        var repository = new FakeRepository { Media = draft, Event = CreateEvent() };
+
+        var result = await CreateService(repository).AssignAsync(repository.Event.Id,
+            new AssignEventMediaRequest(draft.Id, EventMediaUsage.Gallery, 0, false), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EventMediaUsage.Gallery, result.Value!.Usage);
+        Assert.DoesNotContain(repository.EventMediaItems, item => item.Usage == EventMediaUsage.Cover);
+    }
+
+    [Theory]
+    [InlineData(MediaApprovalStatus.Draft, MediaType.Image, "Draft media must be approved")]
+    [InlineData(MediaApprovalStatus.Hidden, MediaType.Image, "Hidden media cannot")]
+    [InlineData(MediaApprovalStatus.Approved, MediaType.Video, "Only image media")]
+    public async Task IneligibleMediaCannotBecomeCover(MediaApprovalStatus status, MediaType type, string expected)
+    {
+        var media = CreateMedia(status, type);
+        var repository = new FakeRepository { Media = media, Event = CreateEvent() };
+
+        var result = await CreateService(repository).AssignAsync(repository.Event.Id,
+            new AssignEventMediaRequest(media.Id, EventMediaUsage.Cover, 0, false), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, error => error.Contains(expected, StringComparison.Ordinal));
+        Assert.Empty(repository.EventMediaItems);
+    }
+
+    [Fact]
+    public async Task SetCoverAtomicallyReplacesPreviousCoverAndIsIdempotent()
+    {
+        var first = CreateMedia(MediaApprovalStatus.Approved);
+        var second = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = first, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(second);
+        var oldCover = AddAssignment(repository, first, EventMediaUsage.Cover, 0);
+        var replacement = AddAssignment(repository, second, EventMediaUsage.Gallery, 1);
+        var service = CreateService(repository);
+
+        var firstChange = await service.SetCoverAsync(repository.Event.Id, replacement.Id, CancellationToken.None);
+        var secondChange = await service.SetCoverAsync(repository.Event.Id, replacement.Id, CancellationToken.None);
+
+        Assert.True(firstChange.IsSuccess);
+        Assert.True(secondChange.IsSuccess);
+        Assert.Equal(replacement.Id, secondChange.Value!.Id);
+        Assert.Equal(EventMediaUsage.Gallery, oldCover.Usage);
+        Assert.Equal(EventMediaUsage.Cover, replacement.Usage);
+        Assert.Single(repository.EventMediaItems, item => item.Usage == EventMediaUsage.Cover);
+        Assert.Equal(1, repository.SaveCount);
+    }
+
+    [Fact]
+    public async Task HidingCoverInvalidatesCoverWithoutRemovingOtherAssignments()
+    {
+        var coverMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var otherMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = coverMedia, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(otherMedia);
+        var cover = AddAssignment(repository, coverMedia, EventMediaUsage.Cover, 0);
+        var other = AddAssignment(repository, otherMedia, EventMediaUsage.Gallery, 1);
+
+        var result = await CreateService(repository).HideAsync(coverMedia.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(MediaApprovalStatus.Hidden, result.Value!.ApprovalStatus);
+        Assert.Equal(EventMediaUsage.Gallery, cover.Usage);
+        Assert.Contains(other, repository.EventMediaItems);
+        Assert.DoesNotContain(repository.EventMediaItems, item => item.Usage == EventMediaUsage.Cover);
+    }
+
+    [Fact]
+    public async Task RemovingCoverClearsOnlyCoverAssignment()
+    {
+        var coverMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var otherMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = coverMedia, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(otherMedia);
+        var cover = AddAssignment(repository, coverMedia, EventMediaUsage.Cover, 0);
+        var other = AddAssignment(repository, otherMedia, EventMediaUsage.Gallery, 1);
+
+        var removed = await CreateService(repository).RemoveAssignmentAsync(
+            repository.Event.Id, cover.Id, CancellationToken.None);
+
+        Assert.True(removed);
+        Assert.DoesNotContain(cover, repository.EventMediaItems);
+        Assert.Contains(other, repository.EventMediaItems);
+        Assert.DoesNotContain(repository.EventMediaItems, item => item.Usage == EventMediaUsage.Cover);
+    }
+
+    [Fact]
+    public async Task RemovingUnrelatedAssignmentPreservesCover()
+    {
+        var coverMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var otherMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = coverMedia, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(otherMedia);
+        var cover = AddAssignment(repository, coverMedia, EventMediaUsage.Cover, 0);
+        var other = AddAssignment(repository, otherMedia, EventMediaUsage.Gallery, 1);
+
+        var removed = await CreateService(repository).RemoveAssignmentAsync(
+            repository.Event.Id, other.Id, CancellationToken.None);
+
+        Assert.True(removed);
+        Assert.Contains(cover, repository.EventMediaItems);
+        Assert.Equal(EventMediaUsage.Cover, cover.Usage);
+    }
+
+    [Fact]
+    public async Task ReorderPersistsStableOrderWithoutChangingCover()
+    {
+        var coverMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var secondMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var thirdMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = coverMedia, Event = CreateEvent() };
+        repository.AdditionalMedia.AddRange([secondMedia, thirdMedia]);
+        var cover = AddAssignment(repository, coverMedia, EventMediaUsage.Cover, 0);
+        var second = AddAssignment(repository, secondMedia, EventMediaUsage.Gallery, 1);
+        var third = AddAssignment(repository, thirdMedia, EventMediaUsage.Poster, 2);
+
+        var result = await CreateService(repository).ReorderAsync(repository.Event.Id,
+            new ReorderEventMediaRequest([third.Id, cover.Id, second.Id]), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([third.Id, cover.Id, second.Id], result.Value!.Select(item => item.Id));
+        Assert.Equal(EventMediaUsage.Cover, cover.Usage);
+        Assert.Equal([0, 1, 2], repository.EventMediaItems.OrderBy(item => item.SortOrder).Select(item => item.SortOrder));
+    }
+
+    [Fact]
+    public async Task InvalidReorderIsRejectedWithoutPersistence()
+    {
+        var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent() };
+        var assignment = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+
+        var result = await CreateService(repository).ReorderAsync(repository.Event.Id,
+            new ReorderEventMediaRequest([assignment.Id, assignment.Id]), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, repository.SaveCount);
     }
 
     [Fact]
@@ -65,13 +234,13 @@ public sealed class MediaManagementServiceTests
     }
 
     [Fact]
-    public async Task PublicEventListReturnsOneCoverWhileDetailsReturnApprovedMedia()
+    public async Task PublicEventListAndDetailsReturnTheSameApprovedImageCover()
     {
         var eventEntity = CreateEvent(); eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
         var hero = CreateMedia(MediaApprovalStatus.Approved);
         var gallery = CreateMedia(MediaApprovalStatus.Approved);
         eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, gallery.Id, EventMediaUsage.Gallery, 0, false, DateTimeOffset.UtcNow), gallery);
-        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, hero.Id, EventMediaUsage.Hero, 10, false, DateTimeOffset.UtcNow), hero);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, hero.Id, EventMediaUsage.Cover, 10, true, DateTimeOffset.UtcNow), hero);
         var service = new TheDomain.Application.Events.EventService(new EventRepositoryFake(eventEntity), TimeProvider.System);
 
         var events = await service.GetUpcomingAsync(CancellationToken.None);
@@ -81,6 +250,43 @@ public sealed class MediaManagementServiceTests
         Assert.Equal(hero.Id, events[0].CoverMedia?.Id);
         Assert.NotNull(details);
         Assert.Equal(2, details.Media.Count);
+        Assert.Equal(hero.Id, details.CoverMedia?.Id);
+    }
+
+    [Theory]
+    [InlineData(MediaApprovalStatus.Draft)]
+    [InlineData(MediaApprovalStatus.Hidden)]
+    public async Task PublicQueriesDoNotExposeIneligibleCover(MediaApprovalStatus status)
+    {
+        var eventEntity = CreateEvent(); eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
+        var media = CreateMedia(status);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, media.Id,
+            EventMediaUsage.Cover, 0, true, DateTimeOffset.UtcNow), media);
+        var service = new TheDomain.Application.Events.EventService(new EventRepositoryFake(eventEntity), TimeProvider.System);
+
+        var list = await service.GetUpcomingAsync(CancellationToken.None);
+        var details = await service.GetPublicBySlugAsync(eventEntity.Slug, CancellationToken.None);
+
+        Assert.Single(list);
+        Assert.Null(list[0].CoverMedia);
+        Assert.NotNull(details);
+        Assert.Null(details.CoverMedia);
+        Assert.Empty(details.Media);
+    }
+
+    [Fact]
+    public async Task UnsafeHttpImageIsNotExposedAsPublicCover()
+    {
+        var eventEntity = CreateEvent(); eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
+        var media = CreateMedia(MediaApprovalStatus.Approved, MediaType.Image, "http://legacy.example.com/media.jpg");
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, media.Id,
+            EventMediaUsage.Cover, 0, true, DateTimeOffset.UtcNow), media);
+        var service = new TheDomain.Application.Events.EventService(new EventRepositoryFake(eventEntity), TimeProvider.System);
+
+        var result = await service.GetUpcomingAsync(CancellationToken.None);
+
+        Assert.Single(result);
+        Assert.Null(result[0].CoverMedia);
     }
 
     [Fact]
@@ -106,7 +312,22 @@ public sealed class MediaManagementServiceTests
     }
 
     private static MediaManagementService CreateService(FakeRepository repository) => new(repository, new FakeStorage(), new MediaUploadPolicy(10, 20, new Dictionary<string, string[]> { ["image/jpeg"] = [".jpg"] }), TimeProvider.System);
-    private static MediaAsset CreateMedia(MediaApprovalStatus status) => new(Guid.NewGuid(), "media.jpg", "media.jpg", MediaType.Image, "https://example.com/media.jpg", null, 100, 100, null, MediaOrientation.Square, null, null, "Alt", status, "public-id", DateTimeOffset.UtcNow);
+    private static MediaAsset CreateMedia(MediaApprovalStatus status, MediaType type = MediaType.Image, string? url = null)
+    {
+        var extension = type == MediaType.Image ? "jpg" : "mp4";
+        return new MediaAsset(Guid.NewGuid(), $"media.{extension}", $"media.{extension}", type,
+            url ?? $"https://res.cloudinary.com/test-cloud/{(type == MediaType.Image ? "image" : "video")}/upload/media.{extension}",
+            type == MediaType.Video ? "https://res.cloudinary.com/test-cloud/video/upload/media.jpg" : null,
+            100, 100, type == MediaType.Video ? 5 : null, MediaOrientation.Square, null, null, "Alt",
+            status, Guid.NewGuid().ToString("N"), DateTimeOffset.UtcNow);
+    }
+    private static EventMedia AddAssignment(FakeRepository repository, MediaAsset media, EventMediaUsage usage, int order)
+    {
+        var item = new EventMedia(Guid.NewGuid(), repository.Event!.Id, media.Id, usage, order,
+            usage == EventMediaUsage.Cover, DateTimeOffset.UtcNow.AddSeconds(order));
+        repository.AddEventMedia(item);
+        return item;
+    }
     private static EntertainmentEvent CreateEvent() { var now = DateTimeOffset.UtcNow; return new(Guid.NewGuid(), "event", "Event", "Short", "Long", "Concert", now.AddDays(1), now.AddDays(2), "Asia/Amman", "Amman", "Venue", null, null, null, false, null, null, false, false, now); }
 
     private sealed class FakeStorage : IMediaStorageService
@@ -118,15 +339,39 @@ public sealed class MediaManagementServiceTests
     }
     private sealed class FakeRepository : IMediaRepository
     {
-        public MediaAsset Media { get; init; } = CreateMedia(MediaApprovalStatus.Approved); public EntertainmentEvent? Event { get; init; } public bool Duplicate { get; init; }
-        public IReadOnlyList<EventMedia> EventMedia { get; set; } = [];
-        public Task<(IReadOnlyList<MediaAsset> Items, int TotalCount)> SearchAsync(MediaListQuery query, CancellationToken token) => Task.FromResult<(IReadOnlyList<MediaAsset>, int)>(([], 0));
-        public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => Task.FromResult(Media.Id == id ? Media : null);
+        public MediaAsset Media { get; init; } = CreateMedia(MediaApprovalStatus.Approved);
+        public List<MediaAsset> AdditionalMedia { get; } = [];
+        public EntertainmentEvent? Event { get; init; }
+        public IReadOnlyList<EventMedia> EventMedia
+        {
+            get => EventMediaItems;
+            set
+            {
+                EventMediaItems.Clear();
+                EventMediaItems.AddRange(value);
+            }
+        }
+        public List<EventMedia> EventMediaItems { get; } = [];
+        public int SaveCount { get; private set; }
+        private IEnumerable<MediaAsset> AllMedia => AdditionalMedia.Prepend(Media).DistinctBy(item => item.Id);
+        public Task<(IReadOnlyList<MediaAsset> Items, int TotalCount)> SearchAsync(MediaListQuery query, CancellationToken token) =>
+            Task.FromResult<(IReadOnlyList<MediaAsset>, int)>((AllMedia.ToArray(), AllMedia.Count()));
+        public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => Task.FromResult(AllMedia.SingleOrDefault(item => item.Id == id));
         public Task<EntertainmentEvent?> FindEventAsync(Guid id, CancellationToken token) => Task.FromResult(Event?.Id == id ? Event : null);
-        public Task<IReadOnlyList<EventMedia>> ListEventMediaAsync(Guid eventId, CancellationToken token) => Task.FromResult(EventMedia);
-        public Task<EventMedia?> FindEventMediaAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => Task.FromResult<EventMedia?>(null);
-        public Task<bool> AssignmentExistsAsync(Guid eventId, Guid mediaAssetId, EventMediaUsage usage, Guid? excludingId, CancellationToken token) => Task.FromResult(Duplicate);
-        public void AddMedia(MediaAsset media) { } public void AddEventMedia(EventMedia eventMedia) { } public void RemoveEventMedia(EventMedia eventMedia) { } public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;
+        public Task<IReadOnlyList<EventMedia>> ListEventMediaAsync(Guid eventId, CancellationToken token) => Task.FromResult<IReadOnlyList<EventMedia>>(EventMediaItems.Where(item => item.EventId == eventId).ToArray());
+        public Task<IReadOnlyList<EventMedia>> ListEventMediaForUpdateAsync(Guid eventId, CancellationToken token) => Task.FromResult<IReadOnlyList<EventMedia>>(EventMediaItems.Where(item => item.EventId == eventId).ToArray());
+        public Task<IReadOnlyList<EventMedia>> ListMediaAssignmentsForUpdateAsync(Guid mediaAssetId, CancellationToken token) => Task.FromResult<IReadOnlyList<EventMedia>>(EventMediaItems.Where(item => item.MediaAssetId == mediaAssetId).ToArray());
+        public Task<EventMedia?> FindEventMediaAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => Task.FromResult(EventMediaItems.SingleOrDefault(item => item.EventId == eventId && item.Id == eventMediaId));
+        public Task<bool> AssignmentExistsAsync(Guid eventId, Guid mediaAssetId, EventMediaUsage usage, Guid? excludingId, CancellationToken token) => Task.FromResult(EventMediaItems.Any(item => item.EventId == eventId && item.MediaAssetId == mediaAssetId && item.Usage == usage && (!excludingId.HasValue || item.Id != excludingId.Value)));
+        public void AddMedia(MediaAsset media) => AdditionalMedia.Add(media);
+        public void AddEventMedia(EventMedia eventMedia)
+        {
+            EventMediaItems.Add(eventMedia);
+            var media = AllMedia.Single(item => item.Id == eventMedia.MediaAssetId);
+            Event?.AddMedia(eventMedia, media);
+        }
+        public void RemoveEventMedia(EventMedia eventMedia) => EventMediaItems.Remove(eventMedia);
+        public Task SaveChangesAsync(CancellationToken token) { SaveCount++; return Task.CompletedTask; }
     }
     private sealed class EventRepositoryFake(params EntertainmentEvent[] events) : TheDomain.Application.Events.IEventRepository
     {

@@ -1,5 +1,6 @@
 using TheDomain.Application.Events;
 using TheDomain.Domain.Events;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Tests.Events;
 
@@ -11,6 +12,7 @@ public sealed class PublicEventQueryRegressionTests
         var now = DateTimeOffset.UtcNow;
         var upcoming = Create("upcoming", now.AddDays(1), now.AddDays(2));
         upcoming.Publish(now);
+        var cover = AttachCover(upcoming);
 
         var service = new EventService(new FakeRepository(upcoming), TimeProvider.System);
         var result = await service.GetUpcomingAsync(CancellationToken.None);
@@ -18,6 +20,7 @@ public sealed class PublicEventQueryRegressionTests
         Assert.Single(result);
         Assert.Equal("upcoming", result[0].Slug);
         Assert.Equal(EventDisplayStatus.Upcoming, result[0].DisplayStatus);
+        Assert.Equal(cover.Id, result[0].CoverMedia?.Id);
     }
 
     [Fact]
@@ -26,6 +29,7 @@ public sealed class PublicEventQueryRegressionTests
         var now = DateTimeOffset.UtcNow;
         var featured = Create("featured", now.AddDays(1), now.AddDays(2));
         featured.Publish(now);
+        var cover = AttachCover(featured);
         featured.Update(featured.Slug, featured.Title, featured.ShortDescription, featured.LongDescription, featured.EventType,
             featured.StartAtUtc, featured.EndAtUtc, featured.TimeZoneId, featured.City, featured.VenueName,
             featured.VenueAddress, featured.MapUrl, featured.ExternalBookingUrl, featured.IsBookingEnabled,
@@ -36,6 +40,22 @@ public sealed class PublicEventQueryRegressionTests
 
         Assert.Single(result);
         Assert.Equal("featured", result[0].Slug);
+        Assert.Equal(cover.Id, result[0].CoverMedia?.Id);
+    }
+
+    [Fact]
+    public async Task PublishedPreviousEventReturnsItsExplicitCover()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var previous = Create("previous", now.AddDays(-2), now.AddDays(-1));
+        previous.Publish(now.AddDays(-3));
+        var cover = AttachCover(previous);
+
+        var result = await new EventService(new FakeRepository(previous), TimeProvider.System)
+            .GetPreviousAsync(CancellationToken.None);
+
+        Assert.Single(result);
+        Assert.Equal(cover.Id, result[0].CoverMedia?.Id);
     }
 
     [Fact]
@@ -70,6 +90,18 @@ public sealed class PublicEventQueryRegressionTests
 
     private static EntertainmentEvent Create(string slug, DateTimeOffset start, DateTimeOffset end) =>
         new(Guid.NewGuid(), slug, "Title", "Short", "Long", "Concert", start, end, "Asia/Amman", "Amman", "Venue", null, null, null, false, null, null, false, false, start.AddDays(-10));
+
+    private static MediaAsset AttachCover(EntertainmentEvent eventEntity)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var media = new MediaAsset(Guid.NewGuid(), "cover.jpg", "cover.jpg", MediaType.Image,
+            "https://res.cloudinary.com/test-cloud/image/upload/cover.jpg", null, 1200, 1500, null,
+            MediaOrientation.Portrait, null, null, "Event cover", MediaApprovalStatus.Approved,
+            "cover", now);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, media.Id,
+            EventMediaUsage.Cover, 0, true, now), media);
+        return media;
+    }
 
     private sealed class FakeRepository(params EntertainmentEvent[] events) : IEventRepository
     {

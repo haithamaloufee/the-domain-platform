@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createAdminEvent, updateAdminEvent } from "@/lib/events/admin-events-client";
+import { EventMediaEditorSection } from "./event-media-editor-section";
 
 type FormFields = Omit<
   SaveEventRequest,
@@ -293,6 +294,8 @@ export function EventForm({ event }: EventFormProps) {
           </div>
         </FormSection>
       </Card>
+
+      {event && <EventMediaEditorSection eventId={event.id} />}
 
       <div className="flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:justify-end">
         <Link

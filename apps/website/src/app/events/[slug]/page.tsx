@@ -10,7 +10,6 @@ import {
   displayStatusLabels,
   formatEventDate,
   formatEventTime,
-  selectEventMedia,
 } from "@/components/events/event-presentation";
 import { PublicMediaThumbnail } from "@/components/gallery/public-media-thumbnail";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -30,12 +29,11 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
   const { slug } = await params;
   try {
     const event = await getEventBySlug(slug);
-    const heroMedia = selectEventMedia(event.media);
     return createPageMetadata({
       title: event.title,
       description: event.shortDescription.trim() || `Event details for ${event.title}.`,
       path: `/events/${encodeURIComponent(event.slug)}`,
-      image: getFirstPublicMediaSeoImage([heroMedia, ...event.media]),
+      image: getFirstPublicMediaSeoImage([event.coverMedia, ...event.media]),
     });
   } catch {
     return createPageMetadata({
@@ -57,7 +55,7 @@ export default async function EventPage({ params }: EventPageProps) {
     throw error;
   }
 
-  const heroMedia = selectEventMedia(event.media);
+  const heroMedia = event.coverMedia;
   const gallery = event.media
     .filter((item) => item.usage === EventMediaUsage.Gallery)
     .sort((left, right) => left.sortOrder - right.sortOrder);

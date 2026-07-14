@@ -7,6 +7,7 @@ import type {
   EventMediaResponse,
   MediaListQuery,
   PagedResponse,
+  ReorderEventMediaRequest,
   UpdateEventMediaRequest,
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,
@@ -109,6 +110,29 @@ export function updateEventMediaAssignment(
     "PUT",
     input,
     parseEventMedia,
+  );
+}
+
+export function setEventCover(
+  eventId: string,
+  eventMediaId: string,
+): Promise<EventMediaResponse> {
+  return request(
+    `/api/admin/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(eventMediaId)}/cover`,
+    { method: "POST" },
+    parseEventMedia,
+  );
+}
+
+export async function reorderEventMedia(
+  eventId: string,
+  input: ReorderEventMediaRequest,
+): Promise<void> {
+  await jsonRequest(
+    `/api/admin/events/${encodeURIComponent(eventId)}/media/reorder`,
+    "POST",
+    input,
+    () => undefined,
   );
 }
 

@@ -36,23 +36,23 @@ export type EventMediaUsage = (typeof EventMediaUsage)[keyof typeof EventMediaUs
 
 export interface AdminMediaListItem {
   id: string;
+  fileName: string;
+  originalFileName: string;
   mediaType: MediaType;
   url: string;
   thumbnailUrl: string | null;
   orientation: MediaOrientation;
   category: string | null;
+  caption: string | null;
+  altText: string | null;
   approvalStatus: MediaApprovalStatus;
   createdAtUtc: string;
 }
 
 export interface AdminMediaDetails extends AdminMediaListItem {
-  fileName: string;
-  originalFileName: string;
   width: number | null;
   height: number | null;
   durationSeconds: number | null;
-  caption: string | null;
-  altText: string | null;
   updatedAtUtc: string;
 }
 
@@ -98,6 +98,10 @@ export interface UpdateEventMediaRequest {
   usage: EventMediaUsage;
   sortOrder: number;
   isFeatured: boolean;
+}
+
+export interface ReorderEventMediaRequest {
+  eventMediaIds: string[];
 }
 
 export interface EventMediaResponse {

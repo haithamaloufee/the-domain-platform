@@ -1,28 +1,50 @@
 "use client";
 
-import type { AdminEventDetails, AdminEventMediaItem } from "@the-domain/types";
-import { buttonClasses, EmptyState } from "@the-domain/ui";
+import {
+  EventMediaUsage,
+  type AdminEventDetails,
+  type AdminEventMediaItem,
+  type EventMediaUsageValue,
+} from "@the-domain/types";
+import { buttonClasses, Card, EmptyState } from "@the-domain/ui";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PublicationBadge } from "@/components/events/event-status-badges";
-import { eventMediaUsageValues } from "@/components/media/media-labels";
+import { MediaApprovalBadge, mediaTypeLabels } from "@/components/media/media-labels";
+import { MediaPreview } from "@/components/media/media-preview";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
 import {
   listEventMedia,
   removeEventMediaAssignment,
+  reorderEventMedia,
+  setEventCover,
   updateEventMediaAssignment,
 } from "@/lib/media/admin-media-client";
+import {
+  activeEventCover,
+  coverEligibilityMessage,
+  orderedEventMedia,
+} from "@/lib/media/event-media-rules";
 import { AssignExistingMedia } from "./assign-existing-media";
 import { EventMediaGroup } from "./event-media-group";
 
 export function EventMediaWorkspace({ eventId }: { eventId: string }) {
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
   const [items, setItems] = useState<AdminEventMediaItem[]>([]);
-  const [baseline, setBaseline] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const [eventDetails, assignments] = await Promise.all([
+      getAdminEvent(eventId),
+      listEventMedia(eventId),
+    ]);
+    setEvent(eventDetails);
+    setItems(assignments);
+    setError("");
+  }, [eventId]);
 
   useEffect(() => {
     let active = true;
@@ -31,127 +53,89 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
         if (!active) return;
         setEvent(eventDetails);
         setItems(assignments);
-        setBaseline(Object.fromEntries(assignments.map((item) => [item.id, snapshot(item)])));
         setError("");
       })
       .catch((loadError: unknown) => {
         if (active)
           setError(loadError instanceof Error ? loadError.message : "Unable to load event media.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [eventId, refreshKey]);
+  }, [eventId]);
 
-  const dirtyItems = items.filter((item) => baseline[item.id] !== snapshot(item));
+  const ordered = useMemo(() => orderedEventMedia(items), [items]);
+  const cover = useMemo(() => activeEventCover(items), [items]);
+  const invalidCover = useMemo(
+    () => ordered.find((item) => item.usage === EventMediaUsage.Cover) ?? null,
+    [ordered],
+  );
+  const assignedMediaIds = useMemo(
+    () => new Set(items.map((item) => item.mediaAssetId)),
+    [items],
+  );
 
-  function updateItem(
-    id: string,
-    change: Partial<Pick<AdminEventMediaItem, "usage" | "sortOrder" | "isFeatured">>,
-  ) {
+  async function runAction(action: () => Promise<unknown>, successMessage: string) {
+    setPending(true);
+    setError("");
     setNotice("");
-    setItems((current) => {
-      const target = current.find((item) => item.id === id);
-      if (!target) return current;
-      const nextChange = { ...change };
-      if (change.usage !== undefined && change.usage !== target.usage) {
-        const existingOrders = current
-          .filter((item) => item.usage === change.usage && item.id !== id)
-          .map((item) => item.sortOrder);
-        nextChange.sortOrder = existingOrders.length > 0 ? Math.max(...existingOrders) + 10 : 0;
-      }
-      return current.map((item) => (item.id === id ? { ...item, ...nextChange } : item));
-    });
+    try {
+      await action();
+      await load();
+      setNotice(successMessage);
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "Unable to update event media.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function setCover(item: AdminEventMediaItem) {
+    void runAction(
+      () => setEventCover(eventId, item.id),
+      `${item.media.originalFileName} is now the event cover.`,
+    );
   }
 
   function moveItem(id: string, direction: -1 | 1) {
-    setNotice("");
-    setItems((current) => {
-      const target = current.find((item) => item.id === id);
-      if (!target) return current;
-      const group = current
-        .filter((item) => item.usage === target.usage)
-        .sort(
-          (left, right) =>
-            left.sortOrder - right.sortOrder || left.createdAtUtc.localeCompare(right.createdAtUtc),
-        );
-      const index = group.findIndex((item) => item.id === id);
-      const destination = index + direction;
-      if (destination < 0 || destination >= group.length) return current;
-      const currentItem = group[index];
-      const destinationItem = group[destination];
-      if (!currentItem || !destinationItem) return current;
-      group[index] = destinationItem;
-      group[destination] = currentItem;
-      const orders = new Map(group.map((item, order) => [item.id, order * 10]));
-      return current.map((item) =>
-        item.usage === target.usage
-          ? { ...item, sortOrder: orders.get(item.id) ?? item.sortOrder }
-          : item,
-      );
-    });
+    const current = orderedEventMedia(items);
+    const index = current.findIndex((item) => item.id === id);
+    const destination = index + direction;
+    if (index < 0 || destination < 0 || destination >= current.length) return;
+    [current[index], current[destination]] = [current[destination]!, current[index]!];
+    void runAction(
+      () => reorderEventMedia(eventId, { eventMediaIds: current.map((item) => item.id) }),
+      "Event media order saved.",
+    );
   }
 
-  async function saveChanges() {
-    if (dirtyItems.length === 0) return;
-    setPending(true);
-    setError("");
-    setNotice("");
-    const savedIds: string[] = [];
-    try {
-      for (const item of dirtyItems) {
-        await updateEventMediaAssignment(eventId, item.id, {
-          usage: item.usage,
+  function changeUsage(item: AdminEventMediaItem, usage: EventMediaUsageValue) {
+    void runAction(
+      () =>
+        updateEventMediaAssignment(eventId, item.id, {
+          usage,
           sortOrder: item.sortOrder,
           isFeatured: item.isFeatured,
-        });
-        savedIds.push(item.id);
-      }
-      setBaseline(Object.fromEntries(items.map((item) => [item.id, snapshot(item)])));
-      setNotice(
-        `${savedIds.length} ${savedIds.length === 1 ? "assignment" : "assignments"} saved.`,
-      );
-    } catch (saveError) {
-      setBaseline((current) => ({
-        ...current,
-        ...Object.fromEntries(
-          items
-            .filter((item) => savedIds.includes(item.id))
-            .map((item) => [item.id, snapshot(item)]),
-        ),
-      }));
-      setError(
-        `${savedIds.length > 0 ? "Some earlier changes were saved. " : ""}${saveError instanceof Error ? saveError.message : "Unable to save event media."}`,
-      );
-    } finally {
-      setPending(false);
-    }
+        }),
+      `${item.media.originalFileName} placement updated.`,
+    );
   }
 
-  async function remove(item: AdminEventMediaItem) {
-    if (
-      !window.confirm(
-        "Remove this assignment from the event? The reusable media asset and Cloudinary file will remain available.",
-      )
-    )
-      return;
-    setPending(true);
-    setError("");
-    setNotice("");
-    try {
-      await removeEventMediaAssignment(eventId, item.id);
-      setItems((current) => current.filter((candidate) => candidate.id !== item.id));
-      setBaseline((current) => {
-        const next = { ...current };
-        delete next[item.id];
-        return next;
-      });
-      setNotice("Assignment removed. The media asset was not deleted.");
-    } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : "Unable to remove assignment.");
-    } finally {
-      setPending(false);
-    }
+  function remove(item: AdminEventMediaItem) {
+    const isCover = item.id === cover?.id || item.usage === EventMediaUsage.Cover;
+    const message = isCover
+      ? "Remove the active cover from this event? The event will have no public cover until another approved image is selected. The library asset will remain available."
+      : "Remove this media from the event? The reusable library asset and Cloudinary file will remain available.";
+    if (!window.confirm(message)) return;
+    void runAction(
+      () => removeEventMediaAssignment(eventId, item.id),
+      isCover
+        ? "Cover removed. This event now has no public cover."
+        : "Media removed from the event. The library asset was preserved.",
+    );
   }
 
   if (error && !event) {
@@ -160,7 +144,16 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
         action={
           <button
             className={buttonClasses("secondary")}
-            onClick={() => setRefreshKey((value) => value + 1)}
+            onClick={() => {
+              setLoading(true);
+              load()
+                .catch((loadError: unknown) =>
+                  setError(
+                    loadError instanceof Error ? loadError.message : "Unable to load event media.",
+                  ),
+                )
+                .finally(() => setLoading(false));
+            }}
             type="button"
           >
             Try again
@@ -172,7 +165,7 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
     );
   }
 
-  if (!event) return <LoadingState />;
+  if (!event || loading) return <LoadingState />;
 
   return (
     <div>
@@ -182,11 +175,14 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
           <span className="border border-line px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
             {items.length} assigned
           </span>
+          <span className={`border px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] ${cover ? "border-gold text-gold" : "border-error text-error"}`}>
+            {cover ? "Cover ready" : "No eligible cover"}
+          </span>
         </div>
         <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
             <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
-              Event gallery management
+              Event and media workflow
             </p>
             <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.03em] text-ink sm:text-6xl">
               {event.title}
@@ -200,10 +196,10 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
               Back to event
             </Link>
             <Link
-              className={buttonClasses("primary")}
+              className={buttonClasses("secondary")}
               href={`/dashboard/media?eventId=${encodeURIComponent(event.id)}&upload=1#media-upload`}
             >
-              Upload media for this event
+              Upload new media
             </Link>
           </div>
         </div>
@@ -212,86 +208,150 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
       {(error || notice) && (
         <div aria-live="polite" className="pt-6">
           {error && (
-            <p
-              className="border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error"
-              role="alert"
-            >
+            <p className="border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
               {error}
             </p>
           )}
           {notice && (
-            <p
-              className="border-l-2 border-gold bg-gold/10 px-4 py-3 text-sm text-ink"
-              role="status"
-            >
+            <p className="border-l-2 border-gold bg-gold/10 px-4 py-3 text-sm text-ink" role="status">
               {notice}
             </p>
           )}
         </div>
       )}
 
-      {items.length === 0 && (
-        <div className="pt-8">
-          <EmptyState
-            description="Assign an approved asset below or upload new media directly to this event."
-            title="This event has no assigned media"
-          />
-        </div>
-      )}
+      <div className="space-y-14 pt-10">
+        <CoverPanel
+          cover={cover}
+          invalidCover={cover ? null : invalidCover}
+          onRemove={remove}
+          pending={pending}
+        />
 
-      <div className="sticky top-0 z-10 mt-8 flex flex-col justify-between gap-4 border border-line bg-background/95 p-4 backdrop-blur sm:flex-row sm:items-center">
-        <p className="text-sm text-ink-muted">
-          {dirtyItems.length > 0
-            ? `${dirtyItems.length} unsaved ${dirtyItems.length === 1 ? "assignment" : "assignments"}`
-            : "All assignment changes are saved."}
-        </p>
-        <button
-          className={buttonClasses("primary")}
-          disabled={pending || dirtyItems.length === 0}
-          onClick={() => void saveChanges()}
-          type="button"
-        >
-          {pending ? "Saving..." : "Save assignment changes"}
-        </button>
+        <EventMediaGroup
+          coverId={cover?.id ?? null}
+          items={items}
+          onMove={moveItem}
+          onRemove={remove}
+          onSetCover={setCover}
+          onUsageChange={changeUsage}
+          pending={pending}
+        />
+
+        <section aria-labelledby="assign-existing-title">
+          <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Media library</p>
+          <h2 className="mt-2 font-display text-3xl font-bold text-ink" id="assign-existing-title">
+            Assign existing media
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
+            The library is global. Assigning links an asset to this event; public gallery visibility
+            still requires an Approved asset with Gallery placement.
+          </p>
+          <div className="mt-6">
+            <AssignExistingMedia
+              assignedMediaIds={assignedMediaIds}
+              disabled={pending}
+              eventId={eventId}
+              onAssigned={(assignment) => {
+                void runAction(
+                  async () => assignment,
+                  assignment.usage === EventMediaUsage.Cover
+                    ? "Media assigned and automatically selected as the first eligible cover."
+                    : "Media assigned to the event.",
+                );
+              }}
+            />
+          </div>
+        </section>
       </div>
-
-      <div className="space-y-12 pt-10">
-        {eventMediaUsageValues.map((usage) => (
-          <EventMediaGroup
-            items={items.filter((item) => item.usage === usage)}
-            key={usage}
-            onMove={moveItem}
-            onRemove={(item) => void remove(item)}
-            onUpdate={updateItem}
-            pending={pending}
-            usage={usage}
-          />
-        ))}
-      </div>
-
-      <section aria-labelledby="assign-existing-title" className="pt-16">
-        <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Reusable assets</p>
-        <h2 className="mt-2 font-display text-3xl font-bold text-ink" id="assign-existing-title">
-          Assign existing media
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
-          Search the approved global library. Assigning creates a relationship for this event; it
-          does not duplicate the asset.
-        </p>
-        <div className="mt-6">
-          <AssignExistingMedia
-            disabled={dirtyItems.length > 0 || pending}
-            eventId={eventId}
-            onAssigned={() => setRefreshKey((value) => value + 1)}
-          />
-        </div>
-      </section>
     </div>
   );
 }
 
-function snapshot(item: AdminEventMediaItem): string {
-  return `${item.usage}:${item.sortOrder}:${item.isFeatured}`;
+function CoverPanel({
+  cover,
+  invalidCover,
+  onRemove,
+  pending,
+}: {
+  cover: AdminEventMediaItem | null;
+  invalidCover: AdminEventMediaItem | null;
+  onRemove: (item: AdminEventMediaItem) => void;
+  pending: boolean;
+}) {
+  const displayed = cover ?? invalidCover;
+  return (
+    <section aria-labelledby="cover-panel-title">
+      <div className="border-b border-line pb-5">
+        <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Event cover</p>
+        <h2 className="mt-2 font-display text-3xl font-bold text-ink" id="cover-panel-title">
+          Public event artwork
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
+          This image is used on public event cards, the homepage, event details, and social metadata.
+        </p>
+      </div>
+
+      {!displayed ? (
+        <div className="mt-6 border-l-2 border-error bg-error/10 p-6">
+          <h3 className="font-display text-xl font-bold text-ink">No event cover selected</h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+            Publishing remains available, but public surfaces will intentionally show their artwork
+            fallback until an approved HTTPS image is selected.
+          </p>
+          <a className={buttonClasses("primary", "mt-5")} href="#media-picker">
+            Choose cover media
+          </a>
+        </div>
+      ) : (
+        <Card className="mt-6 grid overflow-hidden lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
+          <MediaPreview item={displayed.media} priority />
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-wrap gap-2">
+              <MediaApprovalBadge status={displayed.media.approvalStatus} />
+              <span className="border border-line px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
+                {mediaTypeLabels[displayed.media.mediaType]}
+              </span>
+              {cover && (
+                <span className="border border-gold bg-gold/10 px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-gold">
+                  Active public cover
+                </span>
+              )}
+            </div>
+            <h3 className="mt-5 break-words font-display text-2xl font-bold text-ink">
+              {displayed.media.caption || displayed.media.originalFileName}
+            </h3>
+            <p className="mt-2 break-all text-sm text-ink-muted">{displayed.media.fileName}</p>
+            {!cover && (
+              <p className="mt-5 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+                {coverEligibilityMessage(displayed.media) ??
+                  "This cover assignment is invalid and is not exposed publicly."}
+              </p>
+            )}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a className={buttonClasses("primary")} href="#media-picker">
+                Replace cover
+              </a>
+              <button
+                className={buttonClasses("secondary")}
+                disabled={pending}
+                onClick={() => onRemove(displayed)}
+                type="button"
+              >
+                Remove cover
+              </button>
+              <Link
+                className={buttonClasses("ghost")}
+                href={`/dashboard/media/${displayed.mediaAssetId}`}
+              >
+                Open media details
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
+    </section>
+  );
 }
 
 function formatDate(value: string, timeZone: string): string {

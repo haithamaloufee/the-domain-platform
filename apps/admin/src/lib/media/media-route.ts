@@ -110,6 +110,30 @@ export async function proxyEventMediaUpdate(request: NextRequest, path: `/${stri
   return proxyJsonMutation(request, path, "PUT", body, "assignment");
 }
 
+export function proxyEventMediaCover(request: NextRequest, path: `/${string}`) {
+  return proxyMutation(request, path, { method: "POST" }, "assignment");
+}
+
+export async function proxyEventMediaReorder(request: NextRequest, path: `/${string}`) {
+  if (!isSameOriginRequest(request)) return errorResponse("Request origin is not allowed.", 403);
+  let value: unknown;
+  try {
+    value = await request.json();
+  } catch {
+    return errorResponse("Please provide a valid media order.", 400);
+  }
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("eventMediaIds" in value) ||
+    !Array.isArray(value.eventMediaIds) ||
+    value.eventMediaIds.some((id) => typeof id !== "string" || !id)
+  ) {
+    return errorResponse("Please provide every assigned media identifier exactly once.", 400);
+  }
+  return proxyJsonMutation(request, path, "POST", { eventMediaIds: value.eventMediaIds }, "empty");
+}
+
 export function proxyEventMediaDelete(request: NextRequest, path: `/${string}`) {
   return proxyMutation(request, path, { method: "DELETE" }, "empty");
 }

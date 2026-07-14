@@ -54,6 +54,7 @@ export type {
   PublicGalleryAlbum,
   PublicGalleryAlbumDetails,
   PublicMediaItem,
+  ReorderEventMediaRequest,
   UpdateEventMediaRequest,
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,

@@ -5,17 +5,25 @@ import { buttonClasses, Card, EmptyState } from "@the-domain/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
+import { listEventMedia } from "@/lib/media/admin-media-client";
+import { activeEventCover } from "@/lib/media/event-media-rules";
 import { EventActions } from "./event-actions";
 import { BookingBadge, DisplayBadge, PublicationBadge } from "./event-status-badges";
 
 export function EventDetails({ eventId }: { eventId: string }) {
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
+  const [hasEligibleCover, setHasEligibleCover] = useState(false);
   const [error, setError] = useState("");
 
   async function load() {
     setError("");
     try {
-      setEvent(await getAdminEvent(eventId));
+      const [loadedEvent, media] = await Promise.all([
+        getAdminEvent(eventId),
+        listEventMedia(eventId),
+      ]);
+      setEvent(loadedEvent);
+      setHasEligibleCover(activeEventCover(media) !== null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load this event.");
     }
@@ -23,9 +31,12 @@ export function EventDetails({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     let isActive = true;
-    getAdminEvent(eventId)
-      .then((item) => {
-        if (isActive) setEvent(item);
+    Promise.all([getAdminEvent(eventId), listEventMedia(eventId)])
+      .then(([item, media]) => {
+        if (isActive) {
+          setEvent(item);
+          setHasEligibleCover(activeEventCover(media) !== null);
+        }
       })
       .catch((loadError: unknown) => {
         if (isActive)
@@ -166,8 +177,19 @@ export function EventDetails({ eventId }: { eventId: string }) {
             <p className="mt-2 text-sm leading-6 text-ink-muted">
               Status changes apply immediately and may affect public visibility.
             </p>
+            {!hasEligibleCover && (
+              <p className="mt-4 border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm leading-6 text-warning" role="status">
+                This event has no eligible cover. It can still be published, but public views will
+                use their artwork fallback.
+              </p>
+            )}
             <div className="mt-6">
-              <EventActions event={event} onChanged={setEvent} onError={setError} />
+              <EventActions
+                event={event}
+                hasEligibleCover={hasEligibleCover}
+                onChanged={setEvent}
+                onError={setError}
+              />
             </div>
           </Card>
           <Card className="p-6">

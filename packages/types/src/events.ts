@@ -85,7 +85,7 @@ export interface PublicEventListItem {
   coverMedia: PublicMediaItem | null;
 }
 
-export interface PublicEventDetails extends Omit<PublicEventListItem, "coverMedia"> {
+export interface PublicEventDetails extends PublicEventListItem {
   longDescription: string;
   venueAddress: string | null;
   mapUrl: string | null;

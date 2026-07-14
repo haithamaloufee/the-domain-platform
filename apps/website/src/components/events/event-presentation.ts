@@ -1,7 +1,6 @@
 import {
   BookingAvailability,
   EventDisplayStatus,
-  EventMediaUsage,
   MediaType,
   type BookingAvailabilityValue,
   type EventDisplayStatusValue,
@@ -22,24 +21,6 @@ export const bookingAvailabilityLabels: Record<BookingAvailabilityValue, string>
   [BookingAvailability.Closed]: "Booking closed",
   [BookingAvailability.SoldOut]: "Sold out",
 };
-
-const eventMediaPriority = [
-  EventMediaUsage.Hero,
-  EventMediaUsage.Cover,
-  EventMediaUsage.Poster,
-  EventMediaUsage.Thumbnail,
-  EventMediaUsage.Gallery,
-] as const;
-
-export function selectEventMedia(media: PublicMediaItem[]): PublicMediaItem | null {
-  for (const usage of eventMediaPriority) {
-    const match = media.find((item) => item.usage === usage && item.isFeatured);
-    if (match) return match;
-    const fallback = media.find((item) => item.usage === usage);
-    if (fallback) return fallback;
-  }
-  return media[0] ?? null;
-}
 
 export function mediaImageSource(media: PublicMediaItem | null): string | null {
   if (!media) return null;
