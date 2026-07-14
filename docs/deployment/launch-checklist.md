@@ -14,6 +14,8 @@ Status date: 2026-07-13
 - [x] Website runs at `http://localhost:3000` with its server-only API origin configured.
 - [x] API `/health` and `/api/info` return HTTP 200.
 - [x] Public and admin route-level HTTP smoke checks pass.
+- [x] Production Next.js builds include the publish, archive, cancel, media, gallery, homepage, sitemap, and robots routes.
+- [x] A production-mode API rehearsal starts with explicit CORS origins and initial-admin provisioning disabled; health returns 200, Swagger returns 404, and unauthenticated admin access returns 401.
 
 The repository root environment uses `API_URL`; the Next.js applications require `THE_DOMAIN_API_BASE_URL`. For normal local startup, create each app's ignored `.env.local` from its `.env.example`. A one-terminal alternative is to set `THE_DOMAIN_API_BASE_URL=$env:API_URL` in the process before starting either Next.js app.
 
@@ -31,16 +33,18 @@ The repository root environment uses `API_URL`; the Next.js applications require
 
 ## Media readiness
 
-- [ ] Configure `Cloudinary__Enabled=true` in the API process.
-- [ ] Configure server-only `Cloudinary__CloudName`, `Cloudinary__ApiKey`, and `Cloudinary__ApiSecret`.
-- [ ] Upload a disposable approved image and video through admin; do not commit either file.
-- [ ] Verify Draft, Approved, Hidden, and delete-by-hide behavior.
-- [ ] Assign approved media as Cover, Hero, Gallery, HomepagePreview, and PreviousEventPreview where editorially appropriate.
-- [ ] Verify featured selection, ordering persistence, relationship-only removal, and reuse across events.
-- [ ] Verify gallery album projection, photo/video filters, lightbox keyboard behavior, poster use, and no grid autoplay.
+- [x] Configure `Cloudinary__Enabled=true` in the local API process with credentials kept server-only.
+- [x] Upload disposable image and video assets through admin without committing either file.
+- [x] Verify Draft, Approved, Hidden, and safe upload-failure behavior.
+- [x] Keep the normal BFF backend timeout while allowing server-mediated media uploads a bounded 10-minute window.
+- [x] Verify approved image/video event assignment, gallery projection, ordering persistence, featured selection, relationship-only removal, and reuse.
+- [x] Generate a secure Cloudinary JPEG poster URL for uploaded videos and persist it as `ThumbnailUrl`.
+- [x] Resolve the same poster transformation for previously stored Cloudinary videos that have no `ThumbnailUrl`.
+- [ ] Assign approved launch media as Cover, Hero, Gallery, HomepagePreview, and PreviousEventPreview where editorially appropriate.
+- [ ] Verify gallery photo/video filters, lightbox keyboard behavior, poster rendering, and no grid autoplay in a connected browser.
 - [ ] Establish production Cloudinary transformations, image sizing, and video poster/thumbnail policy.
 
-Current blocker: Cloudinary is disabled and credentials are not configured, so media upload APIs return the expected unavailable response and no gallery album can be created from new media.
+Sprint 16 local rehearsal: server-side Cloudinary image/video upload, metadata persistence, approval, assignment, ordering, public visibility, hiding, and gallery album/detail projection passed. Invalid video content returned a generic browser-safe error. Disposable rehearsal assets remain Hidden; production launch still requires approved media and a reviewed delivery/transformation policy.
 
 ## Admin workflow evidence
 
@@ -50,10 +54,11 @@ Current blocker: Cloudinary is disabled and credentials are not configured, so m
 - [x] Logout succeeds and protected navigation redirects afterward.
 - [x] Homepage save as Draft and save/publish behavior persists and changes the public projection.
 - [x] Event create, edit, publish, cancel, and archive actions persist correctly.
+- [x] The observed publish-route 404 was reproduced against a stale Next.js development route manifest; restarting the admin server loaded the existing handler, all three lifecycle actions passed, and the production route manifest contains each route.
 - [x] Archived events return public HTTP 404.
 - [ ] Statistics create/edit/show/hide/delete was not exercised because no verified business value was supplied.
 - [ ] Partners create/edit/show/hide/delete was not exercised because no approved partner identity was supplied.
-- [ ] Media and event-media workflows remain blocked by Cloudinary configuration.
+- [x] Media upload, approval, hide, assignment, ordering, relationship removal, and event gallery workflows pass through the authenticated admin BFF.
 - [ ] Repeat all interactive workflows in a connected browser with keyboard and screen-reader smoke checks.
 
 ## Public website evidence
@@ -96,6 +101,7 @@ Current blocker: no connected browser runtime was available during Sprint 15. HT
 - [ ] Disable `InitialAdmin__Enabled` immediately after controlled production provisioning.
 - [ ] Require HTTPS and exact CORS origins for website, admin, and API.
 - [ ] Confirm Secure, HttpOnly, SameSite=Lax admin cookies on the production HTTPS origin.
+- [x] Production-mode admin login emits Secure, HttpOnly, SameSite=Lax cookies and returns no access or refresh token in the browser-visible JSON response.
 - [ ] Confirm database backups, restore drill, monitoring, log retention, dependency scanning, and incident ownership.
 - [ ] Confirm no `.env.local`, production media, database volume, token, or Cloudinary secret is in Git or release artifacts.
 - [ ] Run clean production builds and zero-warning validation from the reviewed commit.
@@ -106,8 +112,8 @@ Current blocker: no connected browser runtime was available during Sprint 15. HT
 
 1. Approved production homepage/event copy has not replaced local QA records.
 2. Verified statistics and approved partner identities/logos have not been supplied.
-3. Cloudinary is not configured, so media/gallery end-to-end QA is incomplete.
-4. Visual, responsive, keyboard, lightbox, and assistive-technology QA remains incomplete because no browser runtime was available.
+3. Visual, responsive, keyboard, lightbox, poster-rendering, and assistive-technology QA remains incomplete because no browser runtime was available.
+4. Approved production media and a reviewed Cloudinary transformation/delivery policy are still required.
 5. Final domains, production environment revisions, official icon, monitoring, backup restore evidence, and security review remain pending.
 
 ## Ready-to-deploy criteria

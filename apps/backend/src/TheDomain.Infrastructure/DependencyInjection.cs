@@ -57,7 +57,9 @@ public static class DependencyInjection
             cloudinaryOptions.MaxImageSizeMb * 1024L * 1024L,
             cloudinaryOptions.MaxVideoSizeMb * 1024L * 1024L,
             CreateAllowedMediaTypes(cloudinaryOptions)));
-        services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
+        services.AddScoped<CloudinaryMediaStorageService>();
+        services.AddScoped<IMediaStorageService>(provider => provider.GetRequiredService<CloudinaryMediaStorageService>());
+        services.AddScoped<IMediaDeliveryUrlResolver>(provider => provider.GetRequiredService<CloudinaryMediaStorageService>());
 
         if (!databaseOptions.Enabled)
         {

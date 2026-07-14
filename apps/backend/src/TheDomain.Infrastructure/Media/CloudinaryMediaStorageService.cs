@@ -6,8 +6,9 @@ using TheDomain.Domain.Media;
 
 namespace TheDomain.Infrastructure.Media;
 
-public sealed class CloudinaryMediaStorageService : IMediaStorageService
+public sealed class CloudinaryMediaStorageService : IMediaStorageService, IMediaDeliveryUrlResolver
 {
+    private const int VideoThumbnailWidth = 960;
     private readonly CloudinaryOptions _options;
     private readonly Cloudinary _cloudinary;
 
@@ -29,7 +30,65 @@ public sealed class CloudinaryMediaStorageService : IMediaStorageService
         }
         var video = await _cloudinary.UploadAsync(new VideoUploadParams { File = new FileDescription(fileName, content), PublicId = fullPublicId, Overwrite = false }, cancellationToken);
         EnsureSuccess(video.Error);
-        return new(video.SecureUrl.AbsoluteUri, null, video.PublicId, video.Width, video.Height, Convert.ToDecimal(video.Duration, System.Globalization.CultureInfo.InvariantCulture));
+        return new(video.SecureUrl.AbsoluteUri, BuildVideoThumbnailUrl(video.PublicId), video.PublicId, video.Width, video.Height, Convert.ToDecimal(video.Duration, System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    internal string BuildVideoThumbnailUrl(string publicId) =>
+        _cloudinary.Api.UrlVideoUp
+            .Transform(new Transformation()
+                .StartOffsetAuto()
+                .Width(VideoThumbnailWidth)
+                .Crop("limit")
+                .Quality("auto"))
+            .Secure(true)
+            .BuildUrl($"{publicId}.jpg");
+
+    public string? ResolveThumbnailUrl(
+        MediaType mediaType,
+        string mediaUrl,
+        string? thumbnailUrl,
+        string? storagePublicId)
+    {
+        if (!string.IsNullOrWhiteSpace(thumbnailUrl)) return thumbnailUrl;
+        if (mediaType != MediaType.Video) return null;
+
+        var thumbnailFromStoredUrl = TryBuildVideoThumbnailUrl(mediaUrl);
+        if (thumbnailFromStoredUrl is not null)
+        {
+            return thumbnailFromStoredUrl;
+        }
+
+        if (!string.IsNullOrWhiteSpace(storagePublicId) && !string.IsNullOrWhiteSpace(_options.CloudName))
+        {
+            return BuildVideoThumbnailUrl(storagePublicId);
+        }
+
+        return null;
+    }
+
+    private static string? TryBuildVideoThumbnailUrl(string mediaUrl)
+    {
+        if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            !string.Equals(uri.Host, "res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        const string uploadPath = "/video/upload/";
+        const string transformation = "c_limit,q_auto,so_auto,w_960/";
+        var uploadIndex = uri.AbsolutePath.IndexOf(uploadPath, StringComparison.Ordinal);
+        var extensionIndex = uri.AbsolutePath.LastIndexOf('.');
+        if (uploadIndex < 0 || extensionIndex <= uploadIndex + uploadPath.Length)
+        {
+            return null;
+        }
+
+        var transformedPath = uri.AbsolutePath.Insert(
+            uploadIndex + uploadPath.Length,
+            transformation);
+        transformedPath = $"{transformedPath[..(extensionIndex + transformation.Length)]}.jpg";
+        return new UriBuilder(uri) { Path = transformedPath, Query = string.Empty, Fragment = string.Empty }.Uri.AbsoluteUri;
     }
 
     public async Task DeleteAsync(string publicId, MediaType mediaType, CancellationToken cancellationToken)

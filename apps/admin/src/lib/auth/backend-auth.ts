@@ -5,13 +5,17 @@ import { getAdminAuthConfig } from "./auth-config";
 
 const requestTimeoutMilliseconds = 10_000;
 
-export async function fetchBackend(path: `/${string}`, init: RequestInit): Promise<Response> {
+export async function fetchBackend(
+  path: `/${string}`,
+  init: RequestInit,
+  timeoutMilliseconds = requestTimeoutMilliseconds,
+): Promise<Response> {
   const { apiBaseUrl } = getAdminAuthConfig();
   return fetch(`${apiBaseUrl}${path}`, {
     ...init,
     cache: "no-store",
     headers: { Accept: "application/json", ...init.headers },
-    signal: AbortSignal.timeout(requestTimeoutMilliseconds),
+    signal: AbortSignal.timeout(timeoutMilliseconds),
   });
 }
 

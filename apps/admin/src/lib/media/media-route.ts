@@ -25,6 +25,7 @@ const queryKeys = [
   "usage",
   "search",
 ] as const;
+const mediaUploadTimeoutMilliseconds = 10 * 60 * 1_000;
 
 type ResponseShape = "page" | "details" | "assignment" | "assignments" | "empty";
 
@@ -82,7 +83,12 @@ export async function proxyMediaUpload(request: NextRequest) {
       if (typeof value === "string" && value.length <= 2_000) outgoing.set(key, value);
     }
 
-    return proxyRequest("/api/admin/media/upload", { method: "POST", body: outgoing }, "details");
+    return proxyRequest(
+      "/api/admin/media/upload",
+      { method: "POST", body: outgoing },
+      "details",
+      mediaUploadTimeoutMilliseconds,
+    );
   } catch {
     return errorResponse("The upload request could not be read.", 400);
   }
@@ -133,9 +139,14 @@ function proxyMutation(
   return proxyRequest(path, init, shape);
 }
 
-async function proxyRequest(path: `/${string}`, init: RequestInit, shape: ResponseShape) {
+async function proxyRequest(
+  path: `/${string}`,
+  init: RequestInit,
+  shape: ResponseShape,
+  timeoutMilliseconds?: number,
+) {
   try {
-    const response = await fetchAuthorizedBackend(path, init);
+    const response = await fetchAuthorizedBackend(path, init, timeoutMilliseconds);
     if (!response.ok) return mapBackendError(response);
     if (shape === "empty" || response.status === 204) {
       return new NextResponse(null, {

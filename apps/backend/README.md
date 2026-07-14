@@ -71,7 +71,7 @@ Access tokens default to 15 minutes. Refresh tokens default to 14 days, are rota
 
 Refresh-token identifiers are assigned by the application and explicitly mapped as non-generated EF keys. This ensures login and rotation insert new token rows while updating the tracked user or prior token in the same transaction.
 
-Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged.
+Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged. A guarded `InitialAdmin__ResetExistingPassword` recovery switch can rotate only the configured user's password during one Development startup and revokes existing refresh tokens; it defaults to false and is rejected outside Development.
 
 For local provisioning, apply migrations before the first API startup. Once the SuperAdmin exists, set `InitialAdmin__Enabled=false` for subsequent runs. The local password must be changed before any shared or real deployment.
 

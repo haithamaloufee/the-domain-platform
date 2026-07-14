@@ -8,7 +8,8 @@ public sealed class MediaManagementService(
     IMediaRepository repository,
     IMediaStorageService storage,
     MediaUploadPolicy uploadPolicy,
-    TimeProvider timeProvider) : IMediaManagementService, IMediaQueryService
+    TimeProvider timeProvider,
+    IMediaDeliveryUrlResolver? mediaDeliveryUrlResolver = null) : IMediaManagementService, IMediaQueryService
 {
     public async Task<EventOperationResult<AdminMediaResponse>> UploadAsync(UploadMediaCommand command, CancellationToken token)
     {
@@ -85,7 +86,8 @@ public sealed class MediaManagementService(
     private async Task<EventOperationResult<AdminMediaResponse>> ChangeMedia(Guid id, Action<MediaAsset> change, CancellationToken token)
     { var item = await repository.FindMediaAsync(id, token); if (item is null) return EventOperationResult.Failure<AdminMediaResponse>("Media asset was not found."); change(item); await repository.SaveChangesAsync(token); return EventOperationResult.Success(Map(item)); }
     private static MediaOrientation GetOrientation(int? width, int? height) => width is null || height is null ? MediaOrientation.Unknown : width == height ? MediaOrientation.Square : width > height ? MediaOrientation.Landscape : MediaOrientation.Portrait;
-    private static AdminMediaResponse Map(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName, item.MediaType, item.Url, item.ThumbnailUrl, item.Width, item.Height, item.DurationSeconds, item.Orientation, item.Category, item.Caption, item.AltText, item.ApprovalStatus, item.CreatedAtUtc, item.UpdatedAtUtc);
-    private static AdminMediaListItemResponse MapList(MediaAsset item) => new(item.Id, item.MediaType, item.Url, item.ThumbnailUrl, item.Orientation, item.Category, item.ApprovalStatus, item.CreatedAtUtc);
+    private AdminMediaResponse Map(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName, item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Width, item.Height, item.DurationSeconds, item.Orientation, item.Category, item.Caption, item.AltText, item.ApprovalStatus, item.CreatedAtUtc, item.UpdatedAtUtc);
+    private AdminMediaListItemResponse MapList(MediaAsset item) => new(item.Id, item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Orientation, item.Category, item.ApprovalStatus, item.CreatedAtUtc);
+    private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
     private static EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId, item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc);
 }

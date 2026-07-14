@@ -83,12 +83,39 @@ public sealed class MediaManagementServiceTests
         Assert.Equal(2, details.Media.Count);
     }
 
+    [Fact]
+    public async Task PublicGalleryResolvesThumbnailForPreviouslyStoredVideo()
+    {
+        var eventEntity = CreateEvent();
+        eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
+        var video = new MediaAsset(
+            Guid.NewGuid(), "legacy.mp4", "legacy.mp4", MediaType.Video,
+            "https://res.cloudinary.com/test-cloud/video/upload/v1/the-domain/legacy.mp4", null,
+            854, 480, 13, MediaOrientation.Landscape, null, null, "Legacy video",
+            MediaApprovalStatus.Approved, "the-domain/legacy", DateTimeOffset.UtcNow);
+        eventEntity.AddMedia(new EventMedia(Guid.NewGuid(), eventEntity.Id, video.Id, EventMediaUsage.Gallery, 0, true, DateTimeOffset.UtcNow), video);
+        var service = new TheDomain.Application.Events.EventService(
+            new EventRepositoryFake(eventEntity),
+            TimeProvider.System,
+            new FakeDeliveryUrlResolver());
+
+        var album = await service.GetGalleryAlbumAsync(eventEntity.Slug, CancellationToken.None);
+
+        Assert.NotNull(album);
+        Assert.Equal("https://cdn.example.com/legacy-poster.jpg", album.Media[0].ThumbnailUrl);
+    }
+
     private static MediaManagementService CreateService(FakeRepository repository) => new(repository, new FakeStorage(), new MediaUploadPolicy(10, 20, new Dictionary<string, string[]> { ["image/jpeg"] = [".jpg"] }), TimeProvider.System);
     private static MediaAsset CreateMedia(MediaApprovalStatus status) => new(Guid.NewGuid(), "media.jpg", "media.jpg", MediaType.Image, "https://example.com/media.jpg", null, 100, 100, null, MediaOrientation.Square, null, null, "Alt", status, "public-id", DateTimeOffset.UtcNow);
     private static EntertainmentEvent CreateEvent() { var now = DateTimeOffset.UtcNow; return new(Guid.NewGuid(), "event", "Event", "Short", "Long", "Concert", now.AddDays(1), now.AddDays(2), "Asia/Amman", "Amman", "Venue", null, null, null, false, null, null, false, false, now); }
 
     private sealed class FakeStorage : IMediaStorageService
     { public Task<StoredMediaResult> UploadAsync(Stream content, string fileName, string publicId, MediaType mediaType, CancellationToken cancellationToken) => Task.FromResult(new StoredMediaResult("https://example.com/media.jpg", null, publicId, 100, 100, null)); public Task DeleteAsync(string publicId, MediaType mediaType, CancellationToken cancellationToken) => Task.CompletedTask; }
+    private sealed class FakeDeliveryUrlResolver : IMediaDeliveryUrlResolver
+    {
+        public string? ResolveThumbnailUrl(MediaType mediaType, string mediaUrl, string? thumbnailUrl, string? storagePublicId) =>
+            thumbnailUrl ?? (mediaType == MediaType.Video ? "https://cdn.example.com/legacy-poster.jpg" : null);
+    }
     private sealed class FakeRepository : IMediaRepository
     {
         public MediaAsset Media { get; init; } = CreateMedia(MediaApprovalStatus.Approved); public EntertainmentEvent? Event { get; init; } public bool Duplicate { get; init; }
