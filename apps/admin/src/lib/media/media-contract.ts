@@ -9,9 +9,11 @@ import {
   type AssignEventMediaRequest,
   type EventMediaResponse,
   type PagedResponse,
+  type UpdateEventCoverPresentationRequest,
   type UpdateEventMediaRequest,
   type UpdateMediaMetadataRequest,
 } from "@the-domain/types";
+import { defaultEventCoverPresentation, isValidEventCoverPresentation } from "@the-domain/utils";
 
 export function parseMediaPage(value: unknown): PagedResponse<AdminMediaListItem> {
   if (!isRecord(value) || !Array.isArray(value.items)) {
@@ -50,7 +52,14 @@ export function parseEventMedia(value: unknown): EventMediaResponse {
     sortOrder: integer(value.sortOrder),
     isFeatured: booleanValue(value.isFeatured),
     createdAtUtc: dateString(value.createdAtUtc),
+    presentation: parsePresentation(value.presentation),
   };
+}
+
+export function parsePresentationRequest(
+  value: unknown,
+): UpdateEventCoverPresentationRequest | null {
+  return isValidEventCoverPresentation(value) ? { ...value } : null;
 }
 
 export function parseAdminEventMediaList(value: unknown): AdminEventMediaItem[] {
@@ -120,6 +129,13 @@ function parseMediaListItem(value: unknown): AdminMediaListItem {
     approvalStatus: enumValue(value.approvalStatus, MediaApprovalStatus),
     createdAtUtc: dateString(value.createdAtUtc),
   };
+}
+
+function parsePresentation(value: unknown) {
+  if (value === undefined || value === null) return { ...defaultEventCoverPresentation };
+  if (!isValidEventCoverPresentation(value))
+    throw new Error("The server returned invalid cover presentation settings.");
+  return { ...value };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

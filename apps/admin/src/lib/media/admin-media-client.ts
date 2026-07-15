@@ -9,6 +9,7 @@ import type {
   PagedResponse,
   ReorderEventMediaRequest,
   UpdateEventMediaRequest,
+  UpdateEventCoverPresentationRequest,
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,
 } from "@the-domain/types";
@@ -113,13 +114,23 @@ export function updateEventMediaAssignment(
   );
 }
 
-export function setEventCover(
-  eventId: string,
-  eventMediaId: string,
-): Promise<EventMediaResponse> {
+export function setEventCover(eventId: string, eventMediaId: string): Promise<EventMediaResponse> {
   return request(
     `/api/admin/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(eventMediaId)}/cover`,
     { method: "POST" },
+    parseEventMedia,
+  );
+}
+
+export function updateEventCoverPresentation(
+  eventId: string,
+  eventMediaId: string,
+  input: UpdateEventCoverPresentationRequest,
+): Promise<EventMediaResponse> {
+  return jsonRequest(
+    `/api/admin/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(eventMediaId)}/presentation`,
+    "PUT",
+    input,
     parseEventMedia,
   );
 }

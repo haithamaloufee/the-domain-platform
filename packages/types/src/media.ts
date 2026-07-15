@@ -104,6 +104,14 @@ export interface ReorderEventMediaRequest {
   eventMediaIds: string[];
 }
 
+export interface EventCoverPresentation {
+  focalPointX: number;
+  focalPointY: number;
+  zoom: number;
+}
+
+export type UpdateEventCoverPresentationRequest = EventCoverPresentation;
+
 export interface EventMediaResponse {
   id: string;
   eventId: string;
@@ -112,6 +120,7 @@ export interface EventMediaResponse {
   sortOrder: number;
   isFeatured: boolean;
   createdAtUtc: string;
+  presentation: EventCoverPresentation;
 }
 
 export interface AdminEventMediaItem extends EventMediaResponse {
@@ -136,6 +145,7 @@ export interface PublicMediaItem {
   usage: EventMediaUsage;
   sortOrder: number;
   isFeatured: boolean;
+  presentation: EventCoverPresentation;
 }
 
 export interface PublicGalleryAlbum {

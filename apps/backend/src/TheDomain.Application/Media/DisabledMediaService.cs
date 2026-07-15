@@ -15,6 +15,7 @@ public sealed class DisabledMediaService : IMediaManagementService, IMediaQueryS
     public Task<EventOperationResult<EventMediaResponse>> AssignAsync(Guid eventId, AssignEventMediaRequest request, CancellationToken token) => AssignmentDisabled();
     public Task<EventOperationResult<EventMediaResponse>> UpdateAssignmentAsync(Guid eventId, Guid eventMediaId, UpdateEventMediaRequest request, CancellationToken token) => AssignmentDisabled();
     public Task<EventOperationResult<EventMediaResponse>> SetCoverAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => AssignmentDisabled();
+    public Task<EventOperationResult<EventMediaResponse>> UpdateCoverPresentationAsync(Guid eventId, Guid eventMediaId, UpdateEventCoverPresentationRequest request, CancellationToken token) => AssignmentDisabled();
     public Task<EventOperationResult<IReadOnlyList<EventMediaResponse>>> ReorderAsync(Guid eventId, ReorderEventMediaRequest request, CancellationToken token) =>
         Task.FromResult(EventOperationResult.Failure<IReadOnlyList<EventMediaResponse>>("Media persistence is not enabled."));
     public Task<bool> RemoveAssignmentAsync(Guid eventId, Guid eventMediaId, CancellationToken token) => Task.FromResult(false);

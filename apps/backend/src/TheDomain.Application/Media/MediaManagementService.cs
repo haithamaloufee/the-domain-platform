@@ -77,7 +77,7 @@ public sealed class MediaManagementService(
             .ThenBy(item => item.CreatedAtUtc)
             .ThenBy(item => item.Id)
             .Select(item => new AdminEventMediaResponse(item.Id, item.EventId, item.MediaAssetId, item.Usage,
-                item.SortOrder, item.IsFeatured, item.CreatedAtUtc, Map(item.MediaAsset)))
+                item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item), Map(item.MediaAsset)))
             .ToArray();
     public Task<EventOperationResult<AdminMediaResponse>> UpdateMetadataAsync(Guid id, UpdateMediaMetadataRequest request, CancellationToken token) => ChangeMedia(id, item => item.UpdateMetadata(request.Category, request.Caption, request.AltText, timeProvider.GetUtcNow()), token);
     public Task<EventOperationResult<AdminMediaResponse>> ApproveAsync(Guid id, CancellationToken token) => ChangeMedia(id, item => item.Approve(timeProvider.GetUtcNow()), token);
@@ -175,6 +175,40 @@ public sealed class MediaManagementService(
         return EventOperationResult.Success(Map(selected));
     }
 
+    public async Task<EventOperationResult<EventMediaResponse>> UpdateCoverPresentationAsync(
+        Guid eventId, Guid eventMediaId, UpdateEventCoverPresentationRequest request, CancellationToken token)
+    {
+        if (!EventMedia.IsValidFocalPoint(request.FocalPointX) ||
+            !EventMedia.IsValidFocalPoint(request.FocalPointY) ||
+            !double.IsFinite(request.Zoom) ||
+            request.Zoom is < EventMedia.MinimumZoom or > EventMedia.MaximumZoom)
+        {
+            return EventOperationResult.Failure<EventMediaResponse>(
+                "Cover focal points must be between 0 and 1, and zoom must be between 1 and 3.");
+        }
+        if (await repository.FindEventAsync(eventId, token) is null)
+            return EventOperationResult.Failure<EventMediaResponse>("Event was not found.");
+
+        var assignments = await repository.ListEventMediaForUpdateAsync(eventId, token);
+        var target = assignments.SingleOrDefault(item => item.Id == eventMediaId);
+        if (target is null)
+            return EventOperationResult.Failure<EventMediaResponse>("Event media assignment was not found.");
+        if (target.Usage != EventMediaUsage.Cover)
+            return EventOperationResult.Failure<EventMediaResponse>(
+                "Presentation settings can only be saved for the active event cover.");
+        if (!IsEligibleCover(target.MediaAsset))
+            return EventOperationResult.Failure<EventMediaResponse>(CoverEligibilityError(target.MediaAsset));
+
+        if (target.FocalPointX == request.FocalPointX &&
+            target.FocalPointY == request.FocalPointY &&
+            target.Zoom == request.Zoom)
+            return EventOperationResult.Success(Map(target));
+
+        target.UpdatePresentation(request.FocalPointX, request.FocalPointY, request.Zoom);
+        await repository.SaveChangesAsync(token);
+        return EventOperationResult.Success(Map(target));
+    }
+
     public async Task<EventOperationResult<IReadOnlyList<EventMediaResponse>>> ReorderAsync(
         Guid eventId, ReorderEventMediaRequest request, CancellationToken token)
     {
@@ -219,7 +253,10 @@ public sealed class MediaManagementService(
         item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Orientation, item.Category, item.Caption,
         item.AltText, item.ApprovalStatus, item.CreatedAtUtc);
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
-    private static EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId, item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc);
+    private static EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId,
+        item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item));
+    private static EventCoverPresentationResponse MapPresentation(EventMedia item) =>
+        new(item.FocalPointX, item.FocalPointY, item.Zoom);
 
     private static EventMedia? FindActiveCover(IEnumerable<EventMedia> assignments) => assignments
         .Where(item => item.Usage == EventMediaUsage.Cover && IsEligibleCover(item.MediaAsset))

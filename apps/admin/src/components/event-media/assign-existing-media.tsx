@@ -165,7 +165,10 @@ export function AssignExistingMedia({
       </form>
 
       {error && (
-        <p className="mt-4 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+        <p
+          className="mt-4 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error"
+          role="alert"
+        >
           {error}
         </p>
       )}

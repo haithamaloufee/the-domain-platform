@@ -1,8 +1,9 @@
 import type { PublicEventListItem, PublicHomepageContent } from "@the-domain/types";
 import { Badge, Container, buttonClasses } from "@the-domain/ui";
-import Image from "next/image";
+import { eventCoverRenderData } from "@the-domain/utils";
 import Link from "next/link";
-import { formatEventDate, mediaImageSource } from "@/components/events/event-presentation";
+import { EventCoverImage } from "@/components/events/event-cover-image";
+import { formatEventDate } from "@/components/events/event-presentation";
 import { homepageContent } from "@/content/homepage-content";
 
 export function HomeHero({
@@ -12,7 +13,7 @@ export function HomeHero({
   content: PublicHomepageContent | null;
   featuredEvent: PublicEventListItem | null;
 }) {
-  const source = mediaImageSource(featuredEvent?.coverMedia ?? null);
+  const source = eventCoverRenderData(featuredEvent?.coverMedia ?? null);
   const hero = content
     ? {
         eyebrow: content.heroEyebrow,
@@ -36,13 +37,11 @@ export function HomeHero({
     <section className="relative isolate flex min-h-[calc(100svh-4rem)] items-end overflow-hidden border-b border-line">
       <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
       {source ? (
-        <Image
-          alt={featuredEvent?.coverMedia?.altText ?? ""}
+        <EventCoverImage
           className="cinematic-media -z-20 object-cover"
-          fill
+          media={featuredEvent!.coverMedia!}
           priority
           sizes="100vw"
-          src={source}
         />
       ) : (
         <div

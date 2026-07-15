@@ -17,9 +17,12 @@ export function EventMediaStep({
     <section className="space-y-8" aria-labelledby="event-media-step-title">
       <header className="border-b border-line pb-5">
         <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Step 3</p>
-        <h2 className="mt-2 font-display text-3xl font-bold text-ink" id="event-media-step-title">Media</h2>
+        <h2 className="mt-2 font-display text-3xl font-bold text-ink" id="event-media-step-title">
+          Media
+        </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
-          Upload or select reusable library assets, choose an approved image cover, and set the accessible public order.
+          Upload or select reusable library assets, choose an approved image cover, and set the
+          accessible public order.
         </p>
       </header>
       {notice && <InlineAlert tone="success">{notice}</InlineAlert>}

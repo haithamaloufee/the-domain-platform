@@ -224,14 +224,23 @@ export function MediaUploadQueue({
         </Field>
         {lockEvent ? (
           <div>
-            <span className="font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">Assignment</span>
+            <span className="font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
+              Assignment
+            </span>
             <p className="mt-3 text-sm text-ink">This event</p>
           </div>
         ) : (
           <Field label="Assign to event">
-            <Select onChange={(event) => setSelectedEventId(event.target.value)} value={selectedEventId}>
+            <Select
+              onChange={(event) => setSelectedEventId(event.target.value)}
+              value={selectedEventId}
+            >
               <option value="">No event assignment</option>
-              {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.title}
+                </option>
+              ))}
             </Select>
           </Field>
         )}

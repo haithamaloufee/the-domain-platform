@@ -1,6 +1,6 @@
 import { MediaType, type PublicMediaItem } from "@the-domain/types";
-import Image from "next/image";
 import { mediaImageSource } from "./event-presentation";
+import { EventCoverImage } from "./event-cover-image";
 
 export function EventHeroMedia({ media, title }: { media: PublicMediaItem | null; title: string }) {
   const source = mediaImageSource(media);
@@ -17,14 +17,7 @@ export function EventHeroMedia({ media, title }: { media: PublicMediaItem | null
           src={media.url}
         />
       ) : source ? (
-        <Image
-          alt={media?.altText ?? ""}
-          className="cinematic-media object-cover"
-          fill
-          priority
-          sizes="100vw"
-          src={source}
-        />
+        <EventCoverImage media={media!} priority sizes="100vw" />
       ) : (
         <div className="grid h-full place-items-center">
           <span className="font-label text-xs uppercase tracking-[0.16em] text-ink-muted">

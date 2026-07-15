@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -37,6 +38,19 @@ public sealed class EventMediaAuthorizationTests
         using var response = await client.GetAsync(EventMediaPath);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditorCannotModifyCoverPresentation()
+    {
+        await using var factory = new RoleApiFactory(UserRole.Editor);
+        using var client = factory.CreateClient();
+
+        using var response = await client.PutAsJsonAsync(
+            $"{EventMediaPath}/00000000-0000-0000-0000-000000000002/presentation",
+            new { focalPointX = 0.5, focalPointY = 0.5, zoom = 1.0 });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     private sealed class RoleApiFactory(UserRole role) : WebApplicationFactory<Program>

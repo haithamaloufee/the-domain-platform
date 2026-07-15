@@ -21,6 +21,7 @@ import {
   setEventCover,
   updateEventMediaAssignment,
 } from "@/lib/media/admin-media-client";
+import { moveEventMediaId, orderItemsByCanonicalIds } from "@/lib/media/event-media-ordering";
 import {
   activeEventCover,
   coverEligibilityMessage,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/media/event-media-rules";
 import { AssignExistingMedia } from "./assign-existing-media";
 import { EventMediaGroup } from "./event-media-group";
+import { EventCoverComposer } from "./event-cover-composer";
 
 export function EventMediaWorkspace({
   embedded = false,
@@ -91,10 +93,7 @@ export function EventMediaWorkspace({
     () => ordered.find((item) => item.usage === EventMediaUsage.Cover) ?? null,
     [ordered],
   );
-  const assignedMediaIds = useMemo(
-    () => new Set(items.map((item) => item.mediaAssetId)),
-    [items],
-  );
+  const assignedMediaIds = useMemo(() => new Set(items.map((item) => item.mediaAssetId)), [items]);
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setPending(true);
@@ -105,7 +104,9 @@ export function EventMediaWorkspace({
       await load();
       setNotice(successMessage);
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to update event media.");
+      setError(
+        actionError instanceof Error ? actionError.message : "Unable to update event media.",
+      );
     } finally {
       setPending(false);
     }
@@ -119,15 +120,36 @@ export function EventMediaWorkspace({
   }
 
   function moveItem(id: string, direction: -1 | 1) {
-    const current = orderedEventMedia(items);
-    const index = current.findIndex((item) => item.id === id);
-    const destination = index + direction;
-    if (index < 0 || destination < 0 || destination >= current.length) return;
-    [current[index], current[destination]] = [current[destination]!, current[index]!];
-    void runAction(
-      () => reorderEventMedia(eventId, { eventMediaIds: current.map((item) => item.id) }),
-      "Event media order saved.",
-    );
+    void persistOrder(moveEventMediaId(items, id, direction));
+  }
+
+  async function persistOrder(eventMediaIds: string[]) {
+    const canonical = items;
+    const optimistic = orderItemsByCanonicalIds(items, eventMediaIds);
+    if (optimistic.every((item, index) => item.id === ordered[index]?.id)) return;
+    setPending(true);
+    setError("");
+    setNotice("");
+    setItems(optimistic);
+    onItemsChange?.(optimistic);
+    try {
+      await reorderEventMedia(eventId, { eventMediaIds });
+      await load();
+      setNotice("Event media order saved.");
+    } catch (actionError) {
+      setItems(canonical);
+      onItemsChange?.(canonical);
+      try {
+        await load();
+      } catch {
+        // The pre-move canonical state remains available when refresh is also unavailable.
+      }
+      setError(
+        actionError instanceof Error ? actionError.message : "Unable to save event media order.",
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
   function changeUsage(item: AdminEventMediaItem, usage: EventMediaUsageValue) {
@@ -187,51 +209,61 @@ export function EventMediaWorkspace({
 
   return (
     <div>
-      {!embedded && <header className="border-b border-line pb-8">
-        <div className="flex flex-wrap gap-2">
-          <PublicationBadge status={event.publicationStatus} />
-          <span className="border border-line px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
-            {items.length} assigned
-          </span>
-          <span className={`border px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] ${cover ? "border-gold text-gold" : "border-error text-error"}`}>
-            {cover ? "Cover ready" : "No eligible cover"}
-          </span>
-        </div>
-        <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div>
-            <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
-              Event and media workflow
-            </p>
-            <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.03em] text-ink sm:text-6xl">
-              {event.title}
-            </h1>
-            <p className="mt-3 text-sm text-ink-muted">
-              /{event.slug} / {formatDate(event.startAtUtc, event.timeZoneId)}
-            </p>
-          </div>
+      {!embedded && (
+        <header className="border-b border-line pb-8">
           <div className="flex flex-wrap gap-2">
-            <Link className={buttonClasses("ghost")} href={`/dashboard/events/${event.id}`}>
-              Back to event
-            </Link>
-            <Link
-              className={buttonClasses("secondary")}
-              href={`/dashboard/media?eventId=${encodeURIComponent(event.id)}&upload=1#media-upload`}
+            <PublicationBadge status={event.publicationStatus} />
+            <span className="border border-line px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
+              {items.length} assigned
+            </span>
+            <span
+              className={`border px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] ${cover ? "border-gold text-gold" : "border-error text-error"}`}
             >
-              Upload new media
-            </Link>
+              {cover ? "Cover ready" : "No eligible cover"}
+            </span>
           </div>
-        </div>
-      </header>}
+          <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div>
+              <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
+                Event and media workflow
+              </p>
+              <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.03em] text-ink sm:text-6xl">
+                {event.title}
+              </h1>
+              <p className="mt-3 text-sm text-ink-muted">
+                /{event.slug} / {formatDate(event.startAtUtc, event.timeZoneId)}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link className={buttonClasses("ghost")} href={`/dashboard/events/${event.id}`}>
+                Back to event
+              </Link>
+              <Link
+                className={buttonClasses("secondary")}
+                href={`/dashboard/media?eventId=${encodeURIComponent(event.id)}&upload=1#media-upload`}
+              >
+                Upload new media
+              </Link>
+            </div>
+          </div>
+        </header>
+      )}
 
       {(error || notice) && (
         <div aria-live="polite" className="pt-6">
           {error && (
-            <p className="border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+            <p
+              className="border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error"
+              role="alert"
+            >
               {error}
             </p>
           )}
           {notice && (
-            <p className="border-l-2 border-gold bg-gold/10 px-4 py-3 text-sm text-ink" role="status">
+            <p
+              className="border-l-2 border-gold bg-gold/10 px-4 py-3 text-sm text-ink"
+              role="status"
+            >
               {notice}
             </p>
           )}
@@ -241,8 +273,13 @@ export function EventMediaWorkspace({
       <div className="space-y-14 pt-10">
         {embedded && (
           <section aria-labelledby="wizard-media-upload-title">
-            <h3 className="font-display text-2xl font-bold text-ink" id="wizard-media-upload-title">Upload new media</h3>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">Uploads remain reusable library assets. Wizard assignment retries never upload the same file twice.</p>
+            <h3 className="font-display text-2xl font-bold text-ink" id="wizard-media-upload-title">
+              Upload new media
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
+              Uploads remain reusable library assets. Wizard assignment retries never upload the
+              same file twice.
+            </p>
             <div className="mt-6">
               <MediaUploadQueue
                 deferEventAssignment
@@ -260,10 +297,18 @@ export function EventMediaWorkspace({
           pending={pending}
         />
 
+        <EventCoverComposer
+          cover={cover}
+          eventId={eventId}
+          key={cover?.id ?? "no-cover"}
+          onSaved={() => void load()}
+        />
+
         <EventMediaGroup
           coverId={cover?.id ?? null}
           items={items}
           onMove={moveItem}
+          onReorder={(ids) => void persistOrder(ids)}
           onRemove={remove}
           onSetCover={setCover}
           onUsageChange={changeUsage}
@@ -320,7 +365,8 @@ function CoverPanel({
           Public event artwork
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
-          This image is used on public event cards, the homepage, event details, and social metadata.
+          This image is used on public event cards, the homepage, event details, and social
+          metadata.
         </p>
       </div>
 
@@ -337,7 +383,7 @@ function CoverPanel({
         </div>
       ) : (
         <Card className="mt-6 grid overflow-hidden lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
-          <MediaPreview item={displayed.media} priority />
+          <MediaPreview item={displayed.media} presentation={displayed.presentation} priority />
           <div className="p-6 sm:p-8">
             <div className="flex flex-wrap gap-2">
               <MediaApprovalBadge status={displayed.media.approvalStatus} />
@@ -355,7 +401,10 @@ function CoverPanel({
             </h3>
             <p className="mt-2 break-all text-sm text-ink-muted">{displayed.media.fileName}</p>
             {!cover && (
-              <p className="mt-5 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+              <p
+                className="mt-5 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error"
+                role="alert"
+              >
                 {coverEligibilityMessage(displayed.media) ??
                   "This cover assignment is invalid and is not exposed publicly."}
               </p>

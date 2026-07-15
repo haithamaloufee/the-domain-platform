@@ -27,12 +27,7 @@ const actionLabels: Record<EventAction, string> = {
   cancel: "Cancel event",
 };
 
-export function EventActions({
-  event,
-  hasEligibleCover,
-  onChanged,
-  onError,
-}: EventActionsProps) {
+export function EventActions({ event, hasEligibleCover, onChanged, onError }: EventActionsProps) {
   const [pendingAction, setPendingAction] = useState<EventAction | null>(null);
   const actions = availableActions(event);
 
@@ -53,8 +48,7 @@ export function EventActions({
       }
     }
 
-    const warnings =
-      action === "publish" ? publishingWarnings(event, coverIsEligible ?? true) : [];
+    const warnings = action === "publish" ? publishingWarnings(event, coverIsEligible ?? true) : [];
     const confirmed = window.confirm(confirmationMessage(action, event.title, warnings));
     if (!confirmed) {
       setPendingAction(null);

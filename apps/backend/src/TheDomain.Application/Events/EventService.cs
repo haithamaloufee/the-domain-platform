@@ -234,7 +234,8 @@ public sealed class EventService(
     private PublicMediaResponse MapMedia(EventMedia link) => new(link.MediaAsset.Id, link.MediaAsset.MediaType,
         link.MediaAsset.Url, ResolveThumbnailUrl(link.MediaAsset), link.MediaAsset.Caption, link.MediaAsset.AltText,
         link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation,
-        link.Usage, link.SortOrder, link.IsFeatured);
+        link.Usage, link.SortOrder, link.IsFeatured,
+        new(link.FocalPointX, link.FocalPointY, link.Zoom));
     private static bool HasSafePublicUrl(MediaAsset item) => Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) &&
         uri.Scheme == Uri.UriSchemeHttps;
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;

@@ -39,9 +39,21 @@ export const publicationOptions: ReadonlyArray<{
   value: EventPublicationStatusValue;
 }> = [
   { value: EventPublicationStatus.Draft, label: "Draft", description: "Private and editable." },
-  { value: EventPublicationStatus.Published, label: "Published", description: "Visible on public event surfaces." },
-  { value: EventPublicationStatus.Cancelled, label: "Cancelled", description: "Publicly marked as cancelled." },
-  { value: EventPublicationStatus.Archived, label: "Archived", description: "Removed from public event surfaces." },
+  {
+    value: EventPublicationStatus.Published,
+    label: "Published",
+    description: "Visible on public event surfaces.",
+  },
+  {
+    value: EventPublicationStatus.Cancelled,
+    label: "Cancelled",
+    description: "Publicly marked as cancelled.",
+  },
+  {
+    value: EventPublicationStatus.Archived,
+    label: "Archived",
+    description: "Removed from public event surfaces.",
+  },
 ];
 
 export function canTransitionPublication(
@@ -49,10 +61,11 @@ export function canTransitionPublication(
   target: EventPublicationStatusValue,
 ): boolean {
   if (current === target) return true;
-  if (current === EventPublicationStatus.Draft)
-    return target !== EventPublicationStatus.Draft;
+  if (current === EventPublicationStatus.Draft) return target !== EventPublicationStatus.Draft;
   if (current === EventPublicationStatus.Published)
-    return target === EventPublicationStatus.Cancelled || target === EventPublicationStatus.Archived;
+    return (
+      target === EventPublicationStatus.Cancelled || target === EventPublicationStatus.Archived
+    );
   return current === EventPublicationStatus.Cancelled && target === EventPublicationStatus.Archived;
 }
 
@@ -88,7 +101,8 @@ export function publishingWarnings(event: AdminEventDetails, hasEligibleCover: b
   const warnings: string[] = [];
   if (!hasEligibleCover) warnings.push("No eligible event cover is selected.");
   if (!isValidTimeZone(event.timeZoneId)) warnings.push("The event timezone is invalid.");
-  if (new Date(event.endAtUtc) <= new Date()) warnings.push("The event end time has already passed.");
+  if (new Date(event.endAtUtc) <= new Date())
+    warnings.push("The event end time has already passed.");
   if (
     event.bookingStatus === BookingAvailability.Open &&
     !isSafeBookingUrl(event.externalBookingUrl)
@@ -129,7 +143,13 @@ export function zonedInputToUtc(value: string, timeZone: string): string | null 
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
   if (!match) return null;
   const [, year, month, day, hour, minute] = match;
-  const wallClock = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+  const wallClock = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  );
   let candidate = wallClock;
   for (let attempt = 0; attempt < 3; attempt++) {
     const displayed = dateParts(new Date(candidate), timeZone);

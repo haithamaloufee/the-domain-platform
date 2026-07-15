@@ -9,3 +9,4 @@ public sealed record UpdateMediaMetadataRequest(string? Category, string? Captio
 public sealed record AssignEventMediaRequest(Guid MediaAssetId, EventMediaUsage Usage, int SortOrder, bool IsFeatured);
 public sealed record UpdateEventMediaRequest(EventMediaUsage Usage, int SortOrder, bool IsFeatured);
 public sealed record ReorderEventMediaRequest(IReadOnlyList<Guid> EventMediaIds);
+public sealed record UpdateEventCoverPresentationRequest(double FocalPointX, double FocalPointY, double Zoom);

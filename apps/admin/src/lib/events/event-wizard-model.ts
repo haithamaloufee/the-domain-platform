@@ -179,7 +179,10 @@ export function validateWizardStep(
     required(errors, "endDate", fields.endDate, "End date is required.");
     required(errors, "endTime", fields.endTime, "End time is required.");
     if (!isValidTimeZone(fields.timeZoneId)) errors.timeZoneId = "Choose a valid IANA timezone.";
-    const start = zonedInputToUtc(joinDateTime(fields.startDate, fields.startTime), fields.timeZoneId);
+    const start = zonedInputToUtc(
+      joinDateTime(fields.startDate, fields.startTime),
+      fields.timeZoneId,
+    );
     const end = zonedInputToUtc(joinDateTime(fields.endDate, fields.endTime), fields.timeZoneId);
     if (fields.startDate && fields.startTime && !start)
       errors.startTime = "This local time is not valid in the selected timezone.";
@@ -193,7 +196,11 @@ export function validateWizardStep(
       validateOptionalDateTime(errors, fields, "bookingOpenDate", "bookingOpenTime");
       validateOptionalDateTime(errors, fields, "bookingCloseDate", "bookingCloseTime");
       const opens = optionalUtc(fields.bookingOpenDate, fields.bookingOpenTime, fields.timeZoneId);
-      const closes = optionalUtc(fields.bookingCloseDate, fields.bookingCloseTime, fields.timeZoneId);
+      const closes = optionalUtc(
+        fields.bookingCloseDate,
+        fields.bookingCloseTime,
+        fields.timeZoneId,
+      );
       if (opens && closes && new Date(closes) < new Date(opens))
         errors.bookingCloseTime = "Booking close cannot precede booking open.";
     }
@@ -203,16 +210,33 @@ export function validateWizardStep(
 
 export function firstInvalidField(errors: EventWizardErrors): EventWizardFieldName | null {
   const order: EventWizardFieldName[] = [
-    "title", "eventTypeChoice", "customEventType", "shortDescription", "longDescription",
-    "city", "venueName", "slug", "startDate", "startTime", "endDate", "endTime",
-    "timeZoneId", "externalBookingUrl", "bookingOpenDate", "bookingOpenTime",
-    "bookingCloseDate", "bookingCloseTime",
+    "title",
+    "eventTypeChoice",
+    "customEventType",
+    "shortDescription",
+    "longDescription",
+    "city",
+    "venueName",
+    "slug",
+    "startDate",
+    "startTime",
+    "endDate",
+    "endTime",
+    "timeZoneId",
+    "externalBookingUrl",
+    "bookingOpenDate",
+    "bookingOpenTime",
+    "bookingCloseDate",
+    "bookingCloseTime",
   ];
   return order.find((field) => Boolean(errors[field])) ?? null;
 }
 
 export function toSaveEventRequest(fields: EventWizardFields): SaveEventRequest | null {
-  const startAtUtc = zonedInputToUtc(joinDateTime(fields.startDate, fields.startTime), fields.timeZoneId);
+  const startAtUtc = zonedInputToUtc(
+    joinDateTime(fields.startDate, fields.startTime),
+    fields.timeZoneId,
+  );
   const endAtUtc = zonedInputToUtc(joinDateTime(fields.endDate, fields.endTime), fields.timeZoneId);
   if (!startAtUtc || !endAtUtc) return null;
   return {
@@ -250,9 +274,11 @@ export function toSaveEventRequest(fields: EventWizardFields): SaveEventRequest 
 export function timezoneOptions(existing = ""): string[] {
   let values: string[] = [];
   try {
-    const supportedValuesOf = (Intl as typeof Intl & {
-      supportedValuesOf?: (key: "timeZone") => string[];
-    }).supportedValuesOf;
+    const supportedValuesOf = (
+      Intl as typeof Intl & {
+        supportedValuesOf?: (key: "timeZone") => string[];
+      }
+    ).supportedValuesOf;
     values = supportedValuesOf ? supportedValuesOf("timeZone") : [...fallbackTimeZones];
   } catch {
     values = [...fallbackTimeZones];
@@ -280,24 +306,32 @@ export function buildEventPreview(
     (item) => item.media.approvalStatus === MediaApprovalStatus.Approved,
   );
   const cover = activeEventCover(media);
-  const startAt = zonedInputToUtc(joinDateTime(fields.startDate, fields.startTime), fields.timeZoneId);
+  const startAt = zonedInputToUtc(
+    joinDateTime(fields.startDate, fields.startTime),
+    fields.timeZoneId,
+  );
   return {
-    bookingSummary: bookingPreview({
-      bookingClosesAt: joinDateTime(fields.bookingCloseDate, fields.bookingCloseTime),
-      bookingOpensAt: joinDateTime(fields.bookingOpenDate, fields.bookingOpenTime),
-      bookingStatus: fields.bookingStatus,
-      endAt: joinDateTime(fields.endDate, fields.endTime),
-      externalBookingUrl: fields.externalBookingUrl,
-      publicationStatus: fields.publicationStatus,
-      timeZoneId: fields.timeZoneId,
-    }, bookingNow),
+    bookingSummary: bookingPreview(
+      {
+        bookingClosesAt: joinDateTime(fields.bookingCloseDate, fields.bookingCloseTime),
+        bookingOpensAt: joinDateTime(fields.bookingOpenDate, fields.bookingOpenTime),
+        bookingStatus: fields.bookingStatus,
+        endAt: joinDateTime(fields.endDate, fields.endTime),
+        externalBookingUrl: fields.externalBookingUrl,
+        publicationStatus: fields.publicationStatus,
+        timeZoneId: fields.timeZoneId,
+      },
+      bookingNow,
+    ),
     city: fields.city.trim() || "City to be confirmed",
     cover,
     description: fields.shortDescription.trim() || "Your short event description will appear here.",
     eventType: selectedEventType(fields) || "Event type",
     gallery: approved.filter((item) => item.usage === EventMediaUsage.Gallery),
     lifecycleLabel: publicationLabel(fields.publicationStatus),
-    scheduleSummary: startAt ? formatSchedule(startAt, fields.timeZoneId) : "Schedule to be confirmed",
+    scheduleSummary: startAt
+      ? formatSchedule(startAt, fields.timeZoneId)
+      : "Schedule to be confirmed",
     title: fields.title.trim() || "Untitled event",
     venueName: fields.venueName.trim() || "Venue to be confirmed",
   };
@@ -320,10 +354,36 @@ export function buildPublishChecklist(
   ).length;
   return [
     { id: "text", label: "Required event information is complete.", met: basicValid },
-    { id: "schedule", label: "Schedule and timezone are valid.", met: Object.keys(scheduleErrors).length === 0 },
-    { id: "booking", label: "Open booking has a safe HTTPS URL.", met: fields.bookingStatus !== BookingAvailability.Open || isSafeBookingUrl(fields.externalBookingUrl) },
-    { id: "cover", label: eligibleCover ? "An eligible public cover is selected." : isPublishing ? "No eligible cover; acknowledge the public fallback." : "No eligible cover; the event remains non-public.", met: !isPublishing || eligibleCover || coverWarningAcknowledged, warning: !eligibleCover },
-    { id: "media", label: privateMediaCount ? `${privateMediaCount} Draft or Hidden media item(s) will remain private.` : "Assigned public media is approved.", met: true, warning: privateMediaCount > 0 },
+    {
+      id: "schedule",
+      label: "Schedule and timezone are valid.",
+      met: Object.keys(scheduleErrors).length === 0,
+    },
+    {
+      id: "booking",
+      label: "Open booking has a safe HTTPS URL.",
+      met:
+        fields.bookingStatus !== BookingAvailability.Open ||
+        isSafeBookingUrl(fields.externalBookingUrl),
+    },
+    {
+      id: "cover",
+      label: eligibleCover
+        ? "An eligible public cover is selected."
+        : isPublishing
+          ? "No eligible cover; acknowledge the public fallback."
+          : "No eligible cover; the event remains non-public.",
+      met: !isPublishing || eligibleCover || coverWarningAcknowledged,
+      warning: !eligibleCover,
+    },
+    {
+      id: "media",
+      label: privateMediaCount
+        ? `${privateMediaCount} Draft or Hidden media item(s) will remain private.`
+        : "Assigned public media is approved.",
+      met: true,
+      warning: privateMediaCount > 0,
+    },
     { id: "pending", label: "No server operation is pending.", met: !serverPending },
   ];
 }

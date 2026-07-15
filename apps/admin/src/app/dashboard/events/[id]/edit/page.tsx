@@ -2,11 +2,17 @@ import { SectionHeader } from "@the-domain/ui";
 import { EditEventScreen } from "@/components/events/edit-event-screen";
 import { wizardSteps, type WizardStepId } from "@/lib/events/event-wizard-model";
 
-export default async function EditEventPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ step?: string }> }) {
+export default async function EditEventPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ step?: string }>;
+}) {
   const { id } = await params;
   const requestedStep = (await searchParams).step;
   const initialStep = wizardSteps.some((step) => step.id === requestedStep)
-    ? requestedStep as WizardStepId
+    ? (requestedStep as WizardStepId)
     : "basic";
   return (
     <div className="mx-auto max-w-[96rem]">

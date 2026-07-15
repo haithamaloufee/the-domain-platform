@@ -82,7 +82,9 @@ export function EventWizard({
         setMediaLoadFailed(true);
         setOperation("idle");
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [initialEvent]);
 
   useEffect(() => {
@@ -238,17 +240,26 @@ export function EventWizard({
     setOperation("publishing");
     setError("");
     try {
-      const canonical = target === EventPublicationStatus.Published
-        ? await publishAdminEvent(saved.id)
-        : target === EventPublicationStatus.Cancelled
-          ? await cancelAdminEvent(saved.id)
-          : await archiveAdminEvent(saved.id);
+      const canonical =
+        target === EventPublicationStatus.Published
+          ? await publishAdminEvent(saved.id)
+          : target === EventPublicationStatus.Cancelled
+            ? await cancelAdminEvent(saved.id)
+            : await archiveAdminEvent(saved.id);
       setEvent(canonical);
-      setFields((current) => ({ ...current, publicationStatus: canonical.publicationStatus, slug: canonical.slug }));
+      setFields((current) => ({
+        ...current,
+        publicationStatus: canonical.publicationStatus,
+        slug: canonical.slug,
+      }));
       setDirty(false);
-      setNotice(`${publicationLabel(canonical.publicationStatus)} confirmed by the server. Public slug: /events/${canonical.slug}`);
+      setNotice(
+        `${publicationLabel(canonical.publicationStatus)} confirmed by the server. Public slug: /events/${canonical.slug}`,
+      );
     } catch (publishError) {
-      setError(publishError instanceof Error ? publishError.message : "Unable to change event lifecycle.");
+      setError(
+        publishError instanceof Error ? publishError.message : "Unable to change event lifecycle.",
+      );
     } finally {
       requestGuard.current = false;
       setOperation("idle");
@@ -259,41 +270,111 @@ export function EventWizard({
   const canonicalStatus = event?.publicationStatus ?? EventPublicationStatus.Draft;
   const knownVenues = event?.venueName ? [event.venueName] : [];
   const cancelHref = event ? `/dashboard/events/${event.id}` : "/dashboard/events";
-  const publicUrl = event?.publicationStatus === EventPublicationStatus.Published
-    ? publicEventUrl(event.slug)
-    : undefined;
+  const publicUrl =
+    event?.publicationStatus === EventPublicationStatus.Published
+      ? publicEventUrl(event.slug)
+      : undefined;
 
   return (
     <div className="space-y-8">
       <EventWizardStepper completed={completed} current={currentStep} onSelect={selectStep} />
-      {(error || notice) && <div aria-live="polite" className="space-y-3">{error && <InlineAlert tone="error">{error}</InlineAlert>}{notice && <InlineAlert tone="success">{notice}</InlineAlert>}</div>}
+      {(error || notice) && (
+        <div aria-live="polite" className="space-y-3">
+          {error && <InlineAlert tone="error">{error}</InlineAlert>}
+          {notice && <InlineAlert tone="success">{notice}</InlineAlert>}
+        </div>
+      )}
 
       {currentStep === "basic" && (
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)] xl:items-start">
-          <Card className="p-5 sm:p-8"><EventBasicStep canonicalSlug={event?.slug} errors={errors} fields={fields} isExisting={Boolean(event)} knownVenues={knownVenues} onChange={update} /></Card>
-          <div className="xl:sticky xl:top-6"><EventPreview fields={fields} media={media} modes={false} /></div>
+          <Card className="p-5 sm:p-8">
+            <EventBasicStep
+              canonicalSlug={event?.slug}
+              errors={errors}
+              fields={fields}
+              isExisting={Boolean(event)}
+              knownVenues={knownVenues}
+              onChange={update}
+            />
+          </Card>
+          <div className="xl:sticky xl:top-6">
+            <EventPreview fields={fields} media={media} modes={false} />
+          </div>
         </div>
       )}
       {currentStep === "schedule" && (
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)] xl:items-start">
-          <Card className="p-5 sm:p-8"><EventScheduleStep canonicalStatus={canonicalStatus} errors={errors} fields={fields} onChange={update} /></Card>
-          <div className="xl:sticky xl:top-6"><EventPreview fields={fields} media={media} modes={false} /></div>
+          <Card className="p-5 sm:p-8">
+            <EventScheduleStep
+              canonicalStatus={canonicalStatus}
+              errors={errors}
+              fields={fields}
+              onChange={update}
+            />
+          </Card>
+          <div className="xl:sticky xl:top-6">
+            <EventPreview fields={fields} media={media} modes={false} />
+          </div>
         </div>
       )}
-      {currentStep === "media" && event && mediaLoaded && <EventMediaStep event={event} initialItems={mediaLoadFailed ? undefined : media} notice={draftNotice} onItemsChange={handleMediaChange} />}
-      {currentStep === "media" && (!event || !mediaLoaded) && <div className="h-80 animate-pulse border border-line bg-surface-raised" role="status"><span className="sr-only">Loading event media</span></div>}
-      {currentStep === "review" && <EventReviewStep coverWarningAcknowledged={coverWarningAcknowledged} fields={fields} media={media} onAcknowledgeCoverWarning={setCoverWarningAcknowledged} onPublish={() => void saveAndApplyLifecycle()} onSave={() => void saveWithoutTransition()} pending={pending} publicUrl={publicUrl} savedSlug={event?.slug ?? ""} />}
+      {currentStep === "media" && event && mediaLoaded && (
+        <EventMediaStep
+          event={event}
+          initialItems={mediaLoadFailed ? undefined : media}
+          notice={draftNotice}
+          onItemsChange={handleMediaChange}
+        />
+      )}
+      {currentStep === "media" && (!event || !mediaLoaded) && (
+        <div className="h-80 animate-pulse border border-line bg-surface-raised" role="status">
+          <span className="sr-only">Loading event media</span>
+        </div>
+      )}
+      {currentStep === "review" && (
+        <EventReviewStep
+          coverWarningAcknowledged={coverWarningAcknowledged}
+          eventId={event?.id}
+          fields={fields}
+          media={media}
+          onAcknowledgeCoverWarning={setCoverWarningAcknowledged}
+          onMediaChange={handleMediaChange}
+          onPublish={() => void saveAndApplyLifecycle()}
+          onSave={() => void saveWithoutTransition()}
+          pending={pending}
+          publicUrl={publicUrl}
+          savedSlug={event?.slug ?? ""}
+        />
+      )}
 
       <footer className="flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <Link
-          className={buttonClasses("ghost")}
-          href={cancelHref}
-        >
+        <Link className={buttonClasses("ghost")} href={cancelHref}>
           Exit wizard
         </Link>
         <div className="flex flex-col-reverse gap-3 sm:flex-row">
-          {currentStep !== "basic" && <button className={buttonClasses("secondary")} disabled={pending} onClick={back} type="button">Back</button>}
-          {currentStep !== "review" && <LoadingButton disabled={currentStep === "media" && !mediaLoaded} onClick={() => void next()} pending={pending} pendingLabel={operation === "creating" ? "Saving draft…" : "Saving…"}>{currentStep === "schedule" ? "Save draft and continue" : currentStep === "media" ? "Review event" : "Continue"}</LoadingButton>}
+          {currentStep !== "basic" && (
+            <button
+              className={buttonClasses("secondary")}
+              disabled={pending}
+              onClick={back}
+              type="button"
+            >
+              Back
+            </button>
+          )}
+          {currentStep !== "review" && (
+            <LoadingButton
+              disabled={currentStep === "media" && !mediaLoaded}
+              onClick={() => void next()}
+              pending={pending}
+              pendingLabel={operation === "creating" ? "Saving draft…" : "Saving…"}
+            >
+              {currentStep === "schedule"
+                ? "Save draft and continue"
+                : currentStep === "media"
+                  ? "Review event"
+                  : "Continue"}
+            </LoadingButton>
+          )}
         </div>
       </footer>
     </div>
@@ -309,7 +390,8 @@ function publicationLabel(status: AdminEventDetails["publicationStatus"]): strin
 
 function publicEventUrl(slug: string): string | undefined {
   const configuredOrigin = process.env.NEXT_PUBLIC_WEBSITE_URL?.trim();
-  const origin = configuredOrigin || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
+  const origin =
+    configuredOrigin || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
   if (!origin) return undefined;
   try {
     return new URL(`/events/${encodeURIComponent(slug)}`, origin).toString();

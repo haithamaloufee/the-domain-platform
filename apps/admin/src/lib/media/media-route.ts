@@ -12,6 +12,7 @@ import {
   parseMediaDetails,
   parseMediaPage,
   parseMetadataRequest,
+  parsePresentationRequest,
 } from "./media-contract";
 
 const queryKeys = [
@@ -112,6 +113,12 @@ export async function proxyEventMediaUpdate(request: NextRequest, path: `/${stri
 
 export function proxyEventMediaCover(request: NextRequest, path: `/${string}`) {
   return proxyMutation(request, path, { method: "POST" }, "assignment");
+}
+
+export async function proxyEventMediaPresentation(request: NextRequest, path: `/${string}`) {
+  const body = await readJson(request, parsePresentationRequest);
+  if (!body) return errorResponse("Please review the cover position and zoom.", 400);
+  return proxyJsonMutation(request, path, "PUT", body, "assignment");
 }
 
 export async function proxyEventMediaReorder(request: NextRequest, path: `/${string}`) {

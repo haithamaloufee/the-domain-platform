@@ -7,7 +7,13 @@ import { getAdminEvent } from "@/lib/events/admin-events-client";
 import { EventForm } from "./event-form";
 import type { WizardStepId } from "@/lib/events/event-wizard-model";
 
-export function EditEventScreen({ eventId, initialStep }: { eventId: string; initialStep?: WizardStepId }) {
+export function EditEventScreen({
+  eventId,
+  initialStep,
+}: {
+  eventId: string;
+  initialStep?: WizardStepId;
+}) {
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
   const [error, setError] = useState("");
 

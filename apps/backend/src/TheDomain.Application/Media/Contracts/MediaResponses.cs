@@ -9,6 +9,9 @@ public sealed record AdminMediaResponse(Guid Id, string FileName, string Origina
     string Url, string? ThumbnailUrl, int? Width, int? Height, decimal? DurationSeconds,
     MediaOrientation Orientation, string? Category, string? Caption, string? AltText,
     MediaApprovalStatus ApprovalStatus, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
-public sealed record EventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage, int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc);
+public sealed record EventCoverPresentationResponse(double FocalPointX, double FocalPointY, double Zoom);
+public sealed record EventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage,
+    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, EventCoverPresentationResponse Presentation);
 public sealed record AdminEventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage,
-    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, AdminMediaResponse Media);
+    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, EventCoverPresentationResponse Presentation,
+    AdminMediaResponse Media);

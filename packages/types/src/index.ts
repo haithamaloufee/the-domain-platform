@@ -46,6 +46,7 @@ export type {
   AdminMediaResponse,
   AssignEventMediaRequest,
   EventMediaResponse,
+  EventCoverPresentation,
   EventMediaUsage as EventMediaUsageValue,
   MediaApprovalStatus as MediaApprovalStatusValue,
   MediaListQuery,
@@ -56,6 +57,7 @@ export type {
   PublicMediaItem,
   ReorderEventMediaRequest,
   UpdateEventMediaRequest,
+  UpdateEventCoverPresentationRequest,
   UpdateMediaMetadataRequest,
   UploadMediaRequestMetadata,
 } from "./media";

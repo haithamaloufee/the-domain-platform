@@ -1,13 +1,10 @@
 "use client";
 
-import type { AdminEventMediaItem } from "@the-domain/types";
+import type { AdminEventMediaItem, EventCoverPresentation } from "@the-domain/types";
 import { Badge, Card, MediaFrame } from "@the-domain/ui";
 import { useState } from "react";
 import { MediaPreview } from "@/components/media/media-preview";
-import {
-  buildEventPreview,
-  type EventWizardFields,
-} from "@/lib/events/event-wizard-model";
+import { buildEventPreview, type EventWizardFields } from "@/lib/events/event-wizard-model";
 
 type PreviewMode = "desktop" | "tablet" | "mobile";
 
@@ -21,10 +18,12 @@ export function EventPreview({
   fields,
   media,
   modes = true,
+  presentation,
 }: {
   fields: EventWizardFields;
   media: AdminEventMediaItem[];
   modes?: boolean;
+  presentation?: EventCoverPresentation | null;
 }) {
   const [mode, setMode] = useState<PreviewMode>(modes ? "desktop" : "mobile");
   const preview = buildEventPreview(fields, media);
@@ -58,32 +57,59 @@ export function EventPreview({
         )}
       </div>
 
-      <div className={`mx-auto mt-6 transition-[max-width] motion-reduce:transition-none ${modeWidths[mode]}`}>
+      <div
+        className={`mx-auto mt-6 transition-[max-width] motion-reduce:transition-none ${modeWidths[mode]}`}
+      >
         <Card className="overflow-hidden">
-          <div className={mode === "desktop" ? "grid lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)]" : "block"}>
-            <PreviewArtwork cover={preview.cover} />
+          <div
+            className={
+              mode === "desktop"
+                ? "grid lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)]"
+                : "block"
+            }
+          >
+            <PreviewArtwork cover={preview.cover} presentation={presentation} />
             <div className="flex flex-col justify-between p-5 sm:p-7">
               <div>
-                <div className="flex flex-wrap gap-2"><Badge>{preview.lifecycleLabel}</Badge><Badge>{preview.eventType}</Badge></div>
-                <p className="mt-6 font-label text-xs uppercase tracking-[0.14em] text-gold">{preview.scheduleSummary}</p>
-                <h3 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink">{preview.title}</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Badge>{preview.lifecycleLabel}</Badge>
+                  <Badge>{preview.eventType}</Badge>
+                </div>
+                <p className="mt-6 font-label text-xs uppercase tracking-[0.14em] text-gold">
+                  {preview.scheduleSummary}
+                </p>
+                <h3 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink">
+                  {preview.title}
+                </h3>
                 <p className="mt-4 text-sm leading-6 text-ink-muted">{preview.description}</p>
               </div>
               <div className="mt-8 border-t border-line pt-5">
-                <p className="text-sm text-ink">{preview.city} / {preview.venueName}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">{preview.bookingSummary}</p>
+                <p className="text-sm text-ink">
+                  {preview.city} / {preview.venueName}
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
+                  {preview.bookingSummary}
+                </p>
               </div>
             </div>
           </div>
         </Card>
 
         <div className="relative mt-6 min-h-80 overflow-hidden border border-line bg-surface-raised">
-          <div className="absolute inset-0 opacity-45"><PreviewArtwork cover={preview.cover} hero /></div>
+          <div className="absolute inset-0 opacity-45">
+            <PreviewArtwork cover={preview.cover} hero presentation={presentation} />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/65 to-canvas/20" />
           <div className="relative flex min-h-80 flex-col justify-end p-6 sm:p-8">
-            <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Event detail hero</p>
-            <h3 className="mt-3 max-w-3xl font-display text-4xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">{preview.title}</h3>
-            <p className="mt-4 text-sm text-ink-muted">{preview.scheduleSummary} · {preview.venueName}</p>
+            <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
+              Event detail hero
+            </p>
+            <h3 className="mt-3 max-w-3xl font-display text-4xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">
+              {preview.title}
+            </h3>
+            <p className="mt-4 text-sm text-ink-muted">
+              {preview.scheduleSummary} · {preview.venueName}
+            </p>
           </div>
         </div>
 
@@ -94,10 +120,16 @@ export function EventPreview({
           </div>
           {preview.gallery.length ? (
             <ol className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {preview.gallery.slice(0, 6).map((item) => <li key={item.id}><MediaPreview item={item.media} /></li>)}
+              {preview.gallery.slice(0, 6).map((item) => (
+                <li key={item.id}>
+                  <MediaPreview item={item.media} />
+                </li>
+              ))}
             </ol>
           ) : (
-            <div className="mt-4 grid min-h-28 place-items-center border border-dashed border-line px-5 text-center text-xs uppercase tracking-[0.14em] text-ink-muted">Gallery media will appear here</div>
+            <div className="mt-4 grid min-h-28 place-items-center border border-dashed border-line px-5 text-center text-xs uppercase tracking-[0.14em] text-ink-muted">
+              Gallery media will appear here
+            </div>
           )}
         </section>
       </div>
@@ -105,7 +137,31 @@ export function EventPreview({
   );
 }
 
-function PreviewArtwork({ cover, hero = false }: { cover: AdminEventMediaItem | null; hero?: boolean }) {
-  if (cover) return <MediaPreview item={cover.media} priority={hero} />;
-  return <MediaFrame className={hero ? "h-full border-0" : "min-h-72"}><div className="grid h-full min-h-72 place-items-center bg-surface-raised px-8 text-center"><span className="font-label text-xs uppercase tracking-[0.16em] text-ink-muted">Event artwork coming soon</span></div></MediaFrame>;
+function PreviewArtwork({
+  cover,
+  hero = false,
+  presentation,
+}: {
+  cover: AdminEventMediaItem | null;
+  hero?: boolean;
+  presentation?: EventCoverPresentation | null;
+}) {
+  if (cover)
+    return (
+      <MediaPreview
+        className={hero ? "h-full border-0" : undefined}
+        item={cover.media}
+        presentation={presentation ?? cover.presentation}
+        priority={hero}
+      />
+    );
+  return (
+    <MediaFrame className={hero ? "h-full border-0" : "min-h-72"}>
+      <div className="grid h-full min-h-72 place-items-center bg-surface-raised px-8 text-center">
+        <span className="font-label text-xs uppercase tracking-[0.16em] text-ink-muted">
+          Event artwork coming soon
+        </span>
+      </div>
+    </MediaFrame>
+  );
 }

@@ -41,7 +41,10 @@ export function EventMediaEditorSection({ eventId }: { eventId: string }) {
       <section aria-labelledby="event-media-editor-title">
         <div className="border-b border-line pb-5">
           <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Event media</p>
-          <h2 className="mt-2 font-display text-2xl font-bold text-ink" id="event-media-editor-title">
+          <h2
+            className="mt-2 font-display text-2xl font-bold text-ink"
+            id="event-media-editor-title"
+          >
             Cover and assigned media
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
@@ -55,12 +58,15 @@ export function EventMediaEditorSection({ eventId }: { eventId: string }) {
             <span className="sr-only">Loading current event cover</span>
           </div>
         ) : error ? (
-          <p className="mt-6 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+          <p
+            className="mt-6 border-l-2 border-error bg-error/10 px-4 py-3 text-sm text-error"
+            role="alert"
+          >
             {error}
           </p>
         ) : cover ? (
           <div className="mt-6 grid overflow-hidden border border-line bg-surface md:grid-cols-[9rem_minmax(0,1fr)]">
-            <MediaPreview item={cover.media} />
+            <MediaPreview item={cover.media} presentation={cover.presentation} />
             <div className="p-5">
               <div className="flex flex-wrap gap-2">
                 <MediaApprovalBadge status={cover.media.approvalStatus} />

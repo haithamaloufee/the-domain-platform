@@ -67,11 +67,18 @@ test("preview maps live text, eligible cover, and approved gallery ordering", ()
   const later = mediaItem("later", EventMediaUsage.Gallery, 2, MediaApprovalStatus.Approved);
   const earlier = mediaItem("earlier", EventMediaUsage.Gallery, 0, MediaApprovalStatus.Approved);
   const hidden = mediaItem("hidden", EventMediaUsage.Gallery, 3, MediaApprovalStatus.Hidden);
-  const preview = buildEventPreview(validFields(), [cover, later, hidden, earlier], new Date("2026-01-01T00:00:00Z"));
+  const preview = buildEventPreview(
+    validFields(),
+    [cover, later, hidden, earlier],
+    new Date("2026-01-01T00:00:00Z"),
+  );
 
   assert.equal(preview.title, "Domain Night");
   assert.equal(preview.cover?.id, "cover");
-  assert.deepEqual(preview.gallery.map((item) => item.id), ["earlier", "later"]);
+  assert.deepEqual(
+    preview.gallery.map((item) => item.id),
+    ["earlier", "later"],
+  );
 });
 
 test("publish checklist requires acknowledgement only when cover is missing", () => {
@@ -119,6 +126,7 @@ function mediaItem(id, usage, sortOrder, approvalStatus) {
     sortOrder,
     isFeatured: usage === EventMediaUsage.Cover,
     createdAtUtc: "2026-01-01T00:00:00Z",
+    presentation: { focalPointX: 0.5, focalPointY: 0.5, zoom: 1 },
     media: {
       id: `asset-${id}`,
       fileName: `${id}.jpg`,

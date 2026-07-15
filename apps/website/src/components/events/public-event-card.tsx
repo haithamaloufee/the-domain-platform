@@ -4,15 +4,14 @@ import {
   type PublicEventListItem,
 } from "@the-domain/types";
 import { Badge, MediaFrame, buttonClasses } from "@the-domain/ui";
-import { cn } from "@the-domain/utils";
-import Image from "next/image";
+import { cn, eventCoverRenderData } from "@the-domain/utils";
 import Link from "next/link";
 import {
   bookingAvailabilityLabels,
   displayStatusLabels,
   formatEventDate,
-  mediaImageSource,
 } from "./event-presentation";
+import { EventCoverImage } from "./event-cover-image";
 
 export function PublicEventCard({
   event,
@@ -24,7 +23,7 @@ export function PublicEventCard({
   variant?: "default" | "compact";
 }) {
   const media = event.coverMedia;
-  const source = mediaImageSource(media);
+  const source = eventCoverRenderData(media);
   const canBook =
     event.bookingAvailability === BookingAvailability.Open && event.externalBookingUrl !== null;
 
@@ -33,13 +32,10 @@ export function PublicEventCard({
       <article className="cinematic-card group relative min-h-[30rem] overflow-hidden border border-line bg-surface">
         <MediaFrame className="absolute inset-0 border-0">
           {source ? (
-            <Image
-              alt={media?.altText ?? ""}
-              className="cinematic-media object-cover"
-              fill
+            <EventCoverImage
+              media={media!}
               priority={priority}
               sizes="(max-width: 768px) 100vw, 50vw"
-              src={source}
             />
           ) : (
             <EventArtworkFallback />
@@ -73,13 +69,10 @@ export function PublicEventCard({
     <article className="cinematic-card group grid overflow-hidden border border-line bg-surface lg:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.1fr)]">
       <MediaFrame className="min-h-80 lg:min-h-[30rem]">
         {source ? (
-          <Image
-            alt={media?.altText ?? ""}
-            className="cinematic-media object-cover"
-            fill
+          <EventCoverImage
+            media={media!}
             priority={priority}
             sizes="(max-width: 1024px) 100vw, 45vw"
-            src={source}
           />
         ) : (
           <EventArtworkFallback />

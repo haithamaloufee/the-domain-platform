@@ -1,11 +1,13 @@
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
+using TheDomain.Application.Media.Contracts;
 
 namespace TheDomain.Application.Events.Contracts;
 
 public sealed record PublicMediaResponse(Guid Id, MediaType MediaType, string Url, string? ThumbnailUrl,
     string? Caption, string? AltText, int? Width, int? Height, decimal? DurationSeconds,
-    MediaOrientation Orientation, EventMediaUsage Usage, int SortOrder, bool IsFeatured);
+    MediaOrientation Orientation, EventMediaUsage Usage, int SortOrder, bool IsFeatured,
+    EventCoverPresentationResponse Presentation);
 public sealed record PublicEventListResponse(Guid Id, string Slug, string Title, string ShortDescription,
     string EventType, DateTimeOffset StartAtUtc, DateTimeOffset EndAtUtc, string TimeZoneId, string City,
     string VenueName, EventDisplayStatus DisplayStatus, BookingAvailability BookingAvailability,

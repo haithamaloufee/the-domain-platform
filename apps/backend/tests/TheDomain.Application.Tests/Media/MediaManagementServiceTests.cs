@@ -128,6 +128,161 @@ public sealed class MediaManagementServiceTests
     }
 
     [Fact]
+    public void LegacyEventMediaUsesCenteredNeutralPresentationDefaults()
+    {
+        var item = new EventMedia(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            EventMediaUsage.Cover, 0, true, DateTimeOffset.UtcNow);
+
+        Assert.Equal(0.5, item.FocalPointX);
+        Assert.Equal(0.5, item.FocalPointY);
+        Assert.Equal(1.0, item.Zoom);
+    }
+
+    [Theory]
+    [InlineData(0.0, 0.0, 1.0)]
+    [InlineData(1.0, 1.0, 3.0)]
+    [InlineData(0.25, 0.75, 1.8)]
+    public async Task ValidCoverPresentationPersistsIncludingBoundaries(
+        double focalPointX, double focalPointY, double zoom)
+    {
+        var repository = new FakeRepository
+        {
+            Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent()
+        };
+        var cover = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+
+        var result = await CreateService(repository).UpdateCoverPresentationAsync(
+            repository.Event.Id, cover.Id,
+            new UpdateEventCoverPresentationRequest(focalPointX, focalPointY, zoom),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(focalPointX, cover.FocalPointX);
+        Assert.Equal(focalPointY, cover.FocalPointY);
+        Assert.Equal(zoom, cover.Zoom);
+        Assert.Equal(focalPointX, result.Value!.Presentation.FocalPointX);
+        Assert.Equal(1, repository.SaveCount);
+    }
+
+    [Theory]
+    [InlineData(-0.01, 0.5, 1.0)]
+    [InlineData(1.01, 0.5, 1.0)]
+    [InlineData(0.5, -0.01, 1.0)]
+    [InlineData(0.5, 1.01, 1.0)]
+    [InlineData(0.5, 0.5, 0.99)]
+    [InlineData(0.5, 0.5, 3.01)]
+    public async Task OutOfRangeCoverPresentationIsRejected(
+        double focalPointX, double focalPointY, double zoom)
+    {
+        var repository = new FakeRepository
+        {
+            Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent()
+        };
+        var cover = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+
+        var result = await CreateService(repository).UpdateCoverPresentationAsync(
+            repository.Event.Id, cover.Id,
+            new UpdateEventCoverPresentationRequest(focalPointX, focalPointY, zoom),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, repository.SaveCount);
+        Assert.Equal(EventMedia.DefaultFocalPoint, cover.FocalPointX);
+        Assert.Equal(EventMedia.DefaultZoom, cover.Zoom);
+    }
+
+    [Fact]
+    public async Task NonFiniteCoverPresentationIsRejected()
+    {
+        var repository = new FakeRepository
+        {
+            Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent()
+        };
+        var cover = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+        var service = CreateService(repository);
+
+        var nan = await service.UpdateCoverPresentationAsync(repository.Event.Id, cover.Id,
+            new UpdateEventCoverPresentationRequest(double.NaN, 0.5, 1), CancellationToken.None);
+        var infinity = await service.UpdateCoverPresentationAsync(repository.Event.Id, cover.Id,
+            new UpdateEventCoverPresentationRequest(0.5, 0.5, double.PositiveInfinity),
+            CancellationToken.None);
+
+        Assert.False(nan.IsSuccess);
+        Assert.False(infinity.IsSuccess);
+        Assert.Equal(0, repository.SaveCount);
+    }
+
+    [Fact]
+    public async Task CoverPresentationRequiresExistingEventAndActiveAssignedCover()
+    {
+        var repository = new FakeRepository
+        {
+            Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent()
+        };
+        var gallery = AddAssignment(repository, repository.Media, EventMediaUsage.Gallery, 0);
+        var service = CreateService(repository);
+        var request = new UpdateEventCoverPresentationRequest(0.3, 0.4, 1.5);
+
+        var missingEvent = await service.UpdateCoverPresentationAsync(
+            Guid.NewGuid(), gallery.Id, request, CancellationToken.None);
+        var missingAssignment = await service.UpdateCoverPresentationAsync(
+            repository.Event.Id, Guid.NewGuid(), request, CancellationToken.None);
+        var nonCover = await service.UpdateCoverPresentationAsync(
+            repository.Event.Id, gallery.Id, request, CancellationToken.None);
+
+        Assert.False(missingEvent.IsSuccess);
+        Assert.Contains("Event was not found.", missingEvent.Errors);
+        Assert.False(missingAssignment.IsSuccess);
+        Assert.Contains("Event media assignment was not found.", missingAssignment.Errors);
+        Assert.False(nonCover.IsSuccess);
+        Assert.Contains(nonCover.Errors, error => error.Contains("active event cover"));
+        Assert.Equal(0, repository.SaveCount);
+    }
+
+    [Fact]
+    public async Task RepeatedIdenticalCoverPresentationSaveIsIdempotent()
+    {
+        var repository = new FakeRepository
+        {
+            Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent()
+        };
+        var cover = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+        var service = CreateService(repository);
+        var request = new UpdateEventCoverPresentationRequest(0.2, 0.8, 2);
+
+        var first = await service.UpdateCoverPresentationAsync(
+            repository.Event.Id, cover.Id, request, CancellationToken.None);
+        var second = await service.UpdateCoverPresentationAsync(
+            repository.Event.Id, cover.Id, request, CancellationToken.None);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(second.IsSuccess);
+        Assert.Equal(1, repository.SaveCount);
+        Assert.Equal(first.Value!.Presentation, second.Value!.Presentation);
+    }
+
+    [Fact]
+    public async Task ReplacingCoverDoesNotTransferPreviousPresentation()
+    {
+        var first = CreateMedia(MediaApprovalStatus.Approved);
+        var second = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = first, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(second);
+        var oldCover = AddAssignment(repository, first, EventMediaUsage.Cover, 0);
+        oldCover.UpdatePresentation(0.1, 0.9, 2.25);
+        var replacement = AddAssignment(repository, second, EventMediaUsage.Gallery, 1);
+
+        var result = await CreateService(repository).SetCoverAsync(
+            repository.Event.Id, replacement.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0.5, replacement.FocalPointX);
+        Assert.Equal(0.5, replacement.FocalPointY);
+        Assert.Equal(1.0, replacement.Zoom);
+        Assert.Equal(0.1, oldCover.FocalPointX);
+    }
+
+    [Fact]
     public async Task HidingCoverInvalidatesCoverWithoutRemovingOtherAssignments()
     {
         var coverMedia = CreateMedia(MediaApprovalStatus.Approved);
@@ -207,14 +362,27 @@ public sealed class MediaManagementServiceTests
     [Fact]
     public async Task InvalidReorderIsRejectedWithoutPersistence()
     {
-        var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent() };
-        var assignment = AddAssignment(repository, repository.Media, EventMediaUsage.Cover, 0);
+        var firstMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var secondMedia = CreateMedia(MediaApprovalStatus.Approved);
+        var repository = new FakeRepository { Media = firstMedia, Event = CreateEvent() };
+        repository.AdditionalMedia.Add(secondMedia);
+        var first = AddAssignment(repository, firstMedia, EventMediaUsage.Cover, 0);
+        var second = AddAssignment(repository, secondMedia, EventMediaUsage.Gallery, 1);
+        var service = CreateService(repository);
 
-        var result = await CreateService(repository).ReorderAsync(repository.Event.Id,
-            new ReorderEventMediaRequest([assignment.Id, assignment.Id]), CancellationToken.None);
+        var duplicate = await service.ReorderAsync(repository.Event.Id,
+            new ReorderEventMediaRequest([first.Id, first.Id]), CancellationToken.None);
+        var missing = await service.ReorderAsync(repository.Event.Id,
+            new ReorderEventMediaRequest([first.Id]), CancellationToken.None);
+        var foreign = await service.ReorderAsync(repository.Event.Id,
+            new ReorderEventMediaRequest([first.Id, Guid.NewGuid()]), CancellationToken.None);
 
-        Assert.False(result.IsSuccess);
+        Assert.False(duplicate.IsSuccess);
+        Assert.False(missing.IsSuccess);
+        Assert.False(foreign.IsSuccess);
         Assert.Equal(0, repository.SaveCount);
+        Assert.Equal([first.Id, second.Id], repository.EventMediaItems
+            .OrderBy(item => item.SortOrder).Select(item => item.Id));
     }
 
     [Fact]
@@ -250,7 +418,27 @@ public sealed class MediaManagementServiceTests
         Assert.Equal(hero.Id, events[0].CoverMedia?.Id);
         Assert.NotNull(details);
         Assert.Equal(2, details.Media.Count);
+        Assert.Equal(gallery.Id, details.Media[0].Id);
         Assert.Equal(hero.Id, details.CoverMedia?.Id);
+    }
+
+    [Fact]
+    public async Task PublicEventListAndDetailsReturnTheSameCoverPresentation()
+    {
+        var eventEntity = CreateEvent(); eventEntity.Publish(DateTimeOffset.UtcNow.AddDays(-1));
+        var media = CreateMedia(MediaApprovalStatus.Approved);
+        var cover = new EventMedia(Guid.NewGuid(), eventEntity.Id, media.Id,
+            EventMediaUsage.Cover, 0, true, DateTimeOffset.UtcNow, 0.2, 0.7, 1.75);
+        eventEntity.AddMedia(cover, media);
+        var service = new TheDomain.Application.Events.EventService(
+            new EventRepositoryFake(eventEntity), TimeProvider.System);
+
+        var events = await service.GetUpcomingAsync(CancellationToken.None);
+        var details = await service.GetPublicBySlugAsync(eventEntity.Slug, CancellationToken.None);
+
+        Assert.Equal(new EventCoverPresentationResponse(0.2, 0.7, 1.75),
+            events[0].CoverMedia?.Presentation);
+        Assert.Equal(events[0].CoverMedia?.Presentation, details?.CoverMedia?.Presentation);
     }
 
     [Theory]

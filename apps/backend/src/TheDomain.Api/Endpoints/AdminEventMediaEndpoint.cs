@@ -15,6 +15,9 @@ public static class AdminEventMediaEndpoint
         group.MapPost("/", async (Guid eventId, AssignEventMediaRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.AssignAsync(eventId, request, token)));
         group.MapPost("/reorder", async (Guid eventId, ReorderEventMediaRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.ReorderAsync(eventId, request, token)));
         group.MapPost("/{eventMediaId:guid}/cover", async (Guid eventId, Guid eventMediaId, IMediaManagementService service, CancellationToken token) => ToResult(await service.SetCoverAsync(eventId, eventMediaId, token)));
+        group.MapPut("/{eventMediaId:guid}/presentation", async (Guid eventId, Guid eventMediaId,
+            UpdateEventCoverPresentationRequest request, IMediaManagementService service, CancellationToken token) =>
+            ToResult(await service.UpdateCoverPresentationAsync(eventId, eventMediaId, request, token)));
         group.MapPut("/{eventMediaId:guid}", async (Guid eventId, Guid eventMediaId, UpdateEventMediaRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.UpdateAssignmentAsync(eventId, eventMediaId, request, token)));
         group.MapDelete("/{eventMediaId:guid}", async (Guid eventId, Guid eventMediaId, IMediaManagementService service, CancellationToken token) => await service.RemoveAssignmentAsync(eventId, eventMediaId, token) ? Results.NoContent() : Results.NotFound(Problem("Event media assignment was not found.", 404)));
         return endpoints;

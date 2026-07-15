@@ -450,6 +450,16 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
+                    b.Property<double>("FocalPointX")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.5);
+
+                    b.Property<double>("FocalPointY")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.5);
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
 
@@ -464,6 +474,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<double>("Zoom")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(1.0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("MediaAssetId");
@@ -473,7 +488,14 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventId", "MediaAssetId", "Usage")
                         .IsUnique();
 
-                    b.ToTable("event_media", (string)null);
+                    b.ToTable("event_media", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_event_media_FocalPointX", "\"FocalPointX\" >= 0.0 AND \"FocalPointX\" <= 1.0");
+
+                            t.HasCheckConstraint("CK_event_media_FocalPointY", "\"FocalPointY\" >= 0.0 AND \"FocalPointY\" <= 1.0");
+
+                            t.HasCheckConstraint("CK_event_media_Zoom", "\"Zoom\" >= 1.0 AND \"Zoom\" <= 3.0");
+                        });
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Media.MediaAsset", b =>

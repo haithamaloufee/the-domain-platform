@@ -14,6 +14,7 @@ import {
   type PublicPartner,
   type PublicStatisticItem,
 } from "@the-domain/types";
+import { defaultEventCoverPresentation, isValidEventCoverPresentation } from "@the-domain/utils";
 
 export function parsePublicHomepage(value: unknown): PublicHomepageResponse {
   if (!isRecord(value)) throw new Error("The server returned invalid homepage content.");
@@ -176,7 +177,15 @@ function mediaItem(item: unknown): PublicMediaItem {
     usage: enumValue(item.usage, EventMediaUsage),
     sortOrder: integer(item.sortOrder),
     isFeatured: booleanValue(item.isFeatured),
+    presentation: parsePresentation(item.presentation),
   };
+}
+
+function parsePresentation(value: unknown) {
+  if (value === undefined || value === null) return { ...defaultEventCoverPresentation };
+  if (!isValidEventCoverPresentation(value))
+    throw new Error("Expected valid cover presentation settings.");
+  return { ...value };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

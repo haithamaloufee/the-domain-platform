@@ -191,7 +191,10 @@ export function EventDetails({ eventId }: { eventId: string }) {
               Status changes apply immediately and may affect public visibility.
             </p>
             {!hasEligibleCover && (
-              <p className="mt-4 border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm leading-6 text-warning" role="status">
+              <p
+                className="mt-4 border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm leading-6 text-warning"
+                role="status"
+              >
                 This event has no eligible cover. It can still be published, but public views will
                 use their artwork fallback.
               </p>

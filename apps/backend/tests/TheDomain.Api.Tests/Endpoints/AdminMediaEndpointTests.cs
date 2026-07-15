@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using TheDomain.Api.Tests.Infrastructure;
 
 namespace TheDomain.Api.Tests.Endpoints;
@@ -20,6 +21,16 @@ public sealed class AdminMediaEndpointTests(ApiWebApplicationFactory factory) : 
     {
         using var client = factory.CreateClient();
         using var response = await client.PostAsync(path, null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CoverPresentationMutationRequiresAuthentication()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.PutAsJsonAsync(
+            "/api/admin/events/00000000-0000-0000-0000-000000000001/media/00000000-0000-0000-0000-000000000002/presentation",
+            new { focalPointX = 0.5, focalPointY = 0.5, zoom = 1.0 });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
