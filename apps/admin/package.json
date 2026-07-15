@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "eslint .",
+    "test:auth": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/login-foundation.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

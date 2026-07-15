@@ -12,6 +12,9 @@
   --color-gold-bright: var(--td-color-gold-bright);
   --color-line: var(--td-color-line);
   --color-error: var(--td-color-error);
+  --color-info: var(--td-color-info);
+  --color-warning: var(--td-color-warning);
+  --color-success: var(--td-color-success);
   --font-display: var(--td-font-display);
   --font-body: var(--td-font-body);
   --font-label: var(--td-font-label);

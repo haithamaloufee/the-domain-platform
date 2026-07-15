@@ -9,6 +9,9 @@
   --td-color-gold-bright: #f2ca50;
   --td-color-line: #343539;
   --td-color-error: #ffb4ab;
+  --td-color-info: #9ecaff;
+  --td-color-warning: #f2ca50;
+  --td-color-success: #86d993;
   --td-font-display: var(--font-syne), "Arial Black", sans-serif;
   --td-font-body: var(--font-inter), Arial, sans-serif;
   --td-font-label: var(--font-geist), Arial, sans-serif;
