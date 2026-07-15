@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PublicationBadge } from "@/components/events/event-status-badges";
 import { MediaApprovalBadge, mediaTypeLabels } from "@/components/media/media-labels";
 import { MediaPreview } from "@/components/media/media-preview";
+import { MediaUploadQueue } from "@/components/media/media-upload-queue";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
 import {
   listEventMedia,
@@ -28,13 +29,25 @@ import {
 import { AssignExistingMedia } from "./assign-existing-media";
 import { EventMediaGroup } from "./event-media-group";
 
-export function EventMediaWorkspace({ eventId }: { eventId: string }) {
-  const [event, setEvent] = useState<AdminEventDetails | null>(null);
-  const [items, setItems] = useState<AdminEventMediaItem[]>([]);
+export function EventMediaWorkspace({
+  embedded = false,
+  eventDetails,
+  eventId,
+  initialItems,
+  onItemsChange,
+}: {
+  embedded?: boolean;
+  eventDetails?: AdminEventDetails;
+  eventId: string;
+  initialItems?: AdminEventMediaItem[];
+  onItemsChange?: (items: AdminEventMediaItem[]) => void;
+}) {
+  const [event, setEvent] = useState<AdminEventDetails | null>(eventDetails ?? null);
+  const [items, setItems] = useState<AdminEventMediaItem[]>(initialItems ?? []);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!(eventDetails && initialItems));
 
   const load = useCallback(async () => {
     const [eventDetails, assignments] = await Promise.all([
@@ -43,16 +56,21 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
     ]);
     setEvent(eventDetails);
     setItems(assignments);
+    onItemsChange?.(assignments);
     setError("");
-  }, [eventId]);
+  }, [eventId, onItemsChange]);
 
   useEffect(() => {
+    if (eventDetails && initialItems) {
+      return;
+    }
     let active = true;
     Promise.all([getAdminEvent(eventId), listEventMedia(eventId)])
       .then(([eventDetails, assignments]) => {
         if (!active) return;
         setEvent(eventDetails);
         setItems(assignments);
+        onItemsChange?.(assignments);
         setError("");
       })
       .catch((loadError: unknown) => {
@@ -65,7 +83,7 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
     return () => {
       active = false;
     };
-  }, [eventId]);
+  }, [eventDetails, eventId, initialItems, onItemsChange]);
 
   const ordered = useMemo(() => orderedEventMedia(items), [items]);
   const cover = useMemo(() => activeEventCover(items), [items]);
@@ -169,7 +187,7 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
 
   return (
     <div>
-      <header className="border-b border-line pb-8">
+      {!embedded && <header className="border-b border-line pb-8">
         <div className="flex flex-wrap gap-2">
           <PublicationBadge status={event.publicationStatus} />
           <span className="border border-line px-2 py-1 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
@@ -203,7 +221,7 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
             </Link>
           </div>
         </div>
-      </header>
+      </header>}
 
       {(error || notice) && (
         <div aria-live="polite" className="pt-6">
@@ -221,6 +239,20 @@ export function EventMediaWorkspace({ eventId }: { eventId: string }) {
       )}
 
       <div className="space-y-14 pt-10">
+        {embedded && (
+          <section aria-labelledby="wizard-media-upload-title">
+            <h3 className="font-display text-2xl font-bold text-ink" id="wizard-media-upload-title">Upload new media</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">Uploads remain reusable library assets. Wizard assignment retries never upload the same file twice.</p>
+            <div className="mt-6">
+              <MediaUploadQueue
+                deferEventAssignment
+                eventId={eventId}
+                lockEvent
+                onCompleted={() => void load()}
+              />
+            </div>
+          </section>
+        )}
         <CoverPanel
           cover={cover}
           invalidCover={cover ? null : invalidCover}

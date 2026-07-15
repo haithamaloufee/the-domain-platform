@@ -13,7 +13,7 @@ export const manualBookingOptions: ReadonlyArray<{
 }> = [
   {
     value: BookingAvailability.Hidden,
-    label: "Unavailable",
+    label: "Hidden",
     description: "No public booking action is configured.",
   },
   {
@@ -32,6 +32,29 @@ export const manualBookingOptions: ReadonlyArray<{
     description: "Shows that booking is closed without exposing an active link.",
   },
 ];
+
+export const publicationOptions: ReadonlyArray<{
+  description: string;
+  label: string;
+  value: EventPublicationStatusValue;
+}> = [
+  { value: EventPublicationStatus.Draft, label: "Draft", description: "Private and editable." },
+  { value: EventPublicationStatus.Published, label: "Published", description: "Visible on public event surfaces." },
+  { value: EventPublicationStatus.Cancelled, label: "Cancelled", description: "Publicly marked as cancelled." },
+  { value: EventPublicationStatus.Archived, label: "Archived", description: "Removed from public event surfaces." },
+];
+
+export function canTransitionPublication(
+  current: EventPublicationStatusValue,
+  target: EventPublicationStatusValue,
+): boolean {
+  if (current === target) return true;
+  if (current === EventPublicationStatus.Draft)
+    return target !== EventPublicationStatus.Draft;
+  if (current === EventPublicationStatus.Published)
+    return target === EventPublicationStatus.Cancelled || target === EventPublicationStatus.Archived;
+  return current === EventPublicationStatus.Cancelled && target === EventPublicationStatus.Archived;
+}
 
 export interface BookingPreviewInput {
   bookingClosesAt: string;

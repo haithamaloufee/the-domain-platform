@@ -6,6 +6,13 @@ import type {
   UpdateEventRequest,
 } from "@the-domain/types";
 import { parseAdminEvent, parseAdminEvents } from "./event-contract";
+import {
+  eventRequestErrorKind,
+  eventRequestFallbackMessage,
+  type AdminEventRequestErrorKind,
+} from "./event-request-errors";
+
+export { eventRequestErrorKind } from "./event-request-errors";
 
 export function listAdminEvents(): Promise<AdminEventListItem[]> {
   return request("/api/admin/events", { method: "GET" }, parseAdminEvents);
@@ -66,8 +73,23 @@ async function request<T>(
 
   if (!response.ok) {
     const error = value as Partial<AdminEventErrorResponse> | null;
-    throw new Error(error?.message ?? "Unable to complete the event request.");
+    throw new AdminEventRequestError(
+      response.status,
+      eventRequestErrorKind(response.status),
+      error?.message ?? eventRequestFallbackMessage(response.status),
+    );
   }
 
   return parse(value);
+}
+
+export class AdminEventRequestError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly kind: AdminEventRequestErrorKind,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AdminEventRequestError";
+  }
 }

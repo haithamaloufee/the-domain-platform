@@ -30,7 +30,7 @@ export const BookingAvailability = {
 export type BookingAvailability = (typeof BookingAvailability)[keyof typeof BookingAvailability];
 
 export interface SaveEventRequest {
-  slug: string;
+  slug: string | null;
   title: string;
   shortDescription: string;
   longDescription: string;
@@ -51,11 +51,12 @@ export interface SaveEventRequest {
   showOnHomepage: boolean;
 }
 
-export type CreateEventRequest = SaveEventRequest;
+export type CreateEventRequest = Omit<SaveEventRequest, "slug"> & { slug?: string | null };
 export type UpdateEventRequest = SaveEventRequest;
 
 export interface AdminEventDetails extends SaveEventRequest {
   id: string;
+  slug: string;
   isBookingEnabled: boolean;
   bookingStatus: BookingAvailability;
   publicationStatus: EventPublicationStatus;

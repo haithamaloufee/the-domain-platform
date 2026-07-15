@@ -31,6 +31,108 @@ public sealed class EventServiceTests
         Assert.Equal("Asia/Amman", result.Value!.TimeZoneId);
     }
 
+    [Theory]
+    [InlineData("A Night at The Domain", "a-night-at-the-domain")]
+    [InlineData("  Mixed   SPACE -- Event!  ", "mixed-space-event")]
+    [InlineData("The Domain's Opening", "the-domains-opening")]
+    public async Task CreateWithoutSlugGeneratesNormalizedCanonicalSlug(string title, string expected)
+    {
+        var result = await Service(new FakeRepository()).CreateAsync(
+            Request(slug: null, title: title), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expected, result.Value!.Slug);
+    }
+
+    [Fact]
+    public async Task DuplicateGeneratedSlugUsesDeterministicSuffix()
+    {
+        var repository = new FakeRepository(Event("the-domain-night"));
+
+        var result = await Service(repository).CreateAsync(
+            Request(slug: null, title: "The Domain Night"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("the-domain-night-2", result.Value!.Slug);
+    }
+
+    [Fact]
+    public async Task NonLatinTitleUsesSafeIdentityFallback()
+    {
+        var result = await Service(new FakeRepository()).CreateAsync(
+            Request(slug: null, title: "حفلة"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Matches("^event-[a-f0-9]{8}$", result.Value!.Slug);
+    }
+
+    [Fact]
+    public async Task GeneratedSlugHonorsDatabaseMaximumLength()
+    {
+        var result = await Service(new FakeRepository()).CreateAsync(
+            Request(slug: null, title: new string('A', 200)), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EventSlugGenerator.MaximumLength, result.Value!.Slug.Length);
+    }
+
+    [Fact]
+    public async Task ExplicitValidSlugIsPreservedAndDuplicateIsRejected()
+    {
+        var repository = new FakeRepository(Event("reserved-slug"));
+
+        var preserved = await Service(repository).CreateAsync(
+            Request(slug: "deliberate-slug", title: "Different title"), CancellationToken.None);
+        var duplicate = await Service(repository).CreateAsync(
+            Request(slug: "reserved-slug"), CancellationToken.None);
+
+        Assert.True(preserved.IsSuccess);
+        Assert.Equal("deliberate-slug", preserved.Value!.Slug);
+        Assert.False(duplicate.IsSuccess);
+        Assert.Equal(EventFailureKind.Conflict, duplicate.FailureKind);
+    }
+
+    [Theory]
+    [InlineData("Invalid Slug")]
+    [InlineData("double--hyphen")]
+    [InlineData("-leading")]
+    public async Task InvalidExplicitSlugIsRejected(string slug)
+    {
+        var repository = new FakeRepository();
+
+        var result = await Service(repository).CreateAsync(Request(slug: slug), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, repository.SaveCount);
+        Assert.Equal(0, repository.Count);
+    }
+
+    [Fact]
+    public async Task ExistingSlugRemainsStableWhenTitleChangesIncludingAfterPublication()
+    {
+        var item = Event("stable-public-url");
+        item.Publish(Now.AddDays(-1));
+        var repository = new FakeRepository(item);
+
+        var result = await Service(repository).UpdateAsync(item.Id,
+            Request(slug: null, title: "Completely new title"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("stable-public-url", result.Value!.Slug);
+    }
+
+    [Fact]
+    public async Task DraftAllowsDeliberateManualSlugOverride()
+    {
+        var item = Event("original-draft-slug");
+
+        var result = await Service(new FakeRepository(item)).UpdateAsync(item.Id,
+            Request(slug: "editorial-override"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("editorial-override", result.Value!.Slug);
+    }
+
     [Fact]
     public async Task CreateRejectsUnknownTimezone()
     {
@@ -39,6 +141,19 @@ public sealed class EventServiceTests
 
         Assert.False(result.IsSuccess);
         Assert.Contains(result.Errors, error => error.Contains("valid supported identifier", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task InvalidDraftRequestNeverCreatesPlaceholderRecord()
+    {
+        var repository = new FakeRepository();
+
+        var result = await Service(repository).CreateAsync(
+            Request(slug: null, end: Now), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, repository.Count);
+        Assert.Equal(0, repository.SaveCount);
     }
 
     [Theory]
@@ -154,7 +269,7 @@ public sealed class EventServiceTests
         new(repository, new FixedTimeProvider(Now));
 
     private static SaveEventRequest Request(
-        string slug = "sample-event",
+        string? slug = "sample-event",
         string title = "Title",
         DateTimeOffset? start = null,
         DateTimeOffset? end = null,
@@ -179,6 +294,7 @@ public sealed class EventServiceTests
     private sealed class FakeRepository(params EntertainmentEvent[] events) : IEventRepository
     {
         private readonly List<EntertainmentEvent> _events = [.. events];
+        public int Count => _events.Count;
         public int SaveCount { get; private set; }
         public Task<IReadOnlyList<EntertainmentEvent>> ListAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<EntertainmentEvent>>(_events);

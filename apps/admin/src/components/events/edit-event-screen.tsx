@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import type { AdminEventDetails } from "@the-domain/types";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
 import { EventForm } from "./event-form";
+import type { WizardStepId } from "@/lib/events/event-wizard-model";
 
-export function EditEventScreen({ eventId }: { eventId: string }) {
+export function EditEventScreen({ eventId, initialStep }: { eventId: string; initialStep?: WizardStepId }) {
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
   const [error, setError] = useState("");
 
@@ -52,5 +53,5 @@ export function EditEventScreen({ eventId }: { eventId: string }) {
         <span className="sr-only">Loading event form</span>
       </div>
     );
-  return <EventForm event={event} />;
+  return <EventForm event={event} initialStep={initialStep} />;
 }

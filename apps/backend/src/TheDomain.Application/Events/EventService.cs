@@ -50,21 +50,28 @@ public sealed class EventService(
 
     public async Task<EventOperationResult<AdminEventResponse>> CreateAsync(SaveEventRequest request, CancellationToken cancellationToken)
     {
-        var errors = Validate(request, out var bookingStatus);
+        var errors = Validate(request, request.Slug, allowMissingSlug: true, out var bookingStatus);
         if (errors.Count > 0) return new(null, errors);
-        if (await repository.SlugExistsAsync(request.Slug, null, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var now = timeProvider.GetUtcNow();
-        var item = CreateEvent(Guid.NewGuid(), request, bookingStatus, now);
+        var id = Guid.NewGuid();
+        var slug = string.IsNullOrWhiteSpace(request.Slug)
+            ? await GenerateUniqueSlugAsync(request.Title, id, cancellationToken)
+            : request.Slug.Trim();
+        if (await repository.SlugExistsAsync(slug, null, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
+        var item = CreateEvent(id, slug, request, bookingStatus, now);
         repository.Add(item); await repository.SaveChangesAsync(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
     public async Task<EventOperationResult<AdminEventResponse>> UpdateAsync(Guid id, SaveEventRequest request, CancellationToken cancellationToken)
     {
-        var errors = Validate(request, out var bookingStatus); if (errors.Count > 0) return new(null, errors);
         var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.NotFound<AdminEventResponse>("Event was not found.");
-        if (await repository.SlugExistsAsync(request.Slug, id, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
+        // Existing slugs are deliberately stable. A title change never changes the public URL;
+        // only a non-empty explicit slug override can do so, regardless of publication state.
+        var slug = string.IsNullOrWhiteSpace(request.Slug) ? item.Slug : request.Slug.Trim();
+        var errors = Validate(request, slug, allowMissingSlug: false, out var bookingStatus); if (errors.Count > 0) return new(null, errors);
+        if (await repository.SlugExistsAsync(slug, id, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var now = timeProvider.GetUtcNow();
-        Apply(item, request, bookingStatus, now); await repository.SaveChangesAsync(cancellationToken);
+        Apply(item, slug, request, bookingStatus, now); await repository.SaveChangesAsync(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
     public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) =>
@@ -99,12 +106,14 @@ public sealed class EventService(
         else item.Cancel(now);
         await repository.SaveChangesAsync(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
     }
-    private static List<string> Validate(SaveEventRequest request, out BookingAvailability bookingStatus)
+    private static List<string> Validate(SaveEventRequest request, string? slug, bool allowMissingSlug, out BookingAvailability bookingStatus)
     {
         List<string> errors = [];
-        if (string.IsNullOrWhiteSpace(request.Slug) || !request.Slug.All(character => char.IsAsciiLetterOrDigit(character) || character == '-') || request.Slug.StartsWith('-') || request.Slug.EndsWith('-')) errors.Add("Slug must be URL-safe lowercase letters, numbers, and hyphens.");
-        if (!string.Equals(request.Slug, request.Slug.ToLowerInvariant(), StringComparison.Ordinal)) errors.Add("Slug must be lowercase.");
+        if ((!allowMissingSlug || !string.IsNullOrWhiteSpace(slug)) && !EventSlugGenerator.IsValid(slug))
+            errors.Add($"Slug must be at most {EventSlugGenerator.MaximumLength} URL-safe lowercase letters, numbers, and single hyphens.");
         if (string.IsNullOrWhiteSpace(request.Title)) errors.Add("Title is required.");
+        if (string.IsNullOrWhiteSpace(request.ShortDescription)) errors.Add("Short description is required.");
+        if (string.IsNullOrWhiteSpace(request.LongDescription)) errors.Add("Full description is required.");
         if (string.IsNullOrWhiteSpace(request.EventType)) errors.Add("Event type is required.");
         if (string.IsNullOrWhiteSpace(request.City)) errors.Add("City is required.");
         if (string.IsNullOrWhiteSpace(request.VenueName)) errors.Add("Venue name is required.");
@@ -167,8 +176,17 @@ public sealed class EventService(
         }
         return errors;
     }
-    private static EntertainmentEvent CreateEvent(Guid id, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => new(id, r.Slug.Trim(), r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
-    private static void Apply(EntertainmentEvent item, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => item.Update(r.Slug.Trim(), r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
+    private async Task<string> GenerateUniqueSlugAsync(string title, Guid eventId, CancellationToken cancellationToken)
+    {
+        var baseSlug = EventSlugGenerator.FromTitle(title, eventId);
+        for (var occurrence = 1; ; occurrence++)
+        {
+            var candidate = EventSlugGenerator.WithCollisionSuffix(baseSlug, occurrence);
+            if (!await repository.SlugExistsAsync(candidate, null, cancellationToken)) return candidate;
+        }
+    }
+    private static EntertainmentEvent CreateEvent(Guid id, string slug, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => new(id, slug, r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
+    private static void Apply(EntertainmentEvent item, string slug, SaveEventRequest r, BookingAvailability bookingStatus, DateTimeOffset now) => item.Update(slug, r.Title.Trim(), r.ShortDescription.Trim(), r.LongDescription.Trim(), r.EventType.Trim(), r.StartAtUtc, r.EndAtUtc, r.TimeZoneId.Trim(), r.City.Trim(), r.VenueName.Trim(), Clean(r.VenueAddress), Clean(r.MapUrl), Clean(r.ExternalBookingUrl), r.IsBookingEnabled ?? false, r.BookingOpensAtUtc, r.BookingClosesAtUtc, r.IsFeatured, r.ShowOnHomepage, now, bookingStatus);
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private PublicEventListResponse MapPublicList(EntertainmentEvent item, DateTimeOffset now)
     {

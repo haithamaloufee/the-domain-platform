@@ -52,7 +52,7 @@ export function parseSaveEventRequest(value: unknown): SaveEventRequest | null {
 
   try {
     return {
-      slug: boundedString(value.slug),
+      slug: nullableBoundedString(value.slug),
       title: boundedString(value.title),
       shortDescription: boundedString(value.shortDescription),
       longDescription: boundedString(value.longDescription),
@@ -107,7 +107,7 @@ function nullableString(value: unknown): string | null {
 }
 
 function nullableBoundedString(value: unknown): string | null {
-  if (value === null || value === "") return null;
+  if (value === undefined || value === null || value === "") return null;
   return boundedString(value);
 }
 
