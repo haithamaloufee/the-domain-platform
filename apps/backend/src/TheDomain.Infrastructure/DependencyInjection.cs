@@ -73,6 +73,7 @@ public static class DependencyInjection
             services.AddScoped<IGalleryService, DisabledGalleryService>();
             services.AddScoped<IHomepageCmsService, DisabledHomepageCmsService>();
             services.AddScoped<IBrandingSettingsService, DisabledBrandingSettingsService>();
+            services.AddScoped<TheDomain.Application.About.IAboutService, TheDomain.Application.About.DisabledAboutService>();
             return services;
         }
 
@@ -92,6 +93,8 @@ public static class DependencyInjection
         services.AddScoped<IGalleryRepository, GalleryRepository>();
         services.AddScoped<IGalleryService, GalleryService>();
         services.AddScoped<IHomepageCmsRepository, HomepageCmsRepository>();
+        services.AddScoped<TheDomain.Application.About.IAboutRepository, AboutRepository>();
+        services.AddScoped<TheDomain.Application.About.IAboutService, TheDomain.Application.About.AboutService>();
         services.AddScoped<IHomepageCmsService, HomepageCmsService>();
         services.AddScoped<IBrandingSettingsRepository, BrandingSettingsRepository>();
         services.AddScoped<IBrandingSettingsService, BrandingSettingsService>();

@@ -13,6 +13,7 @@
     "test:gallery": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/gallery-manager.test.mjs",
     "test:branding": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/branding-settings.test.mjs",
     "test:partners-statistics": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/partners-statistics.test.mjs",
+    "test:about-team": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/about-team.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

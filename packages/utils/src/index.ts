@@ -38,3 +38,4 @@ export {
   partnerLogoEligible,
   statisticsPhraseRequest,
 } from "./homepage-management";
+export * from "./about-editor";

@@ -47,6 +47,11 @@ public sealed class MediaOrganizationRepository(TheDomainDbContext dbContext) : 
         var partnerNames = await dbContext.Partners.AsNoTracking().Where(item => item.LogoMediaAssetId == mediaAssetId).Select(item => item.Name).ToListAsync(token);
         brandingUsage.AddRange(partnerNames.Select(name => new MediaBrandingUsageResponse($"Partner logo · {name}")));
         if (await dbContext.HomepageContent.AsNoTracking().AnyAsync(item => item.HeroMediaAssetId == mediaAssetId, token)) brandingUsage.Add(new("Homepage hero"));
+        var about = await dbContext.AboutSettings.AsNoTracking().Where(item => item.HeroMediaAssetId == mediaAssetId || item.SocialImageMediaAssetId == mediaAssetId).Select(item => new { item.HeroMediaAssetId, item.SocialImageMediaAssetId }).SingleOrDefaultAsync(token);
+        if (about?.HeroMediaAssetId == mediaAssetId) brandingUsage.Add(new("About hero"));
+        if (about?.SocialImageMediaAssetId == mediaAssetId) brandingUsage.Add(new("About social image"));
+        var teamNames = await dbContext.TeamMembers.AsNoTracking().Where(item => item.PhotoMediaAssetId == mediaAssetId).Select(item => item.Name).ToListAsync(token);
+        brandingUsage.AddRange(teamNames.Select(name => new MediaBrandingUsageResponse($"Team photo · {name}")));
         return new(mediaAssetId, assignments.Concat(posters).ToArray(), collections, brandingUsage, assignments.Count == 0 && posters.Count == 0 && brandingUsage.Count == 0);
     }
     public void AddCollection(MediaCollection collection) => dbContext.MediaCollections.Add(collection);

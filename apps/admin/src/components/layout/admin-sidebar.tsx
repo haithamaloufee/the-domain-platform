@@ -10,6 +10,7 @@ const items = [
   { href: "/dashboard/media", label: "Media" },
   { href: "/dashboard/gallery", label: "Gallery" },
   { href: "/dashboard/homepage", label: "Homepage" },
+  { href: "/dashboard/about", label: "About & Team" },
   { href: "/dashboard/partners", label: "Partners" },
   { href: "/dashboard/statistics", label: "Statistics" },
   { href: "/dashboard/discounts", label: "Discounts" },

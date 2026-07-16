@@ -57,6 +57,17 @@ export type {
   UpdateStatisticRequest,
 } from "./homepage";
 export { HomepageSectionKey } from "./homepage";
+export { AboutHeroPresentation } from "./about";
+export type {
+  AboutMedia,
+  AdminAboutSettings,
+  SaveAboutSettingsRequest,
+  SaveTeamMemberRequest,
+  AdminTeamMember,
+  PublicAboutSettings,
+  PublicTeamMember,
+  PublicAboutResponse,
+} from "./about";
 export type {
   AdminEventMediaItem,
   AdminMediaDetails,

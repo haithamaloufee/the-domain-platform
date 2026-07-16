@@ -22,6 +22,189 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("TheDomain.Domain.About.AboutSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("HeroEyebrow")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("HeroHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("HeroMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("HeroPresentation")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HeroText")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<string>("IntroStatement")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<bool>("IsHeroEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPartnersEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsReachOutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsStoryEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTeamEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PartnersHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PartnersText")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<string>("ReachOutCtaHref")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("ReachOutCtaLabel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReachOutHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ReachOutText")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<string>("SeoDescription")
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
+
+                    b.Property<string>("SeoTitle")
+                        .HasMaxLength(70)
+                        .HasColumnType("character varying(70)");
+
+                    b.Property<Guid?>("SocialImageMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StoryHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StoryHighlight")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("StoryText")
+                        .IsRequired()
+                        .HasMaxLength(2500)
+                        .HasColumnType("character varying(2500)");
+
+                    b.Property<string>("TeamHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TeamText")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HeroMediaAssetId");
+
+                    b.HasIndex("IsPublished");
+
+                    b.HasIndex("SocialImageMediaAssetId");
+
+                    b.ToTable("about_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_about_settings_singleton", "\"Id\" = 'b8fe531e-7d4f-4b50-b3d6-e5de2a69b37e'");
+                        });
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.About.TeamMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Biography")
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsVisible")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid>("PhotoMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProfileUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PhotoMediaAssetId");
+
+                    b.HasIndex("IsVisible", "SortOrder");
+
+                    b.ToTable("team_members", (string)null);
+                });
+
             modelBuilder.Entity("TheDomain.Domain.Branding.BrandingSettings", b =>
                 {
                     b.Property<Guid>("Id")
@@ -878,6 +1061,28 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasIndex("CollectionId", "SortOrder");
 
                     b.ToTable("media_collection_items", (string)null);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.About.AboutSettings", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("HeroMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("SocialImageMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.About.TeamMember", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("PhotoMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Branding.BrandingSettings", b =>

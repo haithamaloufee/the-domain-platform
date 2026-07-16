@@ -18,7 +18,73 @@ import {
   type PublicPartner,
   type PublicStatisticItem,
   type PublicBrandingSettings,
+  type PublicAboutResponse,
+  AboutHeroPresentation,
 } from "@the-domain/types";
+
+export function parsePublicAbout(value: unknown): PublicAboutResponse {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.settings) ||
+    !Array.isArray(value.team) ||
+    !Array.isArray(value.partners)
+  )
+    throw new Error("The server returned invalid About content.");
+  const settings = value.settings;
+  const aboutMedia = (input: unknown) => {
+    if (input === null) return null;
+    if (!isRecord(input)) throw new Error("Invalid About media.");
+    return {
+      id: requiredString(input.id),
+      mediaType: enumValue(input.mediaType, MediaType),
+      url: httpsUrl(input.url),
+      posterUrl: nullableHttpsUrl(input.posterUrl),
+      altText: nullableString(input.altText),
+    };
+  };
+  return {
+    settings: {
+      isHeroEnabled: booleanValue(settings.isHeroEnabled),
+      heroEyebrow: requiredString(settings.heroEyebrow),
+      heroHeading: requiredString(settings.heroHeading),
+      heroText: requiredString(settings.heroText),
+      heroMedia: aboutMedia(settings.heroMedia),
+      heroPresentation: enumValue(settings.heroPresentation, AboutHeroPresentation),
+      introStatement: requiredString(settings.introStatement),
+      isStoryEnabled: booleanValue(settings.isStoryEnabled),
+      storyHeading: requiredString(settings.storyHeading),
+      storyText: requiredString(settings.storyText),
+      storyHighlight: nullableString(settings.storyHighlight),
+      isTeamEnabled: booleanValue(settings.isTeamEnabled),
+      teamHeading: requiredString(settings.teamHeading),
+      teamText: requiredString(settings.teamText),
+      isPartnersEnabled: booleanValue(settings.isPartnersEnabled),
+      partnersHeading: requiredString(settings.partnersHeading),
+      partnersText: requiredString(settings.partnersText),
+      isReachOutEnabled: booleanValue(settings.isReachOutEnabled),
+      reachOutHeading: requiredString(settings.reachOutHeading),
+      reachOutText: requiredString(settings.reachOutText),
+      reachOutCtaLabel: requiredString(settings.reachOutCtaLabel),
+      reachOutCtaHref: safeHref(settings.reachOutCtaHref),
+      seoTitle: nullableString(settings.seoTitle),
+      seoDescription: nullableString(settings.seoDescription),
+      socialImageUrl: nullableHttpsUrl(settings.socialImageUrl),
+    },
+    team: value.team.map((input) => {
+      if (!isRecord(input)) throw new Error("Invalid Team member.");
+      return {
+        id: requiredString(input.id),
+        name: requiredString(input.name),
+        role: requiredString(input.role),
+        biography: nullableString(input.biography),
+        photoUrl: httpsUrl(input.photoUrl),
+        photoAltText: nullableString(input.photoAltText),
+        profileUrl: nullableHttpsUrl(input.profileUrl),
+      };
+    }),
+    partners: parsePublicPartners(value.partners),
+  };
+}
 import {
   defaultEventCoverPresentation,
   isValidEventCoverPresentation,

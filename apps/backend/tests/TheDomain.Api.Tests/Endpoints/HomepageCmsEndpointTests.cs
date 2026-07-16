@@ -52,6 +52,8 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
     [InlineData("/api/admin/homepage")]
     [InlineData("/api/admin/statistics")]
     [InlineData("/api/admin/partners")]
+    [InlineData("/api/admin/about")]
+    [InlineData("/api/admin/team")]
     public async Task AdminCmsEndpointsRequireAuthentication(string path)
     {
         using var client = factory.CreateClient();

@@ -10,6 +10,7 @@ import type {
   PublicPartner,
   PublicStatisticItem,
   PublicBrandingSettings,
+  PublicAboutResponse,
 } from "@the-domain/types";
 import { getPublicApiBaseUrl } from "./environment";
 import {
@@ -23,6 +24,7 @@ import {
   parsePublicEvent,
   parsePublicEvents,
   parsePublicBranding,
+  parsePublicAbout,
 } from "./public-contract";
 
 const publicRevalidationSeconds = 60;
@@ -89,6 +91,9 @@ export function getPublicPartners(): Promise<PublicPartner[]> {
 
 export function getPublicBranding(): Promise<PublicBrandingSettings> {
   return request("/api/public/branding", parsePublicBranding);
+}
+export function getPublicAbout(): Promise<PublicAboutResponse> {
+  return request("/api/public/about", parsePublicAbout);
 }
 
 async function request<T>(path: `/${string}`, parse: (value: unknown) => T): Promise<T> {
