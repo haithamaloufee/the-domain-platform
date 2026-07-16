@@ -84,3 +84,9 @@ export type {
   VideoPosterMode as VideoPosterModeValue,
   VideoPosterPresentation,
 } from "./media";
+export type {
+  BrandingMedia,
+  BrandingSettings,
+  PublicBrandingSettings,
+  UpdateBrandingSettingsRequest,
+} from "./branding";

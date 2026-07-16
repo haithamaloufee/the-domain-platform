@@ -172,6 +172,12 @@ export function parseMediaUsage(value: unknown): MediaUsage {
     mediaAssetId: requiredString(value.mediaAssetId),
     canPermanentlyDelete: booleanValue(value.canPermanentlyDelete),
     collections: parseMediaCollections(value.collections),
+    branding: Array.isArray(value.branding)
+      ? value.branding.map((item) => {
+          if (!isRecord(item)) throw new Error("Expected branding usage.");
+          return { role: requiredString(item.role) };
+        })
+      : [],
     events: value.events.map((event) => {
       if (!isRecord(event)) throw new Error("Expected event usage.");
       return {

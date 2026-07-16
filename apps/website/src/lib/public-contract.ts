@@ -16,12 +16,47 @@ import {
   type PublicMediaItem,
   type PublicPartner,
   type PublicStatisticItem,
+  type PublicBrandingSettings,
 } from "@the-domain/types";
 import {
   defaultEventCoverPresentation,
   isValidEventCoverPresentation,
   safeGalleryLayoutPreset,
 } from "@the-domain/utils";
+
+export function parsePublicBranding(value: unknown): PublicBrandingSettings {
+  if (!isRecord(value)) throw new Error("The server returned invalid branding settings.");
+  return {
+    siteName: requiredString(value.siteName),
+    brandDescription: nullableString(value.brandDescription),
+    defaultSeoTitle: requiredString(value.defaultSeoTitle),
+    defaultSeoDescription: requiredString(value.defaultSeoDescription),
+    primaryLogo: brandingMedia(value.primaryLogo),
+    alternateLogo: brandingMedia(value.alternateLogo),
+    favicon: brandingMedia(value.favicon),
+    socialImage: brandingMedia(value.socialImage),
+    publicEmail: nullableString(value.publicEmail),
+    publicPhone: nullableString(value.publicPhone),
+    whatsApp: nullableString(value.whatsApp),
+    publicAddress: nullableString(value.publicAddress),
+    socialLinks: brandingLinks(value.socialLinks),
+  };
+}
+function brandingMedia(value: unknown) {
+  if (value === null) return null;
+  if (!isRecord(value)) throw new Error("Invalid branding image.");
+  return {
+    id: requiredString(value.id),
+    url: httpsUrl(value.url),
+    altText: nullableString(value.altText),
+    width: nullableNumber(value.width),
+    height: nullableNumber(value.height),
+  };
+}
+function brandingLinks(value: unknown): Record<string, string> {
+  if (!isRecord(value)) throw new Error("Invalid social links.");
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, httpsUrl(item)]));
+}
 
 export function parseGalleryCollections(value: unknown): GalleryPublicCollection[] {
   if (!Array.isArray(value)) throw new Error("The server returned an invalid collection list.");

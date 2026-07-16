@@ -26,3 +26,10 @@ export {
   moveGalleryId,
   safeGalleryLayoutPreset,
 } from "./gallery-presentation";
+export {
+  alternateBrandLogo,
+  brandingChanged,
+  brandingRequest,
+  fallbackBranding,
+  safeBrandingUrl,
+} from "./branding";

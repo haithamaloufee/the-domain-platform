@@ -72,7 +72,7 @@ public sealed class MediaOrganizationService(IMediaOrganizationRepository reposi
         if (!string.Equals(request.Confirmation?.Trim(), media.OriginalFileName, StringComparison.Ordinal))
             return EventOperationResult.Failure<PermanentDeleteMediaResponse>("Type the exact original filename to confirm permanent deletion.");
         var usage = await repository.GetUsageAsync(id, token); if (usage is null || !usage.CanPermanentlyDelete)
-            return EventOperationResult.Conflict<PermanentDeleteMediaResponse>("Media that is used by an event or poster cannot be permanently deleted.");
+            return EventOperationResult.Conflict<PermanentDeleteMediaResponse>("Media used by an event, poster, or branding setting cannot be permanently deleted.");
         if (!string.IsNullOrWhiteSpace(media.CloudinaryPublicId)) await storage.DeleteAsync(media.CloudinaryPublicId, media.MediaType, token);
         repository.RemoveMedia(media); await repository.SaveChangesAsync(token);
         return EventOperationResult.Success(new PermanentDeleteMediaResponse(media.Id, media.OriginalFileName));

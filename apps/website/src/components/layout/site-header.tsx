@@ -5,6 +5,8 @@ import { cn } from "@the-domain/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { PublicBrandingSettings } from "@the-domain/types";
+import Image from "next/image";
 
 const links = [
   { href: "/events", label: "Events" },
@@ -14,7 +16,7 @@ const links = [
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export function SiteHeader() {
+export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [compact, setCompact] = useState(false);
@@ -40,11 +42,25 @@ export function SiteHeader() {
         )}
       >
         <Link
-          aria-label="The Domain home"
+          aria-label={`${branding.siteName} home`}
           className="inline-flex min-h-11 items-center font-display text-lg font-extrabold tracking-[-0.03em] text-ink focus-visible:outline-2 focus-visible:outline-offset-4"
           href="/"
         >
-          THE DOMAIN<span className="text-gold">.</span>
+          {branding.primaryLogo ? (
+            <Image
+              alt={`${branding.siteName} logo`}
+              className="h-11 w-auto object-contain"
+              height={44}
+              width={180}
+              priority
+              src={branding.primaryLogo.url}
+            />
+          ) : (
+            <>
+              {branding.siteName}
+              <span className="text-gold">.</span>
+            </>
+          )}
         </Link>
         <nav aria-label="Primary navigation" className="hidden md:block">
           <ul className="flex items-center gap-x-7 font-label text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-muted">

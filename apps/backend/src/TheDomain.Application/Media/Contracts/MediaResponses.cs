@@ -25,6 +25,7 @@ public sealed record MediaCollectionResponse(Guid Id, string Name, bool IsArchiv
     DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc, DateTimeOffset? ArchivedAtUtc);
 public sealed record MediaCollectionItemResponse(Guid MediaAssetId, int SortOrder, AdminMediaListItemResponse Media);
 public sealed record MediaUsageEventResponse(Guid EventId, string EventTitle, EventMediaUsage Usage, bool IsCustomPoster);
+public sealed record MediaBrandingUsageResponse(string Role);
 public sealed record MediaUsageResponse(Guid MediaAssetId, IReadOnlyList<MediaUsageEventResponse> Events,
-    IReadOnlyList<MediaCollectionResponse> Collections, bool CanPermanentlyDelete);
+    IReadOnlyList<MediaCollectionResponse> Collections, IReadOnlyList<MediaBrandingUsageResponse> Branding, bool CanPermanentlyDelete);
 public sealed record PermanentDeleteMediaResponse(Guid Id, string OriginalFileName);

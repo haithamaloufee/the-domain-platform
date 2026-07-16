@@ -42,6 +42,16 @@ public sealed class MediaOrganizationServiceTests
         Assert.True(storage.Deleted); Assert.Null(repository.MediaRecord);
     }
 
+    [Fact]
+    public async Task BrandingUsageBlocksPermanentDeletion()
+    {
+        var repository = new FakeRepository { HasBrandingUsage = true };
+        var service = CreateService(repository);
+        await service.ArchiveMediaAsync(repository.Media.Id, default);
+        Assert.False((await service.PermanentlyDeleteMediaAsync(repository.Media.Id, new("media.jpg"), default)).IsSuccess);
+        Assert.NotNull(repository.MediaRecord);
+    }
+
     private static MediaOrganizationService CreateService(FakeRepository repository, FakeStorage? storage = null) =>
         new(repository, storage ?? new FakeStorage(), TimeProvider.System);
 
@@ -56,6 +66,7 @@ public sealed class MediaOrganizationServiceTests
         public MediaAsset Media { get; } = new(Guid.NewGuid(), "media.jpg", "media.jpg", MediaType.Image, "https://example.com/media.jpg", null, 100, 100, null, MediaOrientation.Square, null, null, null, MediaApprovalStatus.Approved, "media-id", DateTimeOffset.UtcNow);
         public MediaAsset? MediaRecord { get; private set; }
         public bool HasEventUsage { get; set; }
+        public bool HasBrandingUsage { get; set; }
         public List<MediaCollection> Collections { get; } = [];
         public List<MediaCollectionItem> Items { get; } = [];
         public FakeRepository() { MediaRecord = Media; }
@@ -64,7 +75,7 @@ public sealed class MediaOrganizationServiceTests
         public Task<bool> CollectionNameExistsAsync(string name, Guid? excludingId, CancellationToken token) => Task.FromResult(Collections.Any(item => item.Name == name && item.Id != excludingId));
         public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => Task.FromResult(MediaRecord?.Id == id ? MediaRecord : null);
         public Task<IReadOnlyList<MediaCollectionItem>> ListCollectionItemsAsync(Guid id, bool tracking, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => item.CollectionId == id).OrderBy(item => item.SortOrder).ToArray());
-        public Task<MediaUsageResponse?> GetUsageAsync(Guid id, CancellationToken token) => Task.FromResult<MediaUsageResponse?>(MediaRecord?.Id != id ? null : new(id, HasEventUsage ? [new(Guid.NewGuid(), "Event", EventMediaUsage.Gallery, false)] : [], [], !HasEventUsage));
+        public Task<MediaUsageResponse?> GetUsageAsync(Guid id, CancellationToken token) => Task.FromResult<MediaUsageResponse?>(MediaRecord?.Id != id ? null : new(id, HasEventUsage ? [new(Guid.NewGuid(), "Event", EventMediaUsage.Gallery, false)] : [], [], HasBrandingUsage ? [new("Primary logo")] : [], !HasEventUsage && !HasBrandingUsage));
         public void AddCollection(MediaCollection collection) => Collections.Add(collection);
         public void AddCollectionItem(MediaCollectionItem item) => Items.Add(item);
         public void RemoveCollection(MediaCollection collection) { Collections.Remove(collection); Items.RemoveAll(item => item.CollectionId == collection.Id); }

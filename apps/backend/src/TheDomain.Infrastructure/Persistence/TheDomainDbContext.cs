@@ -3,6 +3,7 @@ using TheDomain.Domain.Identity;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Branding;
 
 namespace TheDomain.Infrastructure.Persistence;
 
@@ -19,6 +20,7 @@ public sealed class TheDomainDbContext(DbContextOptions<TheDomainDbContext> opti
     public DbSet<HomepageContent> HomepageContent => Set<HomepageContent>();
     public DbSet<StatisticItem> HomepageStatistics => Set<StatisticItem>();
     public DbSet<Partner> Partners => Set<Partner>();
+    public DbSet<BrandingSettings> BrandingSettings => Set<BrandingSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

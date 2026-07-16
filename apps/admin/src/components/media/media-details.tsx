@@ -269,9 +269,12 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
                   {usage.collections.map((item) => (
                     <li key={item.id}>Collection · {item.name}</li>
                   ))}
-                  {usage.events.length === 0 && usage.collections.length === 0 && (
-                    <li>Not currently used.</li>
-                  )}
+                  {usage.branding.map((item) => (
+                    <li key={item.role}>Branding · {item.role}</li>
+                  ))}
+                  {usage.events.length === 0 &&
+                    usage.collections.length === 0 &&
+                    usage.branding.length === 0 && <li>Not currently used.</li>}
                 </ul>
                 <PermanentDelete
                   media={media}

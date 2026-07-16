@@ -22,6 +22,109 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("TheDomain.Domain.Branding.BrandingSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AlternateLogoMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BrandDescription")
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DefaultSeoDescription")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("DefaultSeoTitle")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("FacebookUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("FaviconMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("InstagramUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("PrimaryLogoMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PublicAddress")
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)");
+
+                    b.Property<string>("PublicEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("PublicPhone")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("SiteName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SnapchatUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("SocialImageMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TikTokUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WhatsApp")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("XUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("YouTubeUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlternateLogoMediaAssetId");
+
+                    b.HasIndex("FaviconMediaAssetId");
+
+                    b.HasIndex("PrimaryLogoMediaAssetId");
+
+                    b.HasIndex("SocialImageMediaAssetId");
+
+                    b.ToTable("branding_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_branding_settings_singleton", "\"Id\" = '00000000-0000-0000-0000-000000000004'");
+                        });
+                });
+
             modelBuilder.Entity("TheDomain.Domain.Events.EntertainmentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -692,6 +795,29 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasIndex("CollectionId", "SortOrder");
 
                     b.ToTable("media_collection_items", (string)null);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Branding.BrandingSettings", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("AlternateLogoMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("FaviconMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("PrimaryLogoMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("SocialImageMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Identity.RefreshToken", b =>

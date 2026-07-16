@@ -1,5 +1,7 @@
 import { Container } from "@the-domain/ui";
 import Link from "next/link";
+import type { PublicBrandingSettings } from "@the-domain/types";
+import Image from "next/image";
 
 const footerGroups = [
   {
@@ -19,27 +21,39 @@ const footerGroups = [
   },
 ] as const;
 
-export function SiteFooter() {
+export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
   return (
     <footer className="relative isolate overflow-hidden border-t border-line bg-canvas">
       <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-35" />
       <Container className="border-b border-line py-12 sm:py-16">
         <p className="max-w-6xl font-display text-[clamp(3.5rem,12vw,10rem)] font-extrabold leading-[0.78] tracking-[-0.075em] text-ink/10">
-          THE DOMAIN
+          {branding.siteName}
         </p>
       </Container>
       <Container className="grid gap-12 py-14 sm:py-16 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <Link
-            aria-label="The Domain home"
+            aria-label={`${branding.siteName} home`}
             className="inline-flex min-h-11 items-center font-display text-2xl font-extrabold tracking-[-0.04em] text-ink focus-visible:outline-2 focus-visible:outline-offset-4"
             href="/"
           >
-            THE DOMAIN<span className="text-gold">.</span>
+            {branding.alternateLogo ? (
+              <Image
+                alt={`${branding.siteName} logo`}
+                className="h-14 w-auto object-contain"
+                height={56}
+                width={220}
+                src={branding.alternateLogo.url}
+              />
+            ) : (
+              <>
+                {branding.siteName}
+                <span className="text-gold">.</span>
+              </>
+            )}
           </Link>
           <p className="mt-5 max-w-lg text-sm leading-7 text-ink-muted sm:text-base">
-            Events, entertainment, and visual stories presented from Jordan through a cinematic
-            frame.
+            {branding.brandDescription}
           </p>
         </div>
 
@@ -67,8 +81,21 @@ export function SiteFooter() {
       </Container>
       <Container className="border-t border-line py-6">
         <div className="flex flex-col gap-3 font-label text-[0.625rem] uppercase tracking-[0.14em] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} The Domain Entertainment Company. All rights reserved.</p>
-          <p>Amman · Jordan</p>
+          <p>
+            © {new Date().getFullYear()} {branding.siteName}. All rights reserved.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {branding.publicEmail && (
+              <a href={`mailto:${branding.publicEmail}`}>{branding.publicEmail}</a>
+            )}
+            {branding.publicPhone && <span>{branding.publicPhone}</span>}
+            {Object.entries(branding.socialLinks).map(([platform, url]) => (
+              <a href={url} key={platform} rel="noreferrer noopener" target="_blank">
+                {platform}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ))}
+          </div>
         </div>
       </Container>
     </footer>

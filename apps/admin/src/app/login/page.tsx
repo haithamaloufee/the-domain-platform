@@ -4,6 +4,8 @@ import { LoginForm } from "@/components/auth/login-form";
 import { readAuthTokens } from "@/lib/auth/auth-cookies";
 import { loginErrorMessages } from "@/lib/auth/login-errors";
 import { getAdminSession } from "@/lib/auth/session";
+import { fetchBackend } from "@/lib/auth/backend-auth";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function LoginPage({
 
   const { refreshToken } = await readAuthTokens();
   if (refreshToken && !reason) redirect("/dashboard");
+  const branding = await loadLoginBranding();
 
   return (
     <main
@@ -38,7 +41,17 @@ export default async function LoginPage({
             <div className="flex items-center gap-3">
               <span aria-hidden="true" className="h-px w-10 bg-gold" />
               <p className="font-label text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-                The Domain
+                {branding.logoUrl ? (
+                  <Image
+                    alt={`${branding.siteName} logo`}
+                    className="h-12 w-auto object-contain"
+                    height={48}
+                    width={190}
+                    src={branding.logoUrl}
+                  />
+                ) : (
+                  branding.siteName
+                )}
               </p>
             </div>
             <h1 className="mt-8 max-w-xl font-display text-[clamp(2.5rem,8vw,4.5rem)] font-bold leading-[0.95] tracking-[-0.055em] text-ink">
@@ -83,6 +96,30 @@ export default async function LoginPage({
       </div>
     </main>
   );
+}
+
+async function loadLoginBranding() {
+  try {
+    const response = await fetchBackend("/api/public/branding", {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error();
+    const value = (await response.json()) as {
+      siteName?: unknown;
+      primaryLogo?: { url?: unknown } | null;
+    };
+    return {
+      siteName:
+        typeof value.siteName === "string" && value.siteName ? value.siteName : "The Domain",
+      logoUrl:
+        typeof value.primaryLogo?.url === "string" && value.primaryLogo.url.startsWith("https://")
+          ? value.primaryLogo.url
+          : null,
+    };
+  } catch {
+    return { siteName: "The Domain", logoUrl: null };
+  }
 }
 
 function SecurityNote({ label, text }: { label: string; text: string }) {

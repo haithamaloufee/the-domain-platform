@@ -10,6 +10,7 @@ using TheDomain.Application.Events;
 using TheDomain.Application.Media;
 using TheDomain.Infrastructure.Media;
 using TheDomain.Application.Homepage;
+using TheDomain.Application.Branding;
 
 namespace TheDomain.Infrastructure;
 
@@ -71,6 +72,7 @@ public static class DependencyInjection
             services.AddScoped<IMediaOrganizationService, DisabledMediaOrganizationService>();
             services.AddScoped<IGalleryService, DisabledGalleryService>();
             services.AddScoped<IHomepageCmsService, DisabledHomepageCmsService>();
+            services.AddScoped<IBrandingSettingsService, DisabledBrandingSettingsService>();
             return services;
         }
 
@@ -91,6 +93,8 @@ public static class DependencyInjection
         services.AddScoped<IGalleryService, GalleryService>();
         services.AddScoped<IHomepageCmsRepository, HomepageCmsRepository>();
         services.AddScoped<IHomepageCmsService, HomepageCmsService>();
+        services.AddScoped<IBrandingSettingsRepository, BrandingSettingsRepository>();
+        services.AddScoped<IBrandingSettingsService, BrandingSettingsService>();
         if (jwtOptions.Enabled && initialAdminOptions.Enabled)
         {
             services.AddHostedService<InitialAdminProvisioner>();

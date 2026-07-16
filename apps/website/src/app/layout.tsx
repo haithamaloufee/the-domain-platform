@@ -2,35 +2,44 @@ import type { Metadata } from "next";
 import { Geist, Inter, Syne } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { defaultDescription, getWebsiteUrl, siteName } from "@/lib/seo";
+import { getWebsiteUrl } from "@/lib/seo";
+import { getPublicBranding } from "@/lib/public-api";
+import { fallbackBranding } from "@the-domain/utils";
 import "./globals.css";
 
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
-export const metadata: Metadata = {
-  metadataBase: getWebsiteUrl(),
-  title: { default: "The Domain Entertainment", template: "%s | The Domain" },
-  description: defaultDescription,
-  applicationName: siteName,
-  category: "entertainment",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName,
-    title: siteName,
-    description: defaultDescription,
-    url: "/",
-  },
-  twitter: {
-    card: "summary",
-    title: siteName,
-    description: defaultDescription,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await loadBranding();
+  return {
+    metadataBase: getWebsiteUrl(),
+    title: { default: branding.defaultSeoTitle, template: `%s | ${branding.siteName}` },
+    description: branding.defaultSeoDescription,
+    applicationName: branding.siteName,
+    icons: branding.favicon ? { icon: branding.favicon.url } : undefined,
+    category: "entertainment",
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      siteName: branding.siteName,
+      title: branding.defaultSeoTitle,
+      description: branding.defaultSeoDescription,
+      images: branding.socialImage ? [{ url: branding.socialImage.url }] : undefined,
+      url: "/",
+    },
+    twitter: {
+      card: branding.socialImage ? "summary_large_image" : "summary",
+      title: branding.defaultSeoTitle,
+      description: branding.defaultSeoDescription,
+      images: branding.socialImage ? [branding.socialImage.url] : undefined,
+    },
+  };
+}
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const branding = await loadBranding();
   return (
     <html className={`${syne.variable} ${inter.variable} ${geist.variable}`} lang="en">
       <body>
@@ -41,13 +50,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Skip to content
         </a>
         <div className="flex min-h-screen flex-col">
-          <SiteHeader />
+          <SiteHeader branding={branding} />
           <main className="flex-1" id="main-content">
             {children}
           </main>
-          <SiteFooter />
+          <SiteFooter branding={branding} />
         </div>
       </body>
     </html>
   );
+}
+async function loadBranding() {
+  try {
+    return await getPublicBranding();
+  } catch {
+    return fallbackBranding;
+  }
 }

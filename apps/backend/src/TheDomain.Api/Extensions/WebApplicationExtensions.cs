@@ -38,6 +38,7 @@ public static class WebApplicationExtensions
         endpoints.MapPublicGalleryEndpoints();
         endpoints.MapAdminEventMediaEndpoints();
         endpoints.MapAdminHomepageCmsEndpoints();
+        endpoints.MapBrandingSettingsEndpoints();
 
         return endpoints;
     }

@@ -227,6 +227,7 @@ export interface MediaUsage {
   mediaAssetId: string;
   events: MediaUsageEvent[];
   collections: MediaCollection[];
+  branding: Array<{ role: string }>;
   canPermanentlyDelete: boolean;
 }
 
