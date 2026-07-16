@@ -77,7 +77,7 @@ public sealed class MediaManagementService(
             .ThenBy(item => item.CreatedAtUtc)
             .ThenBy(item => item.Id)
             .Select(item => new AdminEventMediaResponse(item.Id, item.EventId, item.MediaAssetId, item.Usage,
-                item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item), Map(item.MediaAsset)))
+                item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item), MapVideoPoster(item), Map(item.MediaAsset)))
             .ToArray();
     public Task<EventOperationResult<AdminMediaResponse>> UpdateMetadataAsync(Guid id, UpdateMediaMetadataRequest request, CancellationToken token) => ChangeMedia(id, item => item.UpdateMetadata(request.Category, request.Caption, request.AltText, timeProvider.GetUtcNow()), token);
     public Task<EventOperationResult<AdminMediaResponse>> ApproveAsync(Guid id, CancellationToken token) => ChangeMedia(id, item => item.Approve(timeProvider.GetUtcNow()), token);
@@ -234,6 +234,40 @@ public sealed class MediaManagementService(
             ids.Select(id => Map(byId[id])).ToArray());
     }
 
+    public async Task<EventOperationResult<EventMediaResponse>> UpdateVideoPosterAsync(
+        Guid eventId, Guid eventMediaId, UpdateVideoPosterRequest request, CancellationToken token)
+    {
+        if (!Enum.IsDefined(request.Mode))
+            return EventOperationResult.Failure<EventMediaResponse>("Video poster mode is invalid.");
+        var assignments = await repository.ListEventMediaForUpdateAsync(eventId, token);
+        var target = assignments.SingleOrDefault(item => item.Id == eventMediaId);
+        if (target is null) return EventOperationResult.Failure<EventMediaResponse>("Event media assignment was not found.");
+        if (target.MediaAsset.MediaType != MediaType.Video)
+            return EventOperationResult.Failure<EventMediaResponse>("Poster settings can only be saved for video media.");
+
+        MediaAsset? customPoster = null;
+        if (request.Mode == VideoPosterMode.Timestamp)
+        {
+            if (request.TimestampSeconds is null || request.TimestampSeconds < 0 ||
+                request.TimestampSeconds > EventMedia.MaximumPosterTimestampSeconds ||
+                (target.MediaAsset.DurationSeconds is { } duration && request.TimestampSeconds > duration))
+                return EventOperationResult.Failure<EventMediaResponse>("Poster timestamp must fall within the video duration.");
+        }
+        else if (request.Mode == VideoPosterMode.CustomImage)
+        {
+            if (request.CustomPosterMediaAssetId is not { } posterId)
+                return EventOperationResult.Failure<EventMediaResponse>("Choose a custom poster image.");
+            customPoster = await repository.FindMediaAsync(posterId, token);
+            if (customPoster is null) return EventOperationResult.Failure<EventMediaResponse>("Custom poster media asset was not found.");
+            if (customPoster.MediaType != MediaType.Image || customPoster.ApprovalStatus != MediaApprovalStatus.Approved || !HasSafeUrl(customPoster.Url))
+                return EventOperationResult.Failure<EventMediaResponse>("Custom posters must be approved HTTPS image assets.");
+        }
+
+        target.UpdateVideoPoster(request.Mode, request.TimestampSeconds, customPoster);
+        await repository.SaveChangesAsync(token);
+        return EventOperationResult.Success(Map(target));
+    }
+
     public async Task<bool> RemoveAssignmentAsync(Guid eventId, Guid eventMediaId, CancellationToken token)
     {
         if (await repository.FindEventAsync(eventId, token) is null) return false;
@@ -253,10 +287,21 @@ public sealed class MediaManagementService(
         item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Orientation, item.Category, item.Caption,
         item.AltText, item.ApprovalStatus, item.CreatedAtUtc);
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
-    private static EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId,
-        item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item));
+    private EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId,
+        item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item), MapVideoPoster(item));
     private static EventCoverPresentationResponse MapPresentation(EventMedia item) =>
         new(item.FocalPointX, item.FocalPointY, item.Zoom);
+    private VideoPosterPresentationResponse MapVideoPoster(EventMedia item) => new(item.VideoPosterMode,
+        item.VideoPosterTimestampSeconds, item.CustomPosterMediaAssetId, ResolvePosterUrl(item));
+    private string? ResolvePosterUrl(EventMedia item) => item.VideoPosterMode switch
+    {
+        VideoPosterMode.Timestamp when item.VideoPosterTimestampSeconds is { } timestamp =>
+            mediaDeliveryUrlResolver?.ResolveVideoFrameUrl(item.MediaAsset.Url, item.MediaAsset.CloudinaryPublicId, timestamp)
+            ?? ResolveThumbnailUrl(item.MediaAsset),
+        VideoPosterMode.CustomImage when item.CustomPosterMediaAsset is { ApprovalStatus: MediaApprovalStatus.Approved } poster && HasSafeUrl(poster.Url) => poster.Url,
+        _ => ResolveThumbnailUrl(item.MediaAsset)
+    };
+    private static bool HasSafeUrl(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps;
 
     private static EventMedia? FindActiveCover(IEnumerable<EventMedia> assignments) => assignments
         .Where(item => item.Usage == EventMediaUsage.Cover && IsEligibleCover(item.MediaAsset))

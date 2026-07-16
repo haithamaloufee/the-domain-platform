@@ -30,6 +30,7 @@ import {
 import { AssignExistingMedia } from "./assign-existing-media";
 import { EventMediaGroup } from "./event-media-group";
 import { EventCoverComposer } from "./event-cover-composer";
+import { VideoPosterEditor } from "./video-poster-editor";
 
 export function EventMediaWorkspace({
   embedded = false,
@@ -314,6 +315,8 @@ export function EventMediaWorkspace({
           onUsageChange={changeUsage}
           pending={pending}
         />
+
+        <VideoPosterEditor eventId={eventId} items={items} onSaved={() => void load()} />
 
         <section aria-labelledby="assign-existing-title">
           <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">Media library</p>

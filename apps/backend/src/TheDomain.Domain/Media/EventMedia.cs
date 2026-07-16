@@ -10,6 +10,7 @@ public sealed class EventMedia
     public const double MaximumFocalPoint = 1.0;
     public const double MinimumZoom = 1.0;
     public const double MaximumZoom = 3.0;
+    public const decimal MaximumPosterTimestampSeconds = 86_400m;
 
     private EventMedia() { }
     public EventMedia(Guid id, Guid eventId, Guid mediaAssetId, EventMediaUsage usage, int sortOrder,
@@ -34,9 +35,13 @@ public sealed class EventMedia
     public double FocalPointX { get; private set; } = DefaultFocalPoint;
     public double FocalPointY { get; private set; } = DefaultFocalPoint;
     public double Zoom { get; private set; } = DefaultZoom;
+    public VideoPosterMode VideoPosterMode { get; private set; } = VideoPosterMode.Automatic;
+    public decimal? VideoPosterTimestampSeconds { get; private set; }
+    public Guid? CustomPosterMediaAssetId { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public EntertainmentEvent Event { get; private set; } = null!;
     public MediaAsset MediaAsset { get; private set; } = null!;
+    public MediaAsset? CustomPosterMediaAsset { get; private set; }
 
     public void Update(EventMediaUsage usage, int sortOrder, bool isFeatured)
     {
@@ -55,6 +60,21 @@ public sealed class EventMedia
         FocalPointX = focalPointX;
         FocalPointY = focalPointY;
         Zoom = zoom;
+    }
+
+    public void UpdateVideoPoster(VideoPosterMode mode, decimal? timestampSeconds, MediaAsset? customPoster)
+    {
+        if (!Enum.IsDefined(mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+        if (mode == VideoPosterMode.Timestamp &&
+            (timestampSeconds is null || timestampSeconds < 0 || timestampSeconds > MaximumPosterTimestampSeconds))
+            throw new ArgumentOutOfRangeException(nameof(timestampSeconds));
+        if (mode == VideoPosterMode.CustomImage && customPoster is null)
+            throw new ArgumentNullException(nameof(customPoster));
+
+        VideoPosterMode = mode;
+        VideoPosterTimestampSeconds = mode == VideoPosterMode.Timestamp ? timestampSeconds : null;
+        CustomPosterMediaAssetId = mode == VideoPosterMode.CustomImage ? customPoster!.Id : null;
+        CustomPosterMediaAsset = mode == VideoPosterMode.CustomImage ? customPoster : null;
     }
 
     public static bool IsValidFocalPoint(double value) =>

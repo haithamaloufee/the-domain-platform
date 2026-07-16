@@ -34,6 +34,14 @@ export const EventMediaUsage = {
 
 export type EventMediaUsage = (typeof EventMediaUsage)[keyof typeof EventMediaUsage];
 
+export const VideoPosterMode = {
+  Automatic: 1,
+  Timestamp: 2,
+  CustomImage: 3,
+} as const;
+
+export type VideoPosterMode = (typeof VideoPosterMode)[keyof typeof VideoPosterMode];
+
 export interface AdminMediaListItem {
   id: string;
   fileName: string;
@@ -112,6 +120,19 @@ export interface EventCoverPresentation {
 
 export type UpdateEventCoverPresentationRequest = EventCoverPresentation;
 
+export interface VideoPosterPresentation {
+  mode: VideoPosterMode;
+  timestampSeconds: number | null;
+  customPosterMediaAssetId: string | null;
+  posterUrl: string | null;
+}
+
+export interface UpdateVideoPosterRequest {
+  mode: VideoPosterMode;
+  timestampSeconds: number | null;
+  customPosterMediaAssetId: string | null;
+}
+
 export interface EventMediaResponse {
   id: string;
   eventId: string;
@@ -121,6 +142,7 @@ export interface EventMediaResponse {
   isFeatured: boolean;
   createdAtUtc: string;
   presentation: EventCoverPresentation;
+  videoPoster: VideoPosterPresentation;
 }
 
 export interface AdminEventMediaItem extends EventMediaResponse {
@@ -146,6 +168,7 @@ export interface PublicMediaItem {
   sortOrder: number;
   isFeatured: boolean;
   presentation: EventCoverPresentation;
+  videoPoster: VideoPosterPresentation;
 }
 
 export interface PublicGalleryAlbum {

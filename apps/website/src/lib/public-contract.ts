@@ -4,6 +4,7 @@ import {
   EventMediaUsage,
   MediaOrientation,
   MediaType,
+  VideoPosterMode,
   type PublicEventDetails,
   type PublicEventListItem,
   type PublicGalleryAlbum,
@@ -178,6 +179,7 @@ function mediaItem(item: unknown): PublicMediaItem {
     sortOrder: integer(item.sortOrder),
     isFeatured: booleanValue(item.isFeatured),
     presentation: parsePresentation(item.presentation),
+    videoPoster: parseVideoPoster(item.videoPoster),
   };
 }
 
@@ -186,6 +188,23 @@ function parsePresentation(value: unknown) {
   if (!isValidEventCoverPresentation(value))
     throw new Error("Expected valid cover presentation settings.");
   return { ...value };
+}
+
+function parseVideoPoster(value: unknown) {
+  if (!isRecord(value)) {
+    return {
+      mode: VideoPosterMode.Automatic,
+      timestampSeconds: null,
+      customPosterMediaAssetId: null,
+      posterUrl: null,
+    };
+  }
+  return {
+    mode: enumValue(value.mode, VideoPosterMode),
+    timestampSeconds: nullableNumber(value.timestampSeconds),
+    customPosterMediaAssetId: nullableString(value.customPosterMediaAssetId),
+    posterUrl: nullableUrl(value.posterUrl),
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

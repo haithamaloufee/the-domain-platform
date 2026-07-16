@@ -66,7 +66,18 @@ public sealed class CloudinaryMediaStorageService : IMediaStorageService, IMedia
         return null;
     }
 
-    private static string? TryBuildVideoThumbnailUrl(string mediaUrl)
+    public string? ResolveVideoFrameUrl(string mediaUrl, string? storagePublicId, decimal timestampSeconds)
+    {
+        if (timestampSeconds < 0 || timestampSeconds > EventMedia.MaximumPosterTimestampSeconds) return null;
+        var offset = timestampSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        if (!string.IsNullOrWhiteSpace(storagePublicId) && !string.IsNullOrWhiteSpace(_options.CloudName))
+            return _cloudinary.Api.UrlVideoUp.Transform(new Transformation().StartOffset(offset)
+                .Width(VideoThumbnailWidth).Crop("limit").Quality("auto")).Secure(true)
+                .BuildUrl($"{storagePublicId}.jpg");
+        return TryBuildVideoThumbnailUrl(mediaUrl, offset);
+    }
+
+    private static string? TryBuildVideoThumbnailUrl(string mediaUrl, string offset = "auto")
     {
         if (!Uri.TryCreate(mediaUrl, UriKind.Absolute, out var uri) ||
             uri.Scheme != Uri.UriSchemeHttps ||
@@ -76,7 +87,7 @@ public sealed class CloudinaryMediaStorageService : IMediaStorageService, IMedia
         }
 
         const string uploadPath = "/video/upload/";
-        const string transformation = "c_limit,q_auto,so_auto,w_960/";
+        var transformation = $"c_limit,q_auto,so_{offset},w_960/";
         var uploadIndex = uri.AbsolutePath.IndexOf(uploadPath, StringComparison.Ordinal);
         var extensionIndex = uri.AbsolutePath.LastIndexOf('.');
         if (uploadIndex < 0 || extensionIndex <= uploadIndex + uploadPath.Length)

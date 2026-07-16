@@ -102,7 +102,7 @@ function MediaDialogContent({ media }: { media: PublicMediaItem }) {
             className="h-full w-full object-contain"
             controls
             playsInline
-            poster={media.thumbnailUrl ?? undefined}
+            poster={media.videoPoster.posterUrl ?? media.thumbnailUrl ?? undefined}
             preload="metadata"
             src={media.url}
           >

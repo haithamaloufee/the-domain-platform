@@ -1,7 +1,13 @@
 export type { ApiProblem, PagedResponse } from "./api";
 export { UserRole } from "./auth";
 export { BookingAvailability, EventDisplayStatus, EventPublicationStatus } from "./events";
-export { EventMediaUsage, MediaApprovalStatus, MediaOrientation, MediaType } from "./media";
+export {
+  EventMediaUsage,
+  MediaApprovalStatus,
+  MediaOrientation,
+  MediaType,
+  VideoPosterMode,
+} from "./media";
 export type {
   AdminUser,
   AuthErrorResponse,
@@ -59,5 +65,8 @@ export type {
   UpdateEventMediaRequest,
   UpdateEventCoverPresentationRequest,
   UpdateMediaMetadataRequest,
+  UpdateVideoPosterRequest,
   UploadMediaRequestMetadata,
+  VideoPosterMode as VideoPosterModeValue,
+  VideoPosterPresentation,
 } from "./media";

@@ -1,5 +1,6 @@
 using TheDomain.Application.Events.Contracts;
 using TheDomain.Application.Media;
+using TheDomain.Application.Media.Contracts;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
 
@@ -235,10 +236,19 @@ public sealed class EventService(
         link.MediaAsset.Url, ResolveThumbnailUrl(link.MediaAsset), link.MediaAsset.Caption, link.MediaAsset.AltText,
         link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation,
         link.Usage, link.SortOrder, link.IsFeatured,
-        new(link.FocalPointX, link.FocalPointY, link.Zoom));
+        new(link.FocalPointX, link.FocalPointY, link.Zoom), MapVideoPoster(link));
     private static bool HasSafePublicUrl(MediaAsset item) => Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) &&
         uri.Scheme == Uri.UriSchemeHttps;
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
+    private VideoPosterPresentationResponse MapVideoPoster(EventMedia link) => new(link.VideoPosterMode,
+        link.VideoPosterTimestampSeconds, link.CustomPosterMediaAssetId, link.VideoPosterMode switch
+        {
+            VideoPosterMode.Timestamp when link.VideoPosterTimestampSeconds is { } timestamp =>
+                mediaDeliveryUrlResolver?.ResolveVideoFrameUrl(link.MediaAsset.Url, link.MediaAsset.CloudinaryPublicId, timestamp)
+                ?? ResolveThumbnailUrl(link.MediaAsset),
+            VideoPosterMode.CustomImage when link.CustomPosterMediaAsset is { ApprovalStatus: MediaApprovalStatus.Approved } poster && HasSafePublicUrl(poster) => poster.Url,
+            _ => ResolveThumbnailUrl(link.MediaAsset)
+        });
     private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now)
     {
         var state = item.EvaluateLifecycle(now);

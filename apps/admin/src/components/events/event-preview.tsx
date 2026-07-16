@@ -122,7 +122,7 @@ export function EventPreview({
             <ol className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {preview.gallery.slice(0, 6).map((item) => (
                 <li key={item.id}>
-                  <MediaPreview item={item.media} />
+                  <MediaPreview item={item.media} posterUrl={item.videoPoster.posterUrl} />
                 </li>
               ))}
             </ol>

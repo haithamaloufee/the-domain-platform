@@ -24,7 +24,11 @@ export const bookingAvailabilityLabels: Record<BookingAvailabilityValue, string>
 
 export function mediaImageSource(media: PublicMediaItem | null): string | null {
   if (!media) return null;
-  return media.thumbnailUrl ?? (media.mediaType === MediaType.Image ? media.url : null);
+  return (
+    media.videoPoster.posterUrl ??
+    media.thumbnailUrl ??
+    (media.mediaType === MediaType.Image ? media.url : null)
+  );
 }
 
 export function formatEventDate(value: string, timeZone: string): string {

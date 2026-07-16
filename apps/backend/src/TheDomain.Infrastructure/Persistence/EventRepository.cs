@@ -12,5 +12,7 @@ public sealed class EventRepository(TheDomainDbContext dbContext) : IEventReposi
     public Task<bool> SlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => dbContext.Events.AnyAsync(item => item.Slug == slug && (!excludingId.HasValue || item.Id != excludingId.Value), cancellationToken);
     public void Add(EntertainmentEvent eventEntity) => dbContext.Events.Add(eventEntity);
     public Task SaveChangesAsync(CancellationToken cancellationToken) => dbContext.SaveChangesAsync(cancellationToken);
-    private IQueryable<EntertainmentEvent> Query() => dbContext.Events.AsSplitQuery().Include(item => item.Media).ThenInclude(link => link.MediaAsset);
+    private IQueryable<EntertainmentEvent> Query() => dbContext.Events.AsSplitQuery()
+        .Include(item => item.Media).ThenInclude(link => link.MediaAsset)
+        .Include(item => item.Media).ThenInclude(link => link.CustomPosterMediaAsset);
 }

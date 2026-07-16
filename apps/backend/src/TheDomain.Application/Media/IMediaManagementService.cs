@@ -14,6 +14,8 @@ public interface IMediaManagementService
     Task<EventOperationResult<EventMediaResponse>> SetCoverAsync(Guid eventId, Guid eventMediaId, CancellationToken token);
     Task<EventOperationResult<EventMediaResponse>> UpdateCoverPresentationAsync(Guid eventId,
         Guid eventMediaId, UpdateEventCoverPresentationRequest request, CancellationToken token);
+    Task<EventOperationResult<EventMediaResponse>> UpdateVideoPosterAsync(Guid eventId,
+        Guid eventMediaId, UpdateVideoPosterRequest request, CancellationToken token);
     Task<EventOperationResult<IReadOnlyList<EventMediaResponse>>> ReorderAsync(Guid eventId, ReorderEventMediaRequest request, CancellationToken token);
     Task<bool> RemoveAssignmentAsync(Guid eventId, Guid eventMediaId, CancellationToken token);
 }

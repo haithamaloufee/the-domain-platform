@@ -11,6 +11,7 @@ import type {
   UpdateEventMediaRequest,
   UpdateEventCoverPresentationRequest,
   UpdateMediaMetadataRequest,
+  UpdateVideoPosterRequest,
   UploadMediaRequestMetadata,
 } from "@the-domain/types";
 import {
@@ -129,6 +130,19 @@ export function updateEventCoverPresentation(
 ): Promise<EventMediaResponse> {
   return jsonRequest(
     `/api/admin/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(eventMediaId)}/presentation`,
+    "PUT",
+    input,
+    parseEventMedia,
+  );
+}
+
+export function updateEventVideoPoster(
+  eventId: string,
+  eventMediaId: string,
+  input: UpdateVideoPosterRequest,
+): Promise<EventMediaResponse> {
+  return jsonRequest(
+    `/api/admin/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(eventMediaId)}/video-poster`,
     "PUT",
     input,
     parseEventMedia,

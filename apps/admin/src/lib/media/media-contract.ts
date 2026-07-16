@@ -3,6 +3,7 @@ import {
   MediaApprovalStatus,
   MediaOrientation,
   MediaType,
+  VideoPosterMode,
   type AdminMediaDetails,
   type AdminEventMediaItem,
   type AdminMediaListItem,
@@ -53,6 +54,7 @@ export function parseEventMedia(value: unknown): EventMediaResponse {
     isFeatured: booleanValue(value.isFeatured),
     createdAtUtc: dateString(value.createdAtUtc),
     presentation: parsePresentation(value.presentation),
+    videoPoster: parseVideoPoster(value.videoPoster),
   };
 }
 
@@ -136,6 +138,31 @@ function parsePresentation(value: unknown) {
   if (!isValidEventCoverPresentation(value))
     throw new Error("The server returned invalid cover presentation settings.");
   return { ...value };
+}
+
+function parseVideoPoster(value: unknown) {
+  if (!isRecord(value)) throw new Error("The server returned invalid video poster settings.");
+  return {
+    mode: enumValue(value.mode, VideoPosterMode),
+    timestampSeconds: nullableNumber(value.timestampSeconds),
+    customPosterMediaAssetId: nullableString(value.customPosterMediaAssetId),
+    posterUrl: nullableUrl(value.posterUrl),
+  };
+}
+
+export function parseVideoPosterRequest(value: unknown) {
+  if (!isRecord(value)) return null;
+  try {
+    const mode = enumValue(value.mode, VideoPosterMode);
+    const timestampSeconds = nullableNumber(value.timestampSeconds);
+    const customPosterMediaAssetId = nullableString(value.customPosterMediaAssetId);
+    if (mode === VideoPosterMode.Timestamp && (timestampSeconds === null || timestampSeconds < 0))
+      return null;
+    if (mode === VideoPosterMode.CustomImage && !customPosterMediaAssetId) return null;
+    return { mode, timestampSeconds, customPosterMediaAssetId };
+  } catch {
+    return null;
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

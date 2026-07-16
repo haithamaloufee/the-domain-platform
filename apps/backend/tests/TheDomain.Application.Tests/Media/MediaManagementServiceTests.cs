@@ -524,6 +524,8 @@ public sealed class MediaManagementServiceTests
     {
         public string? ResolveThumbnailUrl(MediaType mediaType, string mediaUrl, string? thumbnailUrl, string? storagePublicId) =>
             thumbnailUrl ?? (mediaType == MediaType.Video ? "https://cdn.example.com/legacy-poster.jpg" : null);
+        public string? ResolveVideoFrameUrl(string mediaUrl, string? storagePublicId, decimal timestampSeconds) =>
+            $"https://cdn.example.com/frame-{timestampSeconds:0.###}.jpg";
     }
     private sealed class FakeRepository : IMediaRepository
     {

@@ -10,8 +10,12 @@ public sealed record AdminMediaResponse(Guid Id, string FileName, string Origina
     MediaOrientation Orientation, string? Category, string? Caption, string? AltText,
     MediaApprovalStatus ApprovalStatus, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
 public sealed record EventCoverPresentationResponse(double FocalPointX, double FocalPointY, double Zoom);
+public sealed record VideoPosterPresentationResponse(VideoPosterMode Mode, decimal? TimestampSeconds,
+    Guid? CustomPosterMediaAssetId, string? PosterUrl);
 public sealed record EventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage,
-    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, EventCoverPresentationResponse Presentation);
+    int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, EventCoverPresentationResponse Presentation,
+    VideoPosterPresentationResponse VideoPoster);
 public sealed record AdminEventMediaResponse(Guid Id, Guid EventId, Guid MediaAssetId, EventMediaUsage Usage,
     int SortOrder, bool IsFeatured, DateTimeOffset CreatedAtUtc, EventCoverPresentationResponse Presentation,
+    VideoPosterPresentationResponse VideoPoster,
     AdminMediaResponse Media);

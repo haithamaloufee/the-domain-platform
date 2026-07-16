@@ -9,4 +9,5 @@ public interface IMediaDeliveryUrlResolver
         string mediaUrl,
         string? thumbnailUrl,
         string? storagePublicId);
+    string? ResolveVideoFrameUrl(string mediaUrl, string? storagePublicId, decimal timestampSeconds);
 }

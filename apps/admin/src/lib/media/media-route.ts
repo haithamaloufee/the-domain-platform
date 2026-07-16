@@ -13,6 +13,7 @@ import {
   parseMediaPage,
   parseMetadataRequest,
   parsePresentationRequest,
+  parseVideoPosterRequest,
 } from "./media-contract";
 
 const queryKeys = [
@@ -118,6 +119,12 @@ export function proxyEventMediaCover(request: NextRequest, path: `/${string}`) {
 export async function proxyEventMediaPresentation(request: NextRequest, path: `/${string}`) {
   const body = await readJson(request, parsePresentationRequest);
   if (!body) return errorResponse("Please review the cover position and zoom.", 400);
+  return proxyJsonMutation(request, path, "PUT", body, "assignment");
+}
+
+export async function proxyEventMediaVideoPoster(request: NextRequest, path: `/${string}`) {
+  const body = await readJson(request, parseVideoPosterRequest);
+  if (!body) return errorResponse("Please review the video poster choice.", 400);
   return proxyJsonMutation(request, path, "PUT", body, "assignment");
 }
 

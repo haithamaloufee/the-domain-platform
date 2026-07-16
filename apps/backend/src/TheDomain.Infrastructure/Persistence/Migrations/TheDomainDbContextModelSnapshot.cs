@@ -447,6 +447,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CustomPosterMediaAssetId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
@@ -474,12 +477,25 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<string>("VideoPosterMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasDefaultValue("Automatic");
+
+                    b.Property<decimal?>("VideoPosterTimestampSeconds")
+                        .HasPrecision(10, 3)
+                        .HasColumnType("numeric(10,3)");
+
                     b.Property<double>("Zoom")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("double precision")
                         .HasDefaultValue(1.0);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomPosterMediaAssetId");
 
                     b.HasIndex("MediaAssetId");
 
@@ -493,6 +509,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_event_media_FocalPointX", "\"FocalPointX\" >= 0.0 AND \"FocalPointX\" <= 1.0");
 
                             t.HasCheckConstraint("CK_event_media_FocalPointY", "\"FocalPointY\" >= 0.0 AND \"FocalPointY\" <= 1.0");
+
+                            t.HasCheckConstraint("CK_event_media_VideoPosterTimestampSeconds", "\"VideoPosterTimestampSeconds\" IS NULL OR (\"VideoPosterTimestampSeconds\" >= 0 AND \"VideoPosterTimestampSeconds\" <= 86400)");
 
                             t.HasCheckConstraint("CK_event_media_Zoom", "\"Zoom\" >= 1.0 AND \"Zoom\" <= 3.0");
                         });
@@ -595,6 +613,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TheDomain.Domain.Media.EventMedia", b =>
                 {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", "CustomPosterMediaAsset")
+                        .WithMany()
+                        .HasForeignKey("CustomPosterMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TheDomain.Domain.Events.EntertainmentEvent", "Event")
                         .WithMany("Media")
                         .HasForeignKey("EventId")
@@ -606,6 +629,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MediaAssetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CustomPosterMediaAsset");
 
                     b.Navigation("Event");
 

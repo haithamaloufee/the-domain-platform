@@ -69,7 +69,9 @@ export function createPageMetadata({
 
 export function getPublicMediaSeoImage(media: PublicMediaItem | null | undefined): string | null {
   if (!media) return null;
-  return media.mediaType === MediaType.Image ? media.url : media.thumbnailUrl;
+  return media.mediaType === MediaType.Image
+    ? media.url
+    : (media.videoPoster.posterUrl ?? media.thumbnailUrl);
 }
 
 export function getFirstPublicMediaSeoImage(

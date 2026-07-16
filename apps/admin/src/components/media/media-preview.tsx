@@ -8,13 +8,16 @@ export function MediaPreview({
   item,
   presentation,
   priority = false,
+  posterUrl,
 }: {
   className?: string;
   item: AdminMediaListItem;
   presentation?: EventCoverPresentation | null;
   priority?: boolean;
+  posterUrl?: string | null;
 }) {
-  const source = item.thumbnailUrl ?? (item.mediaType === MediaType.Image ? item.url : null);
+  const source =
+    posterUrl ?? item.thumbnailUrl ?? (item.mediaType === MediaType.Image ? item.url : null);
   return (
     <MediaFrame className={className}>
       {source ? (
