@@ -10,6 +10,9 @@ import {
   type AssignEventMediaRequest,
   type EventMediaResponse,
   type PagedResponse,
+  type MediaCollection,
+  type MediaCollectionItem,
+  type MediaUsage,
   type UpdateEventCoverPresentationRequest,
   type UpdateEventMediaRequest,
   type UpdateMediaMetadataRequest,
@@ -129,7 +132,55 @@ function parseMediaListItem(value: unknown): AdminMediaListItem {
     caption: nullableString(value.caption),
     altText: nullableString(value.altText),
     approvalStatus: enumValue(value.approvalStatus, MediaApprovalStatus),
+    isArchived: booleanValue(value.isArchived),
+    archivedAtUtc: nullableDateString(value.archivedAtUtc),
     createdAtUtc: dateString(value.createdAtUtc),
+  };
+}
+
+export function parseMediaCollections(value: unknown): MediaCollection[] {
+  if (!Array.isArray(value)) throw new Error("The server returned invalid media collections.");
+  return value.map(parseMediaCollection);
+}
+export function parseMediaCollection(value: unknown): MediaCollection {
+  if (!isRecord(value)) throw new Error("Expected a media collection.");
+  return {
+    id: requiredString(value.id),
+    name: requiredString(value.name),
+    isArchived: booleanValue(value.isArchived),
+    itemCount: integer(value.itemCount),
+    createdAtUtc: dateString(value.createdAtUtc),
+    updatedAtUtc: dateString(value.updatedAtUtc),
+    archivedAtUtc: nullableDateString(value.archivedAtUtc),
+  };
+}
+export function parseMediaCollectionItems(value: unknown): MediaCollectionItem[] {
+  if (!Array.isArray(value)) throw new Error("The server returned invalid collection media.");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("Expected collection media.");
+    return {
+      mediaAssetId: requiredString(item.mediaAssetId),
+      sortOrder: integer(item.sortOrder),
+      media: parseMediaListItem(item.media),
+    };
+  });
+}
+export function parseMediaUsage(value: unknown): MediaUsage {
+  if (!isRecord(value) || !Array.isArray(value.events))
+    throw new Error("The server returned invalid media usage.");
+  return {
+    mediaAssetId: requiredString(value.mediaAssetId),
+    canPermanentlyDelete: booleanValue(value.canPermanentlyDelete),
+    collections: parseMediaCollections(value.collections),
+    events: value.events.map((event) => {
+      if (!isRecord(event)) throw new Error("Expected event usage.");
+      return {
+        eventId: requiredString(event.eventId),
+        eventTitle: requiredString(event.eventTitle),
+        usage: enumValue(event.usage, EventMediaUsage),
+        isCustomPoster: booleanValue(event.isCustomPoster),
+      };
+    }),
   };
 }
 
@@ -208,6 +259,9 @@ function dateString(value: unknown): string {
   const result = requiredString(value);
   if (Number.isNaN(new Date(result).getTime())) throw new Error("Expected a date string.");
   return result;
+}
+function nullableDateString(value: unknown): string | null {
+  return value === null ? null : dateString(value);
 }
 
 function absoluteUrl(value: unknown): string {

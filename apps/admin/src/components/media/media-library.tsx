@@ -11,12 +11,20 @@ import { MediaPreview } from "./media-preview";
 
 export function MediaLibrary({
   eventId,
+  collectionId,
   refreshSignal = 0,
 }: {
   eventId?: string;
+  collectionId?: string;
   refreshSignal?: number;
 }) {
-  const [query, setQuery] = useState<MediaListQuery>({ pageNumber: 1, pageSize: 20, eventId });
+  const [query, setQuery] = useState<MediaListQuery>({
+    pageNumber: 1,
+    pageSize: 20,
+    eventId,
+    collectionId,
+    isArchived: false,
+  });
   const [page, setPage] = useState<PagedResponse<AdminMediaListItem> | null>(null);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -88,6 +96,11 @@ export function MediaLibrary({
                   <div className="p-4">
                     <div className="flex flex-wrap gap-2">
                       <MediaApprovalBadge status={item.approvalStatus} />
+                      {item.isArchived && (
+                        <span className="border border-line px-2 py-1 text-xs text-ink-muted">
+                          Archived
+                        </span>
+                      )}
                     </div>
                     <p className="mt-4 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink">
                       {mediaTypeLabels[item.mediaType]} / {orientationLabels[item.orientation]}

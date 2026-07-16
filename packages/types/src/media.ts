@@ -54,6 +54,8 @@ export interface AdminMediaListItem {
   caption: string | null;
   altText: string | null;
   approvalStatus: MediaApprovalStatus;
+  isArchived: boolean;
+  archivedAtUtc: string | null;
   createdAtUtc: string;
 }
 
@@ -76,6 +78,8 @@ export interface MediaListQuery {
   eventId?: string;
   usage?: string;
   search?: string;
+  isArchived?: boolean | null;
+  collectionId?: string;
 }
 
 export interface UploadMediaRequestMetadata {
@@ -194,4 +198,39 @@ export interface PublicGalleryAlbumDetails {
   city: string;
   venueName: string;
   media: PublicMediaItem[];
+}
+
+export interface MediaCollection {
+  id: string;
+  name: string;
+  isArchived: boolean;
+  itemCount: number;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  archivedAtUtc: string | null;
+}
+
+export interface MediaCollectionItem {
+  mediaAssetId: string;
+  sortOrder: number;
+  media: AdminMediaListItem;
+}
+
+export interface MediaUsageEvent {
+  eventId: string;
+  eventTitle: string;
+  usage: EventMediaUsage;
+  isCustomPoster: boolean;
+}
+
+export interface MediaUsage {
+  mediaAssetId: string;
+  events: MediaUsageEvent[];
+  collections: MediaCollection[];
+  canPermanentlyDelete: boolean;
+}
+
+export interface PermanentDeleteMediaResponse {
+  id: string;
+  originalFileName: string;
 }

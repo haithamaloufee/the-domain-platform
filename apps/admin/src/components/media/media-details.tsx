@@ -1,13 +1,26 @@
 "use client";
 
-import { MediaApprovalStatus, MediaType, type AdminMediaDetails } from "@the-domain/types";
+import {
+  MediaApprovalStatus,
+  MediaType,
+  type AdminMediaDetails,
+  type MediaCollection,
+  type MediaUsage,
+} from "@the-domain/types";
 import { buttonClasses, Card, EmptyState, Input, MediaFrame, Textarea } from "@the-domain/ui";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   approveAdminMedia,
-  deleteAdminMedia,
+  archiveAdminMedia,
+  restoreAdminMedia,
+  getMediaUsage,
+  permanentlyDeleteAdminMedia,
+  listMediaCollections,
+  createMediaCollection,
+  addMediaToCollection,
   getAdminMedia,
   hideAdminMedia,
   updateAdminMediaMetadata,
@@ -19,6 +32,9 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
   const [media, setMedia] = useState<AdminMediaDetails | null>(null);
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [usage, setUsage] = useState<MediaUsage | null>(null);
+  const [collections, setCollections] = useState<MediaCollection[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     let isActive = true;
@@ -34,12 +50,26 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
       isActive = false;
     };
   }, [mediaId]);
+  useEffect(() => {
+    let active = true;
+    Promise.all([getMediaUsage(mediaId), listMediaCollections(false)])
+      .then(([nextUsage, nextCollections]) => {
+        if (active) {
+          setUsage(nextUsage);
+          setCollections(nextCollections);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [mediaId]);
 
-  async function run(action: "approve" | "hide" | "delete") {
+  async function run(action: "approve" | "hide" | "archive" | "restore") {
     const message =
-      action === "delete"
-        ? "Remove this asset from public use? This hides its metadata and does not hard-delete the Cloudinary file."
-        : `${action === "approve" ? "Approve" : "Hide"} this media asset?`;
+      action === "archive"
+        ? "Archive this asset? Existing event links remain recorded, while public delivery will stop until it is restored."
+        : `${action === "approve" ? "Approve" : action === "restore" ? "Restore" : "Hide"} this media asset?`;
     if (!window.confirm(message)) return;
     setIsPending(true);
     setError("");
@@ -49,7 +79,9 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
           ? await approveAdminMedia(mediaId)
           : action === "hide"
             ? await hideAdminMedia(mediaId)
-            : await deleteAdminMedia(mediaId);
+            : action === "archive"
+              ? await archiveAdminMedia(mediaId)
+              : await restoreAdminMedia(mediaId);
       setMedia(updated);
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "Unable to update media.");
@@ -133,10 +165,10 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
           <button
             className={buttonClasses("ghost")}
             disabled={isPending}
-            onClick={() => void run("delete")}
+            onClick={() => void run(media.isArchived ? "restore" : "archive")}
             type="button"
           >
-            Delete / hide
+            {media.isArchived ? "Restore from archive" : "Archive"}
           </button>
         </div>
       </header>
@@ -206,6 +238,50 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
             <MetadataForm media={media} onSaved={setMedia} />
           </Card>
           <Card className="p-6">
+            <h2 className="font-display text-xl font-bold text-ink">Collections</h2>
+            <CollectionAssignment
+              mediaId={media.id}
+              collections={collections}
+              onCreated={(item) => setCollections((current) => [...current, item])}
+            />
+          </Card>
+          <Card className="p-6">
+            <h2 className="font-display text-xl font-bold text-ink">Where this media is used</h2>
+            {!usage ? (
+              <p className="mt-3 text-sm text-ink-muted">Loading usage…</p>
+            ) : (
+              <>
+                <ul className="mt-4 space-y-2 text-sm text-ink-muted">
+                  {usage.events.map((item) => (
+                    <li key={`${item.eventId}-${item.usage}-${item.isCustomPoster}`}>
+                      <Link
+                        className="text-ink underline decoration-line"
+                        href={`/dashboard/events/${item.eventId}/media`}
+                      >
+                        {item.eventTitle}
+                      </Link>{" "}
+                      ·{" "}
+                      {item.isCustomPoster
+                        ? "Custom video poster"
+                        : `Event placement ${item.usage}`}
+                    </li>
+                  ))}
+                  {usage.collections.map((item) => (
+                    <li key={item.id}>Collection · {item.name}</li>
+                  ))}
+                  {usage.events.length === 0 && usage.collections.length === 0 && (
+                    <li>Not currently used.</li>
+                  )}
+                </ul>
+                <PermanentDelete
+                  media={media}
+                  canDelete={usage.canPermanentlyDelete}
+                  onDeleted={() => router.push("/dashboard/media")}
+                />
+              </>
+            )}
+          </Card>
+          <Card className="p-6">
             <h2 className="font-display text-xl font-bold text-ink">Assign to event</h2>
             <p className="mt-2 text-sm leading-6 text-ink-muted">
               Connect this asset to an event usage without moving or duplicating the file.
@@ -217,6 +293,139 @@ export function MediaDetails({ eventId, mediaId }: { eventId?: string; mediaId: 
         </aside>
       </div>
     </article>
+  );
+}
+
+function CollectionAssignment({
+  mediaId,
+  collections,
+  onCreated,
+}: {
+  mediaId: string;
+  collections: MediaCollection[];
+  onCreated: (item: MediaCollection) => void;
+}) {
+  const [selected, setSelected] = useState("");
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  async function assign() {
+    if (!selected) return;
+    await addMediaToCollection(selected, mediaId);
+    setMessage("Added to collection.");
+  }
+  async function createAndAssign() {
+    if (!name.trim()) return;
+    const collection = await createMediaCollection(name.trim());
+    onCreated(collection);
+    setSelected(collection.id);
+    setName("");
+    await addMediaToCollection(collection.id, mediaId);
+    setMessage("Collection created and media added.");
+  }
+  return (
+    <div className="mt-4 space-y-3">
+      <select
+        className="min-h-11 w-full border border-line bg-surface px-3 text-ink"
+        onChange={(event) => setSelected(event.target.value)}
+        value={selected}
+      >
+        <option value="">Choose collection</option>
+        {collections.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.name}
+          </option>
+        ))}
+      </select>
+      <button className={buttonClasses("secondary")} onClick={() => void assign()} type="button">
+        Add to collection
+      </button>
+      <div className="border-t border-line pt-3">
+        <Input
+          maxLength={120}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Or create a collection"
+          value={name}
+        />
+        <button
+          className={buttonClasses("ghost", "mt-2")}
+          onClick={() => void createAndAssign()}
+          type="button"
+        >
+          Create and add
+        </button>
+      </div>
+      {message && (
+        <p className="text-sm text-gold" role="status">
+          {message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PermanentDelete({
+  media,
+  canDelete,
+  onDeleted,
+}: {
+  media: AdminMediaDetails;
+  canDelete: boolean;
+  onDeleted: () => void;
+}) {
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState("");
+  if (!media.isArchived)
+    return (
+      <p className="mt-5 border-t border-line pt-4 text-sm text-ink-muted">
+        Archive this asset before permanent deletion becomes available.
+      </p>
+    );
+  return (
+    <div className="mt-5 border-t border-error/40 pt-4">
+      <h3 className="font-display text-lg font-bold text-error">Permanent deletion</h3>
+      <p className="mt-2 text-sm leading-6 text-ink-muted">
+        This removes the Cloudinary asset and database record. It cannot be undone.
+      </p>
+      {!canDelete ? (
+        <p className="mt-3 text-sm text-error">
+          Remove all event and poster usages before deleting.
+        </p>
+      ) : (
+        <>
+          <label className="mt-4 block text-xs text-ink-muted">
+            Type <strong className="text-ink">{media.originalFileName}</strong>
+            <Input
+              className="mt-2"
+              onChange={(event) => setConfirmation(event.target.value)}
+              value={confirmation}
+            />
+          </label>
+          <button
+            className={buttonClasses("secondary", "mt-3 border-error text-error")}
+            disabled={confirmation !== media.originalFileName}
+            onClick={() =>
+              void permanentlyDeleteAdminMedia(media.id, confirmation)
+                .then(onDeleted)
+                .catch((reason: unknown) =>
+                  setError(
+                    reason instanceof Error
+                      ? reason.message
+                      : "Unable to permanently delete media.",
+                  ),
+                )
+            }
+            type="button"
+          >
+            Permanently delete asset
+          </button>
+          {error && (
+            <p className="mt-2 text-sm text-error" role="alert">
+              {error}
+            </p>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

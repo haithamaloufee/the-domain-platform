@@ -11,3 +11,7 @@ public sealed record UpdateEventMediaRequest(EventMediaUsage Usage, int SortOrde
 public sealed record ReorderEventMediaRequest(IReadOnlyList<Guid> EventMediaIds);
 public sealed record UpdateEventCoverPresentationRequest(double FocalPointX, double FocalPointY, double Zoom);
 public sealed record UpdateVideoPosterRequest(VideoPosterMode Mode, decimal? TimestampSeconds, Guid? CustomPosterMediaAssetId);
+public sealed record SaveMediaCollectionRequest(string Name);
+public sealed record AddMediaToCollectionRequest(Guid MediaAssetId);
+public sealed record ReorderMediaCollectionRequest(IReadOnlyList<Guid> MediaAssetIds);
+public sealed record PermanentDeleteMediaRequest(string Confirmation);

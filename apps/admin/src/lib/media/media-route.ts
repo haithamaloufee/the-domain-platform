@@ -26,6 +26,8 @@ const queryKeys = [
   "eventId",
   "usage",
   "search",
+  "isArchived",
+  "collectionId",
 ] as const;
 const mediaUploadTimeoutMilliseconds = 10 * 60 * 1_000;
 

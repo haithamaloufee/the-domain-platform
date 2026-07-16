@@ -16,6 +16,8 @@ public sealed class MediaRepository(TheDomainDbContext dbContext) : IMediaReposi
         if (Enum.TryParse<MediaOrientation>(query.Orientation, true, out var orientation)) databaseQuery = databaseQuery.Where(item => item.Orientation == orientation);
         if (!string.IsNullOrWhiteSpace(query.Category)) databaseQuery = databaseQuery.Where(item => item.Category == query.Category);
         if (!string.IsNullOrWhiteSpace(query.Search)) databaseQuery = databaseQuery.Where(item => item.FileName.Contains(query.Search) || (item.Caption != null && item.Caption.Contains(query.Search)));
+        if (query.IsArchived is { } archived) databaseQuery = databaseQuery.Where(item => item.IsArchived == archived);
+        if (query.CollectionId is { } collectionId) databaseQuery = databaseQuery.Where(item => dbContext.MediaCollectionItems.Any(link => link.MediaAssetId == item.Id && link.CollectionId == collectionId));
         if (query.EventId is { } eventId) databaseQuery = databaseQuery.Where(item => dbContext.EventMedia.Any(link => link.MediaAssetId == item.Id && link.EventId == eventId));
         if (Enum.TryParse<EventMediaUsage>(query.Usage, true, out var usage)) databaseQuery = databaseQuery.Where(item => dbContext.EventMedia.Any(link => link.MediaAssetId == item.Id && link.Usage == usage));
         var count = await databaseQuery.CountAsync(token);

@@ -33,6 +33,7 @@ public static class WebApplicationExtensions
         endpoints.MapPublicHomepageEndpoints();
         endpoints.MapAdminEventEndpoints();
         endpoints.MapAdminMediaEndpoints();
+        endpoints.MapAdminMediaCollectionEndpoints();
         endpoints.MapAdminEventMediaEndpoints();
         endpoints.MapAdminHomepageCmsEndpoints();
 

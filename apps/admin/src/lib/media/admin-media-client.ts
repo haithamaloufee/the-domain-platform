@@ -6,6 +6,9 @@ import type {
   AssignEventMediaRequest,
   EventMediaResponse,
   MediaListQuery,
+  MediaCollection,
+  MediaCollectionItem,
+  MediaUsage,
   PagedResponse,
   ReorderEventMediaRequest,
   UpdateEventMediaRequest,
@@ -19,12 +22,16 @@ import {
   parseEventMedia,
   parseMediaDetails,
   parseMediaPage,
+  parseMediaCollection,
+  parseMediaCollections,
+  parseMediaCollectionItems,
+  parseMediaUsage,
 } from "./media-contract";
 
 export function listAdminMedia(query: MediaListQuery): Promise<PagedResponse<AdminMediaListItem>> {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== "") search.set(key, String(value));
+    if (value !== undefined && value !== null && value !== "") search.set(key, String(value));
   }
   return request(`/api/admin/media?${search.toString()}`, { method: "GET" }, parseMediaPage);
 }
@@ -72,6 +79,93 @@ export function approveAdminMedia(id: string): Promise<AdminMediaDetails> {
 
 export function hideAdminMedia(id: string): Promise<AdminMediaDetails> {
   return action(id, "hide");
+}
+export function archiveAdminMedia(id: string) {
+  return request(
+    `/api/admin/media/${encodeURIComponent(id)}/archive`,
+    { method: "POST" },
+    parseMediaDetails,
+  );
+}
+export function restoreAdminMedia(id: string) {
+  return request(
+    `/api/admin/media/${encodeURIComponent(id)}/restore`,
+    { method: "POST" },
+    parseMediaDetails,
+  );
+}
+export function getMediaUsage(id: string): Promise<MediaUsage> {
+  return request(
+    `/api/admin/media/${encodeURIComponent(id)}/usage`,
+    { method: "GET" },
+    parseMediaUsage,
+  );
+}
+export function permanentlyDeleteAdminMedia(id: string, confirmation: string) {
+  return jsonDelete(`/api/admin/media/${encodeURIComponent(id)}/permanent`, { confirmation });
+}
+
+export function listMediaCollections(includeArchived = false): Promise<MediaCollection[]> {
+  return request(
+    `/api/admin/media-collections?includeArchived=${includeArchived}`,
+    { method: "GET" },
+    parseMediaCollections,
+  );
+}
+export function createMediaCollection(name: string) {
+  return jsonRequest("/api/admin/media-collections", "POST", { name }, parseMediaCollection);
+}
+export function renameMediaCollection(id: string, name: string) {
+  return jsonRequest(
+    `/api/admin/media-collections/${encodeURIComponent(id)}`,
+    "PUT",
+    { name },
+    parseMediaCollection,
+  );
+}
+export function collectionAction(id: string, actionName: "archive" | "restore") {
+  return request(
+    `/api/admin/media-collections/${encodeURIComponent(id)}/${actionName}`,
+    { method: "POST" },
+    parseMediaCollection,
+  );
+}
+export function deleteMediaCollection(id: string) {
+  return request(
+    `/api/admin/media-collections/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+    parseMediaCollection,
+  );
+}
+export function listMediaCollectionItems(id: string): Promise<MediaCollectionItem[]> {
+  return request(
+    `/api/admin/media-collections/${encodeURIComponent(id)}/items`,
+    { method: "GET" },
+    parseMediaCollectionItems,
+  );
+}
+export function addMediaToCollection(id: string, mediaAssetId: string) {
+  return jsonRequest(
+    `/api/admin/media-collections/${encodeURIComponent(id)}/items`,
+    "POST",
+    { mediaAssetId },
+    parseMediaCollectionItems,
+  );
+}
+export function removeMediaFromCollection(id: string, mediaAssetId: string) {
+  return request(
+    `/api/admin/media-collections/${encodeURIComponent(id)}/items/${encodeURIComponent(mediaAssetId)}`,
+    { method: "DELETE" },
+    parseMediaCollectionItems,
+  );
+}
+export function reorderMediaCollection(id: string, mediaAssetIds: string[]) {
+  return jsonRequest(
+    `/api/admin/media-collections/${encodeURIComponent(id)}/reorder`,
+    "POST",
+    { mediaAssetIds },
+    parseMediaCollectionItems,
+  );
 }
 
 export function deleteAdminMedia(id: string): Promise<AdminMediaDetails> {
@@ -191,6 +285,17 @@ function jsonRequest<T>(
     path,
     { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
     parse,
+  );
+}
+function jsonDelete(path: string, body: unknown) {
+  return request(
+    path,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    (value) => value,
   );
 }
 

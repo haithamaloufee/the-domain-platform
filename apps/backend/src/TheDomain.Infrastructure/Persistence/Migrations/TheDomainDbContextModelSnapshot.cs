@@ -531,6 +531,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
+                    b.Property<DateTimeOffset?>("ArchivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Caption")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -557,6 +560,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("Height")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("MediaType")
                         .IsRequired()
@@ -595,9 +603,67 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasIndex("CloudinaryPublicId")
                         .IsUnique();
 
+                    b.HasIndex("IsArchived");
+
                     b.HasIndex("MediaType");
 
                     b.ToTable("media_assets", (string)null);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Media.MediaCollection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ArchivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsArchived");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("media_collections", (string)null);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Media.MediaCollectionItem", b =>
+                {
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CollectionId", "MediaAssetId");
+
+                    b.HasIndex("MediaAssetId");
+
+                    b.HasIndex("CollectionId", "SortOrder");
+
+                    b.ToTable("media_collection_items", (string)null);
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Identity.RefreshToken", b =>
@@ -637,6 +703,25 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Navigation("MediaAsset");
                 });
 
+            modelBuilder.Entity("TheDomain.Domain.Media.MediaCollectionItem", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaCollection", "Collection")
+                        .WithMany("Items")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", "MediaAsset")
+                        .WithMany()
+                        .HasForeignKey("MediaAssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("MediaAsset");
+                });
+
             modelBuilder.Entity("TheDomain.Domain.Events.EntertainmentEvent", b =>
                 {
                     b.Navigation("Media");
@@ -645,6 +730,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("TheDomain.Domain.Identity.ApplicationUser", b =>
                 {
                     b.Navigation("RefreshTokens");
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Media.MediaCollection", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

@@ -68,6 +68,7 @@ public static class DependencyInjection
             services.AddScoped<DisabledMediaService>();
             services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<DisabledMediaService>());
             services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<DisabledMediaService>());
+            services.AddScoped<IMediaOrganizationService, DisabledMediaOrganizationService>();
             services.AddScoped<IHomepageCmsService, DisabledHomepageCmsService>();
             return services;
         }
@@ -80,9 +81,11 @@ public static class DependencyInjection
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IMediaOrganizationRepository, MediaOrganizationRepository>();
         services.AddScoped<MediaManagementService>();
         services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<MediaManagementService>());
         services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<MediaManagementService>());
+        services.AddScoped<IMediaOrganizationService, MediaOrganizationService>();
         services.AddScoped<IHomepageCmsRepository, HomepageCmsRepository>();
         services.AddScoped<IHomepageCmsService, HomepageCmsService>();
         if (jwtOptions.Enabled && initialAdminOptions.Enabled)

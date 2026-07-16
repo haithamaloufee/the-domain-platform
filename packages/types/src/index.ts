@@ -56,6 +56,10 @@ export type {
   EventMediaUsage as EventMediaUsageValue,
   MediaApprovalStatus as MediaApprovalStatusValue,
   MediaListQuery,
+  MediaCollection,
+  MediaCollectionItem,
+  MediaUsage,
+  MediaUsageEvent,
   MediaOrientation as MediaOrientationValue,
   MediaType as MediaTypeValue,
   PublicGalleryAlbum,
@@ -67,6 +71,7 @@ export type {
   UpdateMediaMetadataRequest,
   UpdateVideoPosterRequest,
   UploadMediaRequestMetadata,
+  PermanentDeleteMediaResponse,
   VideoPosterMode as VideoPosterModeValue,
   VideoPosterPresentation,
 } from "./media";

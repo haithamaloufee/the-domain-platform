@@ -106,6 +106,7 @@ public sealed class MediaManagementService(
         if (await repository.FindEventAsync(eventId, token) is null) return EventOperationResult.Failure<EventMediaResponse>("Event was not found.");
         var media = await repository.FindMediaAsync(request.MediaAssetId, token);
         if (media is null) return EventOperationResult.Failure<EventMediaResponse>("Media asset was not found.");
+        if (media.IsArchived) return EventOperationResult.Failure<EventMediaResponse>("Restore archived media before assigning it to an event.");
 
         var assignments = await repository.ListEventMediaForUpdateAsync(eventId, token);
         var duplicate = assignments.FirstOrDefault(item => item.MediaAssetId == request.MediaAssetId && item.Usage == request.Usage);
@@ -160,6 +161,7 @@ public sealed class MediaManagementService(
         var assignments = await repository.ListEventMediaForUpdateAsync(eventId, token);
         var target = assignments.SingleOrDefault(item => item.Id == eventMediaId);
         if (target is null) return EventOperationResult.Failure<EventMediaResponse>("Event media assignment was not found.");
+        if (target.MediaAsset.IsArchived) return EventOperationResult.Failure<EventMediaResponse>("Restore archived media before selecting it as an event cover.");
         if (!IsEligibleCover(target.MediaAsset)) return EventOperationResult.Failure<EventMediaResponse>(CoverEligibilityError(target.MediaAsset));
 
         var existingForAsset = assignments.FirstOrDefault(item =>
@@ -259,7 +261,7 @@ public sealed class MediaManagementService(
                 return EventOperationResult.Failure<EventMediaResponse>("Choose a custom poster image.");
             customPoster = await repository.FindMediaAsync(posterId, token);
             if (customPoster is null) return EventOperationResult.Failure<EventMediaResponse>("Custom poster media asset was not found.");
-            if (customPoster.MediaType != MediaType.Image || customPoster.ApprovalStatus != MediaApprovalStatus.Approved || !HasSafeUrl(customPoster.Url))
+            if (customPoster.IsArchived || customPoster.MediaType != MediaType.Image || customPoster.ApprovalStatus != MediaApprovalStatus.Approved || !HasSafeUrl(customPoster.Url))
                 return EventOperationResult.Failure<EventMediaResponse>("Custom posters must be approved HTTPS image assets.");
         }
 
@@ -282,10 +284,10 @@ public sealed class MediaManagementService(
     private async Task<EventOperationResult<AdminMediaResponse>> ChangeMedia(Guid id, Action<MediaAsset> change, CancellationToken token)
     { var item = await repository.FindMediaAsync(id, token); if (item is null) return EventOperationResult.Failure<AdminMediaResponse>("Media asset was not found."); change(item); await repository.SaveChangesAsync(token); return EventOperationResult.Success(Map(item)); }
     private static MediaOrientation GetOrientation(int? width, int? height) => width is null || height is null ? MediaOrientation.Unknown : width == height ? MediaOrientation.Square : width > height ? MediaOrientation.Landscape : MediaOrientation.Portrait;
-    private AdminMediaResponse Map(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName, item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Width, item.Height, item.DurationSeconds, item.Orientation, item.Category, item.Caption, item.AltText, item.ApprovalStatus, item.CreatedAtUtc, item.UpdatedAtUtc);
+    private AdminMediaResponse Map(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName, item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Width, item.Height, item.DurationSeconds, item.Orientation, item.Category, item.Caption, item.AltText, item.ApprovalStatus, item.IsArchived, item.ArchivedAtUtc, item.CreatedAtUtc, item.UpdatedAtUtc);
     private AdminMediaListItemResponse MapList(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName,
         item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Orientation, item.Category, item.Caption,
-        item.AltText, item.ApprovalStatus, item.CreatedAtUtc);
+        item.AltText, item.ApprovalStatus, item.IsArchived, item.ArchivedAtUtc, item.CreatedAtUtc);
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
     private EventMediaResponse Map(EventMedia item) => new(item.Id, item.EventId, item.MediaAssetId,
         item.Usage, item.SortOrder, item.IsFeatured, item.CreatedAtUtc, MapPresentation(item), MapVideoPoster(item));
