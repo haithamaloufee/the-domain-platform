@@ -38,9 +38,10 @@ public sealed class MediaOrganizationRepository(TheDomainDbContext dbContext) : 
         var posters = await dbContext.EventMedia.AsNoTracking().Where(item => item.CustomPosterMediaAssetId == mediaAssetId)
             .Select(item => new MediaUsageEventResponse(item.EventId, item.Event.Title, item.Usage, true)).ToListAsync(token);
         var collections = await dbContext.MediaCollectionItems.AsNoTracking().Where(item => item.MediaAssetId == mediaAssetId)
+            .OrderBy(item => item.Collection.Name)
             .Select(item => new MediaCollectionResponse(item.Collection.Id, item.Collection.Name, item.Collection.IsArchived,
                 item.Collection.Items.Count, item.Collection.CreatedAtUtc, item.Collection.UpdatedAtUtc, item.Collection.ArchivedAtUtc))
-            .OrderBy(item => item.Name).ToListAsync(token);
+            .ToListAsync(token);
         var branding = await dbContext.BrandingSettings.AsNoTracking().Where(item => item.PrimaryLogoMediaAssetId == mediaAssetId || item.AlternateLogoMediaAssetId == mediaAssetId || item.FaviconMediaAssetId == mediaAssetId || item.SocialImageMediaAssetId == mediaAssetId).Select(item => new { item.PrimaryLogoMediaAssetId, item.AlternateLogoMediaAssetId, item.FaviconMediaAssetId, item.SocialImageMediaAssetId }).SingleOrDefaultAsync(token);
         List<MediaBrandingUsageResponse> brandingUsage = [];
         if (branding?.PrimaryLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Primary logo")); if (branding?.AlternateLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Alternate logo")); if (branding?.FaviconMediaAssetId == mediaAssetId) brandingUsage.Add(new("Favicon")); if (branding?.SocialImageMediaAssetId == mediaAssetId) brandingUsage.Add(new("Default social image"));

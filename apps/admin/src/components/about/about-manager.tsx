@@ -133,7 +133,7 @@ export function AboutManager() {
     const error = validateAbout(fields);
     if (error) {
       setFeedback({ message: error, tone: "error" });
-      document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+      document.getElementById(firstInvalidAboutField(fields))?.focus();
       return;
     }
     setBusy(true);
@@ -448,6 +448,7 @@ function Fields({
         <CmsField key={key} label={label} name={key}>
           <Textarea
             className="min-h-20"
+            id={String(key)}
             maxLength={max}
             onChange={(e) => set(key, e.target.value as never)}
             value={(fields[key] as string | null) ?? ""}
@@ -775,4 +776,18 @@ export function validateAbout(value: SaveAboutSettingsRequest): string | null {
   if (!safeAboutHref(value.reachOutCtaHref))
     return "Enter a safe internal, HTTPS, mail, or telephone CTA destination.";
   return null;
+}
+
+function firstInvalidAboutField(value: SaveAboutSettingsRequest): string {
+  for (const field of [
+    "heroHeading",
+    "introStatement",
+    "storyHeading",
+    "teamHeading",
+    "partnersHeading",
+    "reachOutHeading",
+  ] as const) {
+    if (!value[field].trim()) return field;
+  }
+  return "reachOutCtaHref";
 }
