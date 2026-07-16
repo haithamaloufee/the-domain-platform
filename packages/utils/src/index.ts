@@ -16,3 +16,13 @@ export type {
   EventCoverAlignmentPreset,
   EventCoverPreviewPreset,
 } from "./event-cover-presentation";
+export {
+  galleryFeaturedMedia,
+  galleryLayoutPresets,
+  galleryLayoutPresetValues,
+  galleryMediaImageSource,
+  galleryPreviewWidths,
+  galleryUnsaved,
+  moveGalleryId,
+  safeGalleryLayoutPreset,
+} from "./gallery-presentation";

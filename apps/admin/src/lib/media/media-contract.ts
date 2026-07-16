@@ -192,6 +192,13 @@ function parsePresentation(value: unknown) {
 }
 
 function parseVideoPoster(value: unknown) {
+  if (value === undefined || value === null)
+    return {
+      mode: VideoPosterMode.Automatic,
+      timestampSeconds: null,
+      customPosterMediaAssetId: null,
+      posterUrl: null,
+    };
   if (!isRecord(value)) throw new Error("The server returned invalid video poster settings.");
   return {
     mode: enumValue(value.mode, VideoPosterMode),

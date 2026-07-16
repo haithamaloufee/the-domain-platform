@@ -5,6 +5,8 @@ import {
   MediaOrientation,
   MediaType,
   VideoPosterMode,
+  type GalleryPublicCollection,
+  type GalleryPublicMedia,
   type PublicEventDetails,
   type PublicEventListItem,
   type PublicGalleryAlbum,
@@ -15,7 +17,48 @@ import {
   type PublicPartner,
   type PublicStatisticItem,
 } from "@the-domain/types";
-import { defaultEventCoverPresentation, isValidEventCoverPresentation } from "@the-domain/utils";
+import {
+  defaultEventCoverPresentation,
+  isValidEventCoverPresentation,
+  safeGalleryLayoutPreset,
+} from "@the-domain/utils";
+
+export function parseGalleryCollections(value: unknown): GalleryPublicCollection[] {
+  if (!Array.isArray(value)) throw new Error("The server returned an invalid collection list.");
+  return value.map(parseGalleryCollection);
+}
+
+export function parseGalleryCollection(value: unknown): GalleryPublicCollection {
+  if (!isRecord(value)) throw new Error("The server returned an invalid gallery collection.");
+  return {
+    id: requiredString(value.id),
+    title: requiredString(value.title),
+    description: nullableString(value.description),
+    layoutPreset: safeGalleryLayoutPreset(value.layoutPreset),
+    featuredMediaId: nullableString(value.featuredMediaId),
+    media: galleryMediaList(value.media),
+  };
+}
+
+function galleryMediaList(value: unknown): GalleryPublicMedia[] {
+  if (!Array.isArray(value)) throw new Error("Expected gallery media.");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("Expected a gallery media item.");
+    return {
+      id: requiredString(item.id),
+      mediaType: enumValue(item.mediaType, MediaType),
+      url: httpsUrl(item.url),
+      posterUrl: nullableHttpsUrl(item.posterUrl),
+      caption: nullableString(item.caption),
+      altText: nullableString(item.altText),
+      orientation: enumValue(item.orientation, MediaOrientation),
+      width: nullableNumber(item.width),
+      height: nullableNumber(item.height),
+      durationSeconds: nullableNumber(item.durationSeconds),
+      sortOrder: integer(item.sortOrder),
+    };
+  });
+}
 
 export function parsePublicHomepage(value: unknown): PublicHomepageResponse {
   if (!isRecord(value)) throw new Error("The server returned invalid homepage content.");
@@ -259,6 +302,16 @@ function absoluteUrl(value: unknown): string {
 
 function nullableUrl(value: unknown): string | null {
   return value === null ? null : absoluteUrl(value);
+}
+
+function httpsUrl(value: unknown): string {
+  const result = absoluteUrl(value);
+  if (new URL(result).protocol !== "https:") throw new Error("Expected an HTTPS media URL.");
+  return result;
+}
+
+function nullableHttpsUrl(value: unknown): string | null {
+  return value === null ? null : httpsUrl(value);
 }
 
 function safeHref(value: unknown): string {

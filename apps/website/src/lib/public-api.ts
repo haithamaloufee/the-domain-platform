@@ -5,6 +5,7 @@ import type {
   PublicEventListItem,
   PublicGalleryAlbum,
   PublicGalleryAlbumDetails,
+  GalleryPublicCollection,
   PublicHomepageResponse,
   PublicPartner,
   PublicStatisticItem,
@@ -13,6 +14,8 @@ import { getPublicApiBaseUrl } from "./environment";
 import {
   parseGalleryAlbumDetails,
   parseGalleryAlbums,
+  parseGalleryCollection,
+  parseGalleryCollections,
   parsePublicHomepage,
   parsePublicPartners,
   parsePublicStatistics,
@@ -56,6 +59,17 @@ export function getGalleryAlbumByEventSlug(eventSlug: string): Promise<PublicGal
   return request(
     `/api/public/gallery/albums/${encodeURIComponent(eventSlug)}`,
     parseGalleryAlbumDetails,
+  );
+}
+
+export function getGalleryCollections(): Promise<GalleryPublicCollection[]> {
+  return request("/api/public/gallery/collections", parseGalleryCollections);
+}
+
+export function getGalleryCollection(id: string): Promise<GalleryPublicCollection> {
+  return request(
+    `/api/public/gallery/collections/${encodeURIComponent(id)}`,
+    parseGalleryCollection,
   );
 }
 

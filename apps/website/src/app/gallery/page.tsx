@@ -1,46 +1,47 @@
 import type { Metadata } from "next";
 import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
-import { AlbumCard } from "@/components/gallery/album-card";
-import { getGalleryAlbums } from "@/lib/public-api";
+import { CollectionCard } from "@/components/gallery/collection-card";
+import { getGalleryCollections } from "@/lib/public-api";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Event Gallery",
-  description: "Explore approved photography and film from previous Domain events.",
+  title: "Gallery",
+  description: "Explore curated photography and film from The Domain.",
   path: "/gallery",
 });
-
 export const revalidate = 60;
-
 export default async function GalleryPage() {
-  const albums = await loadAlbums();
+  let collections = null;
+  try {
+    collections = await getGalleryCollections();
+  } catch {}
   return (
     <>
       <Section className="architectural-grid border-b border-line pb-12 sm:pb-16">
         <Container>
           <SectionHeader
-            description="Photography and film from the experiences that continue to define The Domain."
-            eyebrow="Event archive"
+            description="Curated photography and film from the experiences that continue to define The Domain."
+            eyebrow="Visual archive"
             title="Gallery"
           />
         </Container>
       </Section>
       <Section className="cinematic-reveal">
         <Container>
-          {albums === null ? (
+          {collections === null ? (
             <EmptyState
-              description="The gallery archive could not be reached. Please try again shortly."
+              description="The Gallery could not be reached. Please try again shortly."
               title="The archive is temporarily off screen"
             />
-          ) : albums.length === 0 ? (
+          ) : collections.length === 0 ? (
             <EmptyState
-              description="Approved event albums will appear here after they are published."
-              title="No gallery albums yet"
+              description="Curated collections will appear here after they are published."
+              title="No Gallery collections yet"
             />
           ) : (
             <div className="grid gap-5 lg:grid-cols-2">
-              {albums.map((album, index) => (
-                <AlbumCard album={album} key={album.eventId} priority={index < 2} />
+              {collections.map((collection, index) => (
+                <CollectionCard collection={collection} key={collection.id} priority={index < 2} />
               ))}
             </div>
           )}
@@ -48,12 +49,4 @@ export default async function GalleryPage() {
       </Section>
     </>
   );
-}
-
-async function loadAlbums() {
-  try {
-    return await getGalleryAlbums();
-  } catch {
-    return null;
-  }
 }

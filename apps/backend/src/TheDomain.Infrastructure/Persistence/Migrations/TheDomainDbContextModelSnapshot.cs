@@ -622,7 +622,31 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GalleryDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("GalleryFeaturedMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GalleryLayoutPreset")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasDefaultValue("Editorial");
+
+                    b.Property<int>("GallerySortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GalleryTitle")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublishedInGallery")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
@@ -635,10 +659,14 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GalleryFeaturedMediaAssetId");
+
                     b.HasIndex("IsArchived");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("IsPublishedInGallery", "GallerySortOrder");
 
                     b.ToTable("media_collections", (string)null);
                 });
@@ -701,6 +729,14 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("MediaAsset");
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Media.MediaCollection", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("GalleryFeaturedMediaAssetId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Media.MediaCollectionItem", b =>

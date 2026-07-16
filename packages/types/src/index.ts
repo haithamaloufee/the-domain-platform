@@ -1,6 +1,15 @@
 export type { ApiProblem, PagedResponse } from "./api";
 export { UserRole } from "./auth";
 export { BookingAvailability, EventDisplayStatus, EventPublicationStatus } from "./events";
+export { GalleryLayoutPreset } from "./gallery";
+export type {
+  GalleryAdminCollection,
+  GalleryAdminMedia,
+  GalleryPublicCollection,
+  GalleryPublicMedia,
+  SaveGalleryPresentationRequest,
+  GalleryLayoutPreset as GalleryLayoutPresetValue,
+} from "./gallery";
 export {
   EventMediaUsage,
   MediaApprovalStatus,

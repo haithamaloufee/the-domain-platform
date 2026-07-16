@@ -10,6 +10,7 @@
     "test:auth": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/login-foundation.test.mjs",
     "test:events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/event-wizard.test.mjs",
     "test:presentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/presentation-ordering.test.mjs",
+    "test:gallery": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/gallery-manager.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

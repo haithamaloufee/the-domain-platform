@@ -37,6 +37,7 @@ public sealed class AdminMediaEndpointTests(ApiWebApplicationFactory factory) : 
     [Theory]
     [InlineData("/api/admin/media")]
     [InlineData("/api/admin/media-collections")]
+    [InlineData("/api/admin/gallery")]
     [InlineData("/api/admin/media/upload")]
     [InlineData("/api/admin/events/00000000-0000-0000-0000-000000000001/media")]
     public async Task MediaAdministrationRequiresAuthentication(string path)
