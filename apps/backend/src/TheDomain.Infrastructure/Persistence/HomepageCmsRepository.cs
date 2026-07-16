@@ -29,6 +29,8 @@ public sealed class HomepageCmsRepository(TheDomainDbContext dbContext) : IHomep
             && (!excludingId.HasValue || item.Id != excludingId.Value), cancellationToken);
     public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+    public Task<MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.MediaCollections.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
     public void AddHomepage(HomepageContent content) => dbContext.HomepageContent.Add(content);
     public void AddStatistic(StatisticItem statistic) => dbContext.HomepageStatistics.Add(statistic);

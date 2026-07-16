@@ -1,7 +1,8 @@
-import type { PublicEventListItem, PublicHomepageContent } from "@the-domain/types";
+import { MediaType, type PublicEventListItem, type PublicHomepageContent } from "@the-domain/types";
 import { Badge, Container, buttonClasses } from "@the-domain/ui";
 import { eventCoverRenderData } from "@the-domain/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { EventCoverImage } from "@/components/events/event-cover-image";
 import { formatEventDate } from "@/components/events/event-presentation";
 import { homepageContent } from "@/content/homepage-content";
@@ -14,6 +15,7 @@ export function HomeHero({
   featuredEvent: PublicEventListItem | null;
 }) {
   const source = eventCoverRenderData(featuredEvent?.coverMedia ?? null);
+  const configuredMedia = content?.builder.heroMedia ?? null;
   const hero = content
     ? {
         eyebrow: content.heroEyebrow,
@@ -36,7 +38,29 @@ export function HomeHero({
   return (
     <section className="relative isolate flex min-h-[calc(100svh-4rem)] items-end overflow-hidden border-b border-line">
       <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
-      {source ? (
+      {configuredMedia?.mediaType === MediaType.Video ? (
+        <video
+          aria-hidden="true"
+          autoPlay
+          className="cinematic-media absolute inset-0 -z-20 h-full w-full object-cover"
+          loop
+          muted
+          playsInline
+          poster={configuredMedia.posterUrl ?? undefined}
+          preload="metadata"
+          src={configuredMedia.url}
+        />
+      ) : configuredMedia?.mediaType === MediaType.Image ? (
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="cinematic-media -z-20 object-cover"
+          fill
+          priority
+          sizes="100vw"
+          src={configuredMedia.url}
+        />
+      ) : source ? (
         <EventCoverImage
           className="cinematic-media -z-20 object-cover"
           media={featuredEvent!.coverMedia!}

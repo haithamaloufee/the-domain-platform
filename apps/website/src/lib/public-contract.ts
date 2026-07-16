@@ -5,6 +5,7 @@ import {
   MediaOrientation,
   MediaType,
   VideoPosterMode,
+  HomepageSectionKey,
   type GalleryPublicCollection,
   type GalleryPublicMedia,
   type PublicEventDetails,
@@ -158,6 +159,45 @@ function parsePublicHomepageContent(value: unknown): PublicHomepageContent {
     contactDescription: requiredString(value.contactDescription),
     contactCtaLabel: requiredString(value.contactCtaLabel),
     contactCtaHref: safeHref(value.contactCtaHref),
+    builder: parseHomepageBuilder(value.builder),
+  };
+}
+function parseHomepageBuilder(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid homepage builder settings.");
+  const allowed = Object.values(HomepageSectionKey);
+  const keys = (input: unknown, subset = false) => {
+    if (!Array.isArray(input)) throw new Error("Invalid homepage sections.");
+    const result = input.map((item) => {
+      if (typeof item !== "string" || !allowed.includes(item as never))
+        throw new Error("Invalid homepage section.");
+      return item as (typeof allowed)[number];
+    });
+    if (!subset && result.length !== allowed.length)
+      throw new Error("Incomplete homepage sections.");
+    return result;
+  };
+  return {
+    heroMediaAssetId: nullableString(value.heroMediaAssetId),
+    galleryCollectionId: nullableString(value.galleryCollectionId),
+    heroMedia: value.heroMedia === null ? null : parseHomepageHero(value.heroMedia),
+    sectionOrder: keys(value.sectionOrder),
+    disabledSections: keys(value.disabledSections, true),
+    eventsTitle: requiredString(value.eventsTitle),
+    eventsDescription: requiredString(value.eventsDescription),
+    previousEventsTitle: requiredString(value.previousEventsTitle),
+    previousEventsDescription: requiredString(value.previousEventsDescription),
+    galleryTitle: requiredString(value.galleryTitle),
+    galleryDescription: requiredString(value.galleryDescription),
+  };
+}
+function parseHomepageHero(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid homepage hero media.");
+  return {
+    id: requiredString(value.id),
+    mediaType: enumValue(value.mediaType, MediaType),
+    url: httpsUrl(value.url),
+    posterUrl: nullableHttpsUrl(value.posterUrl),
+    altText: nullableString(value.altText),
   };
 }
 

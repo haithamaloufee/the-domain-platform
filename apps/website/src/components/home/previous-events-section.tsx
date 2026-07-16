@@ -6,9 +6,13 @@ import { HomeSectionHeader } from "./home-section-header";
 export function PreviousEventsSection({
   events,
   unavailable,
+  title,
+  description,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section className="border-y border-line bg-surface/25">
@@ -16,9 +20,12 @@ export function PreviousEventsSection({
         <HomeSectionHeader
           actionHref="/events"
           actionLabel="Explore The Archive"
-          description="Finished events return as approved highlights—an evolving record of the rooms, stages, and audiences that shaped each experience."
+          description={
+            description ??
+            "Finished events return as approved highlights—an evolving record of the rooms, stages, and audiences that shaped each experience."
+          }
           eyebrow="Previous Events"
-          title="The night ends. The story remains."
+          title={title ?? "The night ends. The story remains."}
         />
         {events.length > 0 ? (
           <div className="mt-10 grid gap-5 lg:grid-cols-2">

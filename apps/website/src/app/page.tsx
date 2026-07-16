@@ -1,5 +1,7 @@
 import type {
   PublicEventListItem,
+  GalleryPublicCollection,
+  HomepageSectionKey,
   PublicGalleryAlbum,
   PublicHomepageContent,
   PublicPartner,
@@ -7,6 +9,7 @@ import type {
   StatisticsPresentation,
 } from "@the-domain/types";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
@@ -21,6 +24,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import {
   getFeaturedEvents,
   getGalleryAlbums,
+  getGalleryCollections,
   getPublicHomepage,
   getPublicPartners,
   getPublicStatistics,
@@ -41,41 +45,55 @@ export default async function HomePage() {
   const data = await loadHomepageData();
   const heroEvent = data.featured[0] ?? data.upcoming[0] ?? null;
   const programme = uniqueEvents([...data.featured, ...data.upcoming]).slice(0, 2);
+  const builder = data.content?.builder;
+  const galleryCollection =
+    data.collections.find((collection) => collection.id === builder?.galleryCollectionId) ?? null;
+  const sections: Record<HomepageSectionKey, ReactNode> = {
+    events: (
+      <HomepageEventsSection
+        description={builder?.eventsDescription}
+        events={programme}
+        title={builder?.eventsTitle}
+        unavailable={data.unavailable.events}
+      />
+    ),
+    statistics: (
+      <StatsSection statistics={data.statistics} presentation={data.statisticsPresentation} />
+    ),
+    why: <WhyDomainSection cmsContent={data.content} />,
+    previous: (
+      <PreviousEventsSection
+        description={builder?.previousEventsDescription}
+        events={data.previous.slice(0, 2)}
+        title={builder?.previousEventsTitle}
+        unavailable={data.unavailable.previous}
+      />
+    ),
+    gallery: (
+      <GalleryPreviewSection
+        albums={data.albums.slice(0, 3)}
+        collection={galleryCollection}
+        description={builder?.galleryDescription}
+        title={builder?.galleryTitle}
+        unavailable={data.unavailable.gallery}
+      />
+    ),
+    services: <ServicesSection content={data.content} />,
+    partners: <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />,
+    contact: <ContactCtaSection cmsContent={data.content} />,
+  };
+  const order = builder?.sectionOrder ?? (Object.keys(sections) as HomepageSectionKey[]);
+  const disabled = new Set(builder?.disabledSections ?? []);
 
   return (
     <>
       <JsonLd data={createHomepageStructuredData()} />
       <HomeHero content={data.content} featuredEvent={heroEvent} />
-      <CinematicReveal>
-        <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
-      </CinematicReveal>
-      <CinematicReveal>
-        <StatsSection statistics={data.statistics} presentation={data.statisticsPresentation} />
-      </CinematicReveal>
-      <CinematicReveal>
-        <WhyDomainSection cmsContent={data.content} />
-      </CinematicReveal>
-      <CinematicReveal>
-        <PreviousEventsSection
-          events={data.previous.slice(0, 2)}
-          unavailable={data.unavailable.previous}
-        />
-      </CinematicReveal>
-      <CinematicReveal>
-        <GalleryPreviewSection
-          albums={data.albums.slice(0, 3)}
-          unavailable={data.unavailable.gallery}
-        />
-      </CinematicReveal>
-      <CinematicReveal>
-        <ServicesSection content={data.content} />
-      </CinematicReveal>
-      <CinematicReveal>
-        <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />
-      </CinematicReveal>
-      <CinematicReveal>
-        <ContactCtaSection cmsContent={data.content} />
-      </CinematicReveal>
+      {order
+        .filter((key) => !disabled.has(key))
+        .map((key) => (
+          <CinematicReveal key={key}>{sections[key]}</CinematicReveal>
+        ))}
     </>
   );
 }
@@ -107,6 +125,7 @@ interface HomepageData {
   upcoming: PublicEventListItem[];
   previous: PublicEventListItem[];
   albums: PublicGalleryAlbum[];
+  collections: GalleryPublicCollection[];
   content: PublicHomepageContent | null;
   statistics: PublicStatisticItem[];
   statisticsPresentation: StatisticsPresentation;
@@ -119,12 +138,13 @@ interface HomepageData {
 }
 
 async function loadHomepageData(): Promise<HomepageData> {
-  const [featured, upcoming, previous, albums, homepage, statistics, partners] =
+  const [featured, upcoming, previous, albums, collections, homepage, statistics, partners] =
     await Promise.allSettled([
       getFeaturedEvents(),
       getUpcomingEvents(),
       getPreviousEvents(),
       getGalleryAlbums(),
+      getGalleryCollections(),
       getPublicHomepage(),
       getPublicStatistics(),
       getPublicPartners(),
@@ -137,6 +157,7 @@ async function loadHomepageData(): Promise<HomepageData> {
     upcoming: settledValue(upcoming),
     previous: settledValue(previous),
     albums: settledValue(albums),
+    collections: settledValue(collections),
     content: homepageValue?.content ?? null,
     statistics:
       statistics.status === "fulfilled" ? statistics.value : (homepageValue?.statistics ?? []),
@@ -148,7 +169,7 @@ async function loadHomepageData(): Promise<HomepageData> {
     unavailable: {
       events: featured.status === "rejected" && upcoming.status === "rejected",
       previous: previous.status === "rejected",
-      gallery: albums.status === "rejected",
+      gallery: albums.status === "rejected" && collections.status === "rejected",
     },
   };
 }

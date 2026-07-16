@@ -50,10 +50,13 @@ export type {
   PublicPartner,
   PublicStatisticItem,
   StatisticsPresentation,
+  HomepageBuilderSettings,
+  HomepageHeroMedia,
   UpdateHomepageContentRequest,
   UpdatePartnerRequest,
   UpdateStatisticRequest,
 } from "./homepage";
+export { HomepageSectionKey } from "./homepage";
 export type {
   AdminEventMediaItem,
   AdminMediaDetails,

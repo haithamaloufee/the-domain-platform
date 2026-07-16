@@ -6,9 +6,13 @@ import { HomeSectionHeader } from "./home-section-header";
 export function HomepageEventsSection({
   events,
   unavailable,
+  title,
+  description,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section>
@@ -16,9 +20,12 @@ export function HomepageEventsSection({
         <HomeSectionHeader
           actionHref="/events"
           actionLabel="View All Events"
-          description="Featured experiences lead the programme, followed by what is coming next. Booking remains on the event's verified external platform."
+          description={
+            description ??
+            "Featured experiences lead the programme, followed by what is coming next. Booking remains on the event's verified external platform."
+          }
           eyebrow="Featured & Upcoming"
-          title="The next frame is taking shape."
+          title={title ?? "The next frame is taking shape."}
         />
         {events.length > 0 ? (
           <div className="mt-10 grid gap-5 lg:grid-cols-2">

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Infrastructure.Persistence.Configurations;
 
@@ -35,5 +36,12 @@ public sealed class HomepageContentConfiguration : IEntityTypeConfiguration<Home
         builder.HasIndex(item => item.IsPublished);
         builder.Property(item => item.StatisticsPhrase).HasMaxLength(180).HasDefaultValue("Moments that move with us");
         builder.Property(item => item.IsStatisticsPhraseEnabled).HasDefaultValue(true);
+        builder.Property(item => item.SectionOrder).HasMaxLength(200).HasDefaultValue("events,statistics,why,previous,gallery,services,partners,contact");
+        builder.Property(item => item.DisabledSections).HasMaxLength(200).HasDefaultValue(string.Empty);
+        builder.Property(item => item.EventsTitle).HasMaxLength(160).HasDefaultValue("Upcoming experiences"); builder.Property(item => item.EventsDescription).HasMaxLength(500).HasDefaultValue("The next Domain experiences.");
+        builder.Property(item => item.PreviousEventsTitle).HasMaxLength(160).HasDefaultValue("Previous events"); builder.Property(item => item.PreviousEventsDescription).HasMaxLength(500).HasDefaultValue("Moments that continue to shape The Domain.");
+        builder.Property(item => item.GalleryTitle).HasMaxLength(160).HasDefaultValue("Gallery highlights"); builder.Property(item => item.GalleryDescription).HasMaxLength(500).HasDefaultValue("Curated photography and film from The Domain.");
+        builder.HasOne<MediaAsset>().WithMany().HasForeignKey(item => item.HeroMediaAssetId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<MediaCollection>().WithMany().HasForeignKey(item => item.GalleryCollectionId).OnDelete(DeleteBehavior.SetNull);
     }
 }

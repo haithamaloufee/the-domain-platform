@@ -262,6 +262,44 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DisabledSections")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("EventsDescription")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("The next Domain experiences.");
+
+                    b.Property<string>("EventsTitle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasDefaultValue("Upcoming experiences");
+
+                    b.Property<Guid?>("GalleryCollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GalleryDescription")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("Curated photography and film from The Domain.");
+
+                    b.Property<string>("GalleryTitle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasDefaultValue("Gallery highlights");
+
                     b.Property<string>("HeroAccent")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -275,6 +313,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("HeroMediaAssetId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("HeroTitle")
                         .IsRequired()
@@ -299,6 +340,20 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("PreviousEventsDescription")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("Moments that continue to shape The Domain.");
+
+                    b.Property<string>("PreviousEventsTitle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasDefaultValue("Previous events");
+
                     b.Property<string>("PrimaryCtaHref")
                         .IsRequired()
                         .HasMaxLength(2048)
@@ -316,6 +371,13 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<string>("SecondaryCtaLabel")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SectionOrder")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("events,statistics,why,previous,gallery,services,partners,contact");
 
                     b.Property<string>("ServicesDescription")
                         .IsRequired()
@@ -348,6 +410,10 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GalleryCollectionId");
+
+                    b.HasIndex("HeroMediaAssetId");
 
                     b.HasIndex("IsPublished");
 
@@ -834,6 +900,19 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
                         .WithMany()
                         .HasForeignKey("SocialImageMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Homepage.HomepageContent", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaCollection", null)
+                        .WithMany()
+                        .HasForeignKey("GalleryCollectionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("HeroMediaAssetId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 

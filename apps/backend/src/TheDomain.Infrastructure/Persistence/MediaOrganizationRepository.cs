@@ -46,6 +46,7 @@ public sealed class MediaOrganizationRepository(TheDomainDbContext dbContext) : 
         if (branding?.PrimaryLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Primary logo")); if (branding?.AlternateLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Alternate logo")); if (branding?.FaviconMediaAssetId == mediaAssetId) brandingUsage.Add(new("Favicon")); if (branding?.SocialImageMediaAssetId == mediaAssetId) brandingUsage.Add(new("Default social image"));
         var partnerNames = await dbContext.Partners.AsNoTracking().Where(item => item.LogoMediaAssetId == mediaAssetId).Select(item => item.Name).ToListAsync(token);
         brandingUsage.AddRange(partnerNames.Select(name => new MediaBrandingUsageResponse($"Partner logo · {name}")));
+        if (await dbContext.HomepageContent.AsNoTracking().AnyAsync(item => item.HeroMediaAssetId == mediaAssetId, token)) brandingUsage.Add(new("Homepage hero"));
         return new(mediaAssetId, assignments.Concat(posters).ToArray(), collections, brandingUsage, assignments.Count == 0 && posters.Count == 0 && brandingUsage.Count == 0);
     }
     public void AddCollection(MediaCollection collection) => dbContext.MediaCollections.Add(collection);

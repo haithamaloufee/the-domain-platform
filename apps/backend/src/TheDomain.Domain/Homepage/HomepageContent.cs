@@ -47,7 +47,19 @@ public sealed class HomepageContent
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public string StatisticsPhrase { get; private set; } = "Moments that move with us";
     public bool IsStatisticsPhraseEnabled { get; private set; } = true;
+    public Guid? HeroMediaAssetId { get; private set; }
+    public Guid? GalleryCollectionId { get; private set; }
+    public string SectionOrder { get; private set; } = "events,statistics,why,previous,gallery,services,partners,contact";
+    public string DisabledSections { get; private set; } = string.Empty;
+    public string EventsTitle { get; private set; } = "Upcoming experiences";
+    public string EventsDescription { get; private set; } = "The next Domain experiences.";
+    public string PreviousEventsTitle { get; private set; } = "Previous events";
+    public string PreviousEventsDescription { get; private set; } = "Moments that continue to shape The Domain.";
+    public string GalleryTitle { get; private set; } = "Gallery highlights";
+    public string GalleryDescription { get; private set; } = "Curated photography and film from The Domain.";
     public void UpdateStatisticsPresentation(string phrase, bool enabled, DateTimeOffset now) { var value = phrase?.Trim() ?? string.Empty; if (value.Length is < 1 or > 180) throw new ArgumentException("Statistics phrase must be between 1 and 180 characters.", nameof(phrase)); StatisticsPhrase = value; IsStatisticsPhraseEnabled = enabled; UpdatedAtUtc = now; }
+    public void UpdateBuilder(Guid? heroMediaAssetId, Guid? galleryCollectionId, string sectionOrder, string disabledSections, string eventsTitle, string eventsDescription, string previousTitle, string previousDescription, string galleryTitle, string galleryDescription, DateTimeOffset now)
+    { HeroMediaAssetId = heroMediaAssetId; GalleryCollectionId = galleryCollectionId; SectionOrder = sectionOrder; DisabledSections = disabledSections; EventsTitle = eventsTitle.Trim(); EventsDescription = eventsDescription.Trim(); PreviousEventsTitle = previousTitle.Trim(); PreviousEventsDescription = previousDescription.Trim(); GalleryTitle = galleryTitle.Trim(); GalleryDescription = galleryDescription.Trim(); UpdatedAtUtc = now; }
 
     public void Update(string heroEyebrow, string heroTitle, string? heroAccent,
         string heroDescription, string primaryCtaLabel, string primaryCtaHref,

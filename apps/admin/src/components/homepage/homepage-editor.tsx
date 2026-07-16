@@ -1,10 +1,21 @@
 "use client";
 
-import type { AdminHomepageContent, UpdateHomepageContentRequest } from "@the-domain/types";
-import { Card, Input, Textarea, buttonClasses } from "@the-domain/ui";
+import {
+  HomepageSectionKey,
+  MediaApprovalStatus,
+  MediaType,
+  type AdminHomepageContent,
+  type AdminMediaListItem,
+  type GalleryAdminCollection,
+  type UpdateHomepageContentRequest,
+} from "@the-domain/types";
+import { Card, Input, Select, Textarea, buttonClasses } from "@the-domain/ui";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CmsCheckbox, CmsFeedback, CmsField, CmsStatusBadge } from "@/components/cms/cms-controls";
 import { getAdminHomepage, updateAdminHomepage } from "@/lib/cms/admin-cms-client";
+import { listAdminMedia, uploadAdminMedia } from "@/lib/media/admin-media-client";
+import { getAdminGallery } from "@/lib/gallery/admin-gallery-client";
 
 type TextFieldName = Exclude<keyof UpdateHomepageContentRequest, "isPublished">;
 type FieldErrors = Partial<Record<TextFieldName, string>>;
@@ -29,6 +40,16 @@ const emptyContent: UpdateHomepageContentRequest = {
   contactCtaLabel: "",
   contactCtaHref: "",
   isPublished: false,
+  heroMediaAssetId: null,
+  galleryCollectionId: null,
+  sectionOrder: Object.values(HomepageSectionKey),
+  disabledSections: [],
+  eventsTitle: "Upcoming experiences",
+  eventsDescription: "The next Domain experiences.",
+  previousEventsTitle: "Previous events",
+  previousEventsDescription: "Moments that continue to shape The Domain.",
+  galleryTitle: "Gallery highlights",
+  galleryDescription: "Curated photography and film from The Domain.",
 };
 
 export function HomepageEditor() {
@@ -139,6 +160,7 @@ export function HomepageEditor() {
       </div>
 
       <CmsFeedback message={message} tone={messageTone} />
+      <HomepageVisualBuilder fields={fields} onChange={update} />
 
       <EditorSection
         description="The opening editorial statement shown above the event programme."
@@ -326,6 +348,276 @@ export function HomepageEditor() {
   );
 }
 
+function HomepageVisualBuilder({
+  fields,
+  onChange,
+}: {
+  fields: UpdateHomepageContentRequest;
+  onChange: <K extends keyof UpdateHomepageContentRequest>(
+    name: K,
+    value: UpdateHomepageContentRequest[K],
+  ) => void;
+}) {
+  const [media, setMedia] = useState<AdminMediaListItem[]>([]);
+  const [collections, setCollections] = useState<GalleryAdminCollection[]>([]);
+  const [mode, setMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [uploading, setUploading] = useState(false);
+  useEffect(() => {
+    void Promise.all([
+      listAdminMedia({ pageNumber: 1, pageSize: 100, isArchived: false }),
+      getAdminGallery(),
+    ]).then(([assets, gallery]) => {
+      setMedia([...assets.items]);
+      setCollections(gallery.filter((item) => item.isPublished && !item.isArchived));
+    });
+  }, []);
+  const hero = media.find((item) => item.id === fields.heroMediaAssetId);
+  const widths = { desktop: "max-w-full", tablet: "max-w-2xl", mobile: "max-w-xs" };
+  function move(key: string, direction: -1 | 1) {
+    const next = [...fields.sectionOrder];
+    const index = next.indexOf(key as never);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= next.length) return;
+    const [item] = next.splice(index, 1);
+    if (item) next.splice(target, 0, item);
+    onChange("sectionOrder", next);
+  }
+  async function upload(file: File) {
+    setUploading(true);
+    try {
+      const item = await uploadAdminMedia(file, {
+        approvalStatus: MediaApprovalStatus.Approved,
+        category: "Homepage hero",
+        altText: fields.heroTitle,
+      });
+      setMedia((current) => [item, ...current]);
+      onChange("heroMediaAssetId", item.id);
+    } finally {
+      setUploading(false);
+    }
+  }
+  return (
+    <Card className="p-6 sm:p-8">
+      <div className="border-b border-line pb-5">
+        <p className="font-label text-xs uppercase tracking-[.14em] text-gold">
+          Guided visual builder
+        </p>
+        <h2 className="mt-2 font-display text-3xl font-bold">Homepage composition</h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          Select media and arrange predefined sections. Underlying Events, Statistics, Partners, and
+          Gallery records remain owned by their managers.
+        </p>
+      </div>
+      <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(20rem,.8fr)_minmax(24rem,1.2fr)]">
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-display text-xl font-bold">Hero media</h3>
+            <Select
+              className="mt-3"
+              onChange={(event) => onChange("heroMediaAssetId", event.target.value || null)}
+              value={fields.heroMediaAssetId ?? ""}
+            >
+              <option value="">Text-only intentional fallback</option>
+              {media
+                .filter(
+                  (item) =>
+                    !item.isArchived &&
+                    item.approvalStatus === MediaApprovalStatus.Approved &&
+                    item.url.startsWith("https://"),
+                )
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.caption || item.originalFileName} ·{" "}
+                    {item.mediaType === MediaType.Video ? "Video" : "Image"}
+                  </option>
+                ))}
+            </Select>
+            <label className="mt-3 block border border-dashed border-line p-3 text-xs">
+              Upload image or video
+              <input
+                accept="image/*,video/*"
+                className="mt-2 block"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void upload(file);
+                }}
+                type="file"
+              />
+            </label>
+          </div>
+          <div>
+            <h3 className="font-display text-xl font-bold">Gallery highlight</h3>
+            <Select
+              className="mt-3"
+              onChange={(event) => onChange("galleryCollectionId", event.target.value || null)}
+              value={fields.galleryCollectionId ?? ""}
+            >
+              <option value="">Automatic Gallery preview</option>
+              {collections.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.publicTitle || item.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <h3 className="font-display text-xl font-bold">Section structure</h3>
+            <ol className="mt-3 space-y-2">
+              {fields.sectionOrder.map((key, index) => {
+                const disabled = fields.disabledSections.includes(key);
+                return (
+                  <li
+                    className="flex items-center justify-between gap-3 border border-line p-3"
+                    key={key}
+                  >
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        checked={!disabled}
+                        onChange={(event) =>
+                          onChange(
+                            "disabledSections",
+                            event.target.checked
+                              ? fields.disabledSections.filter((item) => item !== key)
+                              : [...fields.disabledSections, key],
+                          )
+                        }
+                        type="checkbox"
+                      />
+                      {key}
+                    </label>
+                    <div className="flex gap-1">
+                      <button
+                        aria-label={`Move ${key} up`}
+                        className={buttonClasses("ghost", "px-2")}
+                        disabled={index === 0}
+                        onClick={() => move(key, -1)}
+                        type="button"
+                      >
+                        Up
+                      </button>
+                      <button
+                        aria-label={`Move ${key} down`}
+                        className={buttonClasses("ghost", "px-2")}
+                        disabled={index === fields.sectionOrder.length - 1}
+                        onClick={() => move(key, 1)}
+                        type="button"
+                      >
+                        Down
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <div>
+            <h3 className="font-display text-xl font-bold">Curated section copy</h3>
+            <div className="mt-3 space-y-5">
+              {(
+                [
+                  ["Events", "eventsTitle", "eventsDescription"],
+                  ["Previous events", "previousEventsTitle", "previousEventsDescription"],
+                  ["Gallery", "galleryTitle", "galleryDescription"],
+                ] as const
+              ).map(([label, titleName, descriptionName]) => (
+                <div className="space-y-3 border-l border-line pl-4" key={titleName}>
+                  <p className="font-label text-xs uppercase tracking-[.14em] text-gold">{label}</p>
+                  <TextControl
+                    fields={fields}
+                    label="Heading"
+                    maxLength={160}
+                    name={titleName}
+                    onChange={onChange}
+                    required
+                  />
+                  <TextControl
+                    fields={fields}
+                    label="Supporting copy"
+                    maxLength={500}
+                    multiline
+                    name={descriptionName}
+                    onChange={onChange}
+                    required
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="flex gap-2" role="group" aria-label="Homepage preview width">
+            {(["desktop", "tablet", "mobile"] as const).map((value) => (
+              <button
+                aria-pressed={mode === value}
+                className={buttonClasses(mode === value ? "primary" : "secondary", "px-3")}
+                key={value}
+                onClick={() => setMode(value)}
+                type="button"
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <div
+            className={`mx-auto mt-4 overflow-hidden border border-line bg-canvas transition-[max-width] ${widths[mode]}`}
+          >
+            <div className="relative min-h-72 p-6">
+              {hero &&
+                (hero.mediaType === MediaType.Video ? (
+                  <video
+                    className="absolute inset-0 h-full w-full object-cover opacity-45"
+                    muted
+                    playsInline
+                    poster={hero.thumbnailUrl ?? undefined}
+                    preload="metadata"
+                    src={hero.url}
+                  />
+                ) : (
+                  <Image
+                    alt={hero.altText ?? ""}
+                    className="object-cover opacity-45"
+                    fill
+                    sizes="60vw"
+                    src={hero.url}
+                  />
+                ))}
+              <div className="relative">
+                <p className="text-xs uppercase text-gold">{fields.heroEyebrow}</p>
+                <h3 className="mt-4 max-w-lg font-display text-4xl font-bold">
+                  {fields.heroTitle || "Homepage hero"}
+                </h3>
+                <p className="mt-3 max-w-lg text-sm text-ink-muted">{fields.heroDescription}</p>
+                <div className="mt-5 flex gap-2">
+                  <span className={buttonClasses("primary")}>
+                    {fields.primaryCtaLabel || "Primary action"}
+                  </span>
+                  {fields.secondaryCtaLabel && (
+                    <span className={buttonClasses("secondary")}>{fields.secondaryCtaLabel}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2 p-4">
+              {fields.sectionOrder
+                .filter((key) => !fields.disabledSections.includes(key))
+                .map((key) => (
+                  <div className="border border-line bg-surface p-4" key={key}>
+                    <p className="font-display text-lg font-bold capitalize">{key}</p>
+                    <p className="mt-1 text-xs text-ink-muted">Configured public section</p>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-ink-muted">
+            Approximation only. Save the complete homepage form to persist changes.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function EditorSection({
   children,
   description,
@@ -447,6 +739,12 @@ function validate(fields: UpdateHomepageContentRequest): FieldErrors {
     "contactTitle",
     "contactDescription",
     "contactCtaLabel",
+    "eventsTitle",
+    "eventsDescription",
+    "previousEventsTitle",
+    "previousEventsDescription",
+    "galleryTitle",
+    "galleryDescription",
   ] as const) {
     if (!fields[name].trim()) errors[name] = "This field is required.";
   }
@@ -506,6 +804,16 @@ function toRequest(content: AdminHomepageContent): UpdateHomepageContentRequest 
     contactCtaLabel: content.contactCtaLabel,
     contactCtaHref: content.contactCtaHref,
     isPublished: content.isPublished,
+    heroMediaAssetId: content.builder.heroMediaAssetId,
+    galleryCollectionId: content.builder.galleryCollectionId,
+    sectionOrder: content.builder.sectionOrder,
+    disabledSections: content.builder.disabledSections,
+    eventsTitle: content.builder.eventsTitle,
+    eventsDescription: content.builder.eventsDescription,
+    previousEventsTitle: content.builder.previousEventsTitle,
+    previousEventsDescription: content.builder.previousEventsDescription,
+    galleryTitle: content.builder.galleryTitle,
+    galleryDescription: content.builder.galleryDescription,
   };
 }
 

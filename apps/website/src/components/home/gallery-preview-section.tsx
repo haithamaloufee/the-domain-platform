@@ -1,14 +1,21 @@
-import type { PublicGalleryAlbum } from "@the-domain/types";
+import type { GalleryPublicCollection, PublicGalleryAlbum } from "@the-domain/types";
 import { Container, EmptyState, Section } from "@the-domain/ui";
 import { AlbumCard } from "@/components/gallery/album-card";
+import { CollectionCard } from "@/components/gallery/collection-card";
 import { HomeSectionHeader } from "./home-section-header";
 
 export function GalleryPreviewSection({
   albums,
   unavailable,
+  collection,
+  title,
+  description,
 }: {
   albums: PublicGalleryAlbum[];
   unavailable: boolean;
+  collection?: GalleryPublicCollection | null;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section>
@@ -16,11 +23,18 @@ export function GalleryPreviewSection({
         <HomeSectionHeader
           actionHref="/gallery"
           actionLabel="Open The Gallery"
-          description="A focused selection of approved event albums, using cover imagery only until a visitor chooses to enter the full gallery."
+          description={
+            description ??
+            "A focused selection of approved event albums, using cover imagery only until a visitor chooses to enter the full gallery."
+          }
           eyebrow="Gallery Preview"
-          title="Moments with their own afterlife."
+          title={title ?? "Moments with their own afterlife."}
         />
-        {albums.length > 0 ? (
+        {collection ? (
+          <div className="mt-10">
+            <CollectionCard collection={collection} priority={false} />
+          </div>
+        ) : albums.length > 0 ? (
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {albums.map((album, index) => (
               <div

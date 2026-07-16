@@ -17,6 +17,38 @@ export interface PublicHomepageContent {
   contactDescription: string;
   contactCtaLabel: string;
   contactCtaHref: string;
+  builder: HomepageBuilderSettings;
+}
+export const HomepageSectionKey = {
+  Events: "events",
+  Statistics: "statistics",
+  Why: "why",
+  Previous: "previous",
+  Gallery: "gallery",
+  Services: "services",
+  Partners: "partners",
+  Contact: "contact",
+} as const;
+export type HomepageSectionKey = (typeof HomepageSectionKey)[keyof typeof HomepageSectionKey];
+export interface HomepageHeroMedia {
+  id: string;
+  mediaType: number;
+  url: string;
+  posterUrl: string | null;
+  altText: string | null;
+}
+export interface HomepageBuilderSettings {
+  heroMediaAssetId: string | null;
+  galleryCollectionId: string | null;
+  heroMedia: HomepageHeroMedia | null;
+  sectionOrder: HomepageSectionKey[];
+  disabledSections: HomepageSectionKey[];
+  eventsTitle: string;
+  eventsDescription: string;
+  previousEventsTitle: string;
+  previousEventsDescription: string;
+  galleryTitle: string;
+  galleryDescription: string;
 }
 
 export interface PublicStatisticItem {
@@ -46,12 +78,23 @@ export interface StatisticsPresentation {
   isEnabled: boolean;
 }
 
-export interface UpdateHomepageContentRequest extends PublicHomepageContent {
+export interface UpdateHomepageContentRequest extends Omit<PublicHomepageContent, "builder"> {
   isPublished: boolean;
+  heroMediaAssetId: string | null;
+  galleryCollectionId: string | null;
+  sectionOrder: HomepageSectionKey[];
+  disabledSections: HomepageSectionKey[];
+  eventsTitle: string;
+  eventsDescription: string;
+  previousEventsTitle: string;
+  previousEventsDescription: string;
+  galleryTitle: string;
+  galleryDescription: string;
 }
 
-export interface AdminHomepageContent extends UpdateHomepageContentRequest {
+export interface AdminHomepageContent extends PublicHomepageContent {
   id: string;
+  isPublished: boolean;
   createdAtUtc: string;
   updatedAtUtc: string;
 }

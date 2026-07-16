@@ -86,6 +86,7 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
         public Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<Partner?>(null);
         public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaAsset?>(null);
+        public Task<TheDomain.Domain.Media.MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaCollection?>(null);
         public void AddHomepage(HomepageContent content) { }
         public void AddStatistic(StatisticItem statistic) { }
         public void AddPartner(Partner partner) { }

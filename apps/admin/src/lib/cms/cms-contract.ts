@@ -6,6 +6,7 @@ import type {
   CreateStatisticRequest,
   UpdateHomepageContentRequest,
 } from "@the-domain/types";
+import { HomepageSectionKey } from "@the-domain/types";
 
 type CmsRequest = UpdateHomepageContentRequest | CreateStatisticRequest | CreatePartnerRequest;
 export type CmsRequestShape = "homepage" | "statistic" | "partner";
@@ -19,6 +20,7 @@ export function parseAdminHomepage(value: unknown): AdminHomepageContent | null 
     isPublished: booleanValue(value.isPublished),
     createdAtUtc: dateString(value.createdAtUtc),
     updatedAtUtc: dateString(value.updatedAtUtc),
+    builder: parseBuilder(value.builder),
   };
 }
 
@@ -65,6 +67,7 @@ export function parseCmsRequest(value: unknown, shape: CmsRequestShape): CmsRequ
 }
 
 function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageContentRequest {
+  const builder = isRecord(value.builder) ? parseBuilder(value.builder) : null;
   return {
     heroEyebrow: boundedString(value.heroEyebrow, 100),
     heroTitle: boundedString(value.heroTitle, 200),
@@ -85,7 +88,67 @@ function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageCont
     contactCtaLabel: boundedString(value.contactCtaLabel, 100),
     contactCtaHref: boundedString(value.contactCtaHref, 2_048),
     isPublished: booleanValue(value.isPublished),
+    heroMediaAssetId: nullableBoundedString(
+      value.heroMediaAssetId ?? builder?.heroMediaAssetId ?? null,
+      64,
+    ),
+    galleryCollectionId: nullableBoundedString(
+      value.galleryCollectionId ?? builder?.galleryCollectionId ?? null,
+      64,
+    ),
+    sectionOrder: sectionKeys(value.sectionOrder ?? builder?.sectionOrder),
+    disabledSections: sectionKeys(value.disabledSections ?? builder?.disabledSections, true),
+    eventsTitle: boundedString(value.eventsTitle ?? builder?.eventsTitle, 160),
+    eventsDescription: boundedString(value.eventsDescription ?? builder?.eventsDescription, 500),
+    previousEventsTitle: boundedString(
+      value.previousEventsTitle ?? builder?.previousEventsTitle,
+      160,
+    ),
+    previousEventsDescription: boundedString(
+      value.previousEventsDescription ?? builder?.previousEventsDescription,
+      500,
+    ),
+    galleryTitle: boundedString(value.galleryTitle ?? builder?.galleryTitle, 160),
+    galleryDescription: boundedString(value.galleryDescription ?? builder?.galleryDescription, 500),
   };
+}
+function parseBuilder(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid homepage builder settings.");
+  return {
+    heroMediaAssetId: nullableBoundedString(value.heroMediaAssetId, 64),
+    galleryCollectionId: nullableBoundedString(value.galleryCollectionId, 64),
+    heroMedia: value.heroMedia === null ? null : parseHeroMedia(value.heroMedia),
+    sectionOrder: sectionKeys(value.sectionOrder),
+    disabledSections: sectionKeys(value.disabledSections, true),
+    eventsTitle: boundedString(value.eventsTitle, 160),
+    eventsDescription: boundedString(value.eventsDescription, 500),
+    previousEventsTitle: boundedString(value.previousEventsTitle, 160),
+    previousEventsDescription: boundedString(value.previousEventsDescription, 500),
+    galleryTitle: boundedString(value.galleryTitle, 160),
+    galleryDescription: boundedString(value.galleryDescription, 500),
+  };
+}
+function parseHeroMedia(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid hero media.");
+  return {
+    id: requiredString(value.id),
+    mediaType: nonNegativeInteger(value.mediaType),
+    url: boundedString(value.url, 2048),
+    posterUrl: nullableBoundedString(value.posterUrl, 2048),
+    altText: nullableBoundedString(value.altText, 500),
+  };
+}
+function sectionKeys(value: unknown, allowSubset = false) {
+  if (!Array.isArray(value)) throw new Error("Invalid homepage section order.");
+  const allowed = Object.values(HomepageSectionKey);
+  const result = value.map((item) => {
+    if (typeof item !== "string" || !allowed.includes(item as never))
+      throw new Error("Invalid homepage section.");
+    return item as (typeof allowed)[number];
+  });
+  if (!allowSubset && (result.length !== allowed.length || new Set(result).size !== result.length))
+    throw new Error("Incomplete homepage section order.");
+  return result;
 }
 
 function parseStatisticFields(value: Record<string, unknown>): CreateStatisticRequest {

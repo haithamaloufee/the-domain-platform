@@ -19,7 +19,17 @@ public sealed record UpdateHomepageContentRequest(
     string ContactDescription,
     string ContactCtaLabel,
     string ContactCtaHref,
-    bool IsPublished);
+    bool IsPublished,
+    Guid? HeroMediaAssetId = null,
+    Guid? GalleryCollectionId = null,
+    IReadOnlyList<string>? SectionOrder = null,
+    IReadOnlyList<string>? DisabledSections = null,
+    string? EventsTitle = null,
+    string? EventsDescription = null,
+    string? PreviousEventsTitle = null,
+    string? PreviousEventsDescription = null,
+    string? GalleryTitle = null,
+    string? GalleryDescription = null);
 
 public sealed record SaveStatisticRequest(
     string Label,

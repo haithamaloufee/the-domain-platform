@@ -12,6 +12,7 @@ public interface IHomepageCmsRepository
     Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken);
     Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken);
+    Task<MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken);
     void AddHomepage(HomepageContent content);
     void AddStatistic(StatisticItem statistic);
     void AddPartner(Partner partner);

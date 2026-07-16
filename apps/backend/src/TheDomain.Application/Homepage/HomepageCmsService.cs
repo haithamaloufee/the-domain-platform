@@ -4,7 +4,7 @@ using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Homepage;
 
-public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimeProvider timeProvider)
+public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimeProvider timeProvider, TheDomain.Application.Media.IMediaDeliveryUrlResolver? delivery = null)
     : IHomepageCmsService
 {
     public async Task<PublicHomepageResponse> GetPublicHomepageAsync(CancellationToken cancellationToken)
@@ -12,7 +12,7 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         var content = await repository.GetHomepageAsync(cancellationToken);
         var statistics = await GetPublicStatisticsAsync(cancellationToken);
         var partners = await GetPublicPartnersAsync(cancellationToken);
-        return new(content is { IsPublished: true } ? MapPublic(content) : null, statistics, partners,
+        return new(content is { IsPublished: true } ? await MapPublicAsync(content, cancellationToken) : null, statistics, partners,
             content is null ? new("Moments that move with us", true) : new(content.StatisticsPhrase, content.IsStatisticsPhraseEnabled));
     }
 
@@ -33,12 +33,15 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
             .ToArray();
 
     public async Task<AdminHomepageContentResponse?> GetAdminHomepageAsync(CancellationToken cancellationToken) =>
-        await repository.GetHomepageAsync(cancellationToken) is { } content ? MapAdmin(content) : null;
+        await repository.GetHomepageAsync(cancellationToken) is { } content ? await MapAdminAsync(content, cancellationToken) : null;
 
     public async Task<CmsOperationResult<AdminHomepageContentResponse>> UpdateHomepageAsync(
         UpdateHomepageContentRequest request, CancellationToken cancellationToken)
     {
         var errors = ValidateHomepage(request);
+        var builder = ValidateBuilder(request); errors.AddRange(builder.Errors);
+        if (request.HeroMediaAssetId is { } heroId) { var hero = await repository.FindMediaAsync(heroId, cancellationToken); if (hero is null || hero.IsArchived || hero.ApprovalStatus != MediaApprovalStatus.Approved || hero.MediaType is not (MediaType.Image or MediaType.Video) || !Uri.TryCreate(hero.Url, UriKind.Absolute, out var heroUrl) || heroUrl.Scheme != Uri.UriSchemeHttps) errors.Add("Hero media must be an approved, non-archived HTTPS image or video."); }
+        if (request.GalleryCollectionId is { } collectionId && await repository.FindCollectionAsync(collectionId, cancellationToken) is not { IsPublishedInGallery: true, IsArchived: false }) errors.Add("Gallery highlight must use a published, non-archived Collection.");
         if (errors.Count > 0) return Failure<AdminHomepageContentResponse>(CmsFailureKind.Validation, errors);
 
         var now = timeProvider.GetUtcNow();
@@ -52,9 +55,13 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         {
             Apply(content, request, now);
         }
+        content.UpdateBuilder(request.HeroMediaAssetId, request.GalleryCollectionId, builder.Order, builder.Disabled,
+            request.EventsTitle?.Trim() ?? content.EventsTitle, request.EventsDescription?.Trim() ?? content.EventsDescription,
+            request.PreviousEventsTitle?.Trim() ?? content.PreviousEventsTitle, request.PreviousEventsDescription?.Trim() ?? content.PreviousEventsDescription,
+            request.GalleryTitle?.Trim() ?? content.GalleryTitle, request.GalleryDescription?.Trim() ?? content.GalleryDescription, now);
 
         await repository.SaveChangesAsync(cancellationToken);
-        return CmsOperationResult.Success(MapAdmin(content));
+        return CmsOperationResult.Success(await MapAdminAsync(content, cancellationToken));
     }
 
     public async Task<IReadOnlyList<AdminStatisticResponse>> GetAdminStatisticsAsync(CancellationToken cancellationToken) =>
@@ -255,6 +262,15 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         && value.All(character => char.IsAsciiLetterOrDigit(character) || character == '-')
         && string.Equals(value, value.ToLowerInvariant(), StringComparison.Ordinal)
         && !value.StartsWith('-') && !value.EndsWith('-') && !value.Contains("--", StringComparison.Ordinal);
+    private static (string Order, string Disabled, List<string> Errors) ValidateBuilder(UpdateHomepageContentRequest request)
+    {
+        string[] allowed = ["events", "statistics", "why", "previous", "gallery", "services", "partners", "contact"];
+        var order = request.SectionOrder?.Select(value => value.Trim().ToLowerInvariant()).ToArray() ?? allowed;
+        var disabled = request.DisabledSections?.Select(value => value.Trim().ToLowerInvariant()).Distinct().ToArray() ?? [];
+        List<string> errors = []; if (order.Length != allowed.Length || order.Distinct().Count() != order.Length || !order.ToHashSet().SetEquals(allowed)) errors.Add("Section order must contain every predefined homepage section exactly once."); if (disabled.Any(value => !allowed.Contains(value))) errors.Add("Disabled sections contain an unsupported homepage section.");
+        foreach (var (value, name, max) in new[] { (request.EventsTitle, "Events title", 160), (request.EventsDescription, "Events description", 500), (request.PreviousEventsTitle, "Previous events title", 160), (request.PreviousEventsDescription, "Previous events description", 500), (request.GalleryTitle, "Gallery title", 160), (request.GalleryDescription, "Gallery description", 500) }) if (value is not null && (string.IsNullOrWhiteSpace(value) || value.Trim().Length > max)) errors.Add($"{name} is required and must not exceed {max} characters.");
+        return (string.Join(',', order), string.Join(',', disabled), errors);
+    }
 
     private static HomepageContent CreateHomepage(UpdateHomepageContentRequest request, DateTimeOffset now) =>
         new(HomepageContent.SingletonId, (request.HeroEyebrow ?? string.Empty).Trim(), request.HeroTitle.Trim(),
@@ -277,20 +293,22 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private static CmsOperationResult<T> Failure<T>(CmsFailureKind kind, IReadOnlyList<string> errors) => new(default, errors, kind);
 
-    private static PublicHomepageContentResponse MapPublic(HomepageContent item) => new(
+    private async Task<PublicHomepageContentResponse> MapPublicAsync(HomepageContent item, CancellationToken token) => new(
         item.HeroEyebrow, item.HeroTitle, item.HeroAccent, item.HeroDescription,
         item.PrimaryCtaLabel, item.PrimaryCtaHref, item.SecondaryCtaLabel, item.SecondaryCtaHref,
         item.WhyTitle, item.WhyDescription, item.ServicesTitle, item.ServicesDescription,
         item.PartnersTitle, item.PartnersDescription, item.ContactTitle, item.ContactDescription,
-        item.ContactCtaLabel, item.ContactCtaHref);
+        item.ContactCtaLabel, item.ContactCtaHref, await Builder(item, token));
     private static PublicStatisticResponse MapPublic(StatisticItem item) => new(item.Label, item.Value, item.Suffix, item.Description);
     private static PublicPartnerResponse MapPublic(Partner item) => new(item.Name, item.Slug, item.LogoUrl, item.WebsiteUrl, item.Description, item.IsFeatured);
-    private static AdminHomepageContentResponse MapAdmin(HomepageContent item) => new(
+    private async Task<AdminHomepageContentResponse> MapAdminAsync(HomepageContent item, CancellationToken token) => new(
         item.Id, item.HeroEyebrow, item.HeroTitle, item.HeroAccent, item.HeroDescription,
         item.PrimaryCtaLabel, item.PrimaryCtaHref, item.SecondaryCtaLabel, item.SecondaryCtaHref,
         item.WhyTitle, item.WhyDescription, item.ServicesTitle, item.ServicesDescription,
         item.PartnersTitle, item.PartnersDescription, item.ContactTitle, item.ContactDescription,
-        item.ContactCtaLabel, item.ContactCtaHref, item.IsPublished, item.CreatedAtUtc, item.UpdatedAtUtc);
+        item.ContactCtaLabel, item.ContactCtaHref, item.IsPublished, item.CreatedAtUtc, item.UpdatedAtUtc, await Builder(item, token));
+    private async Task<HomepageBuilderResponse> Builder(HomepageContent item, CancellationToken token)
+    { HomepageHeroMediaResponse? hero = null; if (item.HeroMediaAssetId is { } id && await repository.FindMediaAsync(id, token) is { } media && !media.IsArchived && media.ApprovalStatus == MediaApprovalStatus.Approved) hero = new(media.Id, media.MediaType, media.Url, media.MediaType == MediaType.Video ? delivery?.ResolveThumbnailUrl(media.MediaType, media.Url, media.ThumbnailUrl, media.CloudinaryPublicId) ?? media.ThumbnailUrl : null, media.AltText); return new(item.HeroMediaAssetId, item.GalleryCollectionId, hero, item.SectionOrder.Split(',', StringSplitOptions.RemoveEmptyEntries), item.DisabledSections.Split(',', StringSplitOptions.RemoveEmptyEntries), item.EventsTitle, item.EventsDescription, item.PreviousEventsTitle, item.PreviousEventsDescription, item.GalleryTitle, item.GalleryDescription); }
     private static AdminStatisticResponse MapAdmin(StatisticItem item) => new(item.Id, item.Label,
         item.Value, item.Suffix, item.Description, item.SortOrder, item.IsVisible, item.IsVerified,
         item.CreatedAtUtc, item.UpdatedAtUtc);

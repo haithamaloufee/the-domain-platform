@@ -80,6 +80,45 @@ public sealed class HomepageCmsServiceTests
     }
 
     [Fact]
+    public async Task HomepageBuilderRejectsIncompleteSectionOrder()
+    {
+        var repository = new FakeRepository();
+        var request = HomepageRequest("/events") with { SectionOrder = ["events", "gallery"] };
+
+        var result = await CreateService(repository).UpdateHomepageAsync(request, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, error => error.Contains("every predefined homepage section", StringComparison.Ordinal));
+        Assert.Equal(0, repository.SaveCount);
+    }
+
+    [Fact]
+    public async Task HomepageBuilderPersistsContextualPresentationInSingleSave()
+    {
+        string[] order = ["contact", "partners", "services", "gallery", "previous", "why", "statistics", "events"];
+        var repository = new FakeRepository();
+        var request = HomepageRequest("/events") with
+        {
+            SectionOrder = order,
+            DisabledSections = ["why"],
+            EventsTitle = "Tonight at The Domain",
+            EventsDescription = "A curated programme.",
+            PreviousEventsTitle = "From the archive",
+            PreviousEventsDescription = "Stories worth revisiting.",
+            GalleryTitle = "Selected frames",
+            GalleryDescription = "A visual edit."
+        };
+
+        var result = await CreateService(repository).UpdateHomepageAsync(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(order, result.Value!.Builder.SectionOrder);
+        Assert.Equal(["why"], result.Value.Builder.DisabledSections);
+        Assert.Equal("Tonight at The Domain", result.Value.Builder.EventsTitle);
+        Assert.Equal(1, repository.SaveCount);
+    }
+
+    [Fact]
     public async Task PartnerCreateRejectsDuplicateSlug()
     {
         var repository = new FakeRepository { DuplicatePartnerSlug = true };
@@ -139,6 +178,7 @@ public sealed class HomepageCmsServiceTests
         public Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(Partners.SingleOrDefault(item => item.Id == id));
         public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => Task.FromResult(DuplicatePartnerSlug);
         public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaAsset?>(null);
+        public Task<TheDomain.Domain.Media.MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaCollection?>(null);
         public void AddHomepage(HomepageContent content) => Homepage = content;
         public void AddStatistic(StatisticItem statistic) { }
         public void AddPartner(Partner partner) { }
