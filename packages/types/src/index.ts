@@ -49,6 +49,7 @@ export type {
   PublicHomepageResponse,
   PublicPartner,
   PublicStatisticItem,
+  StatisticsPresentation,
   UpdateHomepageContentRequest,
   UpdatePartnerRequest,
   UpdateStatisticRequest,

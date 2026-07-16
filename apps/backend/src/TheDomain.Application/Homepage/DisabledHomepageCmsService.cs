@@ -10,7 +10,7 @@ public sealed class DisabledHomepageCmsService : IHomepageCmsService
     private static readonly IReadOnlyList<AdminPartnerResponse> NoAdminPartners = [];
 
     public Task<PublicHomepageResponse> GetPublicHomepageAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(new PublicHomepageResponse(null, NoPublicStatistics, NoPublicPartners));
+        Task.FromResult(new PublicHomepageResponse(null, NoPublicStatistics, NoPublicPartners, new("Moments that move with us", true)));
     public Task<IReadOnlyList<PublicStatisticResponse>> GetPublicStatisticsAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicStatistics);
     public Task<IReadOnlyList<PublicPartnerResponse>> GetPublicPartnersAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicPartners);
     public Task<AdminHomepageContentResponse?> GetAdminHomepageAsync(CancellationToken cancellationToken) => Task.FromResult<AdminHomepageContentResponse?>(null);
@@ -19,10 +19,14 @@ public sealed class DisabledHomepageCmsService : IHomepageCmsService
     public Task<CmsOperationResult<AdminStatisticResponse>> CreateStatisticAsync(SaveStatisticRequest request, CancellationToken cancellationToken) => Disabled<AdminStatisticResponse>();
     public Task<CmsOperationResult<AdminStatisticResponse>> UpdateStatisticAsync(Guid id, SaveStatisticRequest request, CancellationToken cancellationToken) => Disabled<AdminStatisticResponse>();
     public Task<CmsOperationResult<AdminStatisticResponse>> SetStatisticVisibilityAsync(Guid id, bool visible, CancellationToken cancellationToken) => Disabled<AdminStatisticResponse>();
+    public Task<CmsOperationResult<IReadOnlyList<AdminStatisticResponse>>> ReorderStatisticsAsync(ReorderHomepageItemsRequest request, CancellationToken cancellationToken) => Disabled<IReadOnlyList<AdminStatisticResponse>>();
+    public Task<StatisticsPresentationResponse> GetStatisticsPresentationAsync(CancellationToken cancellationToken) => Task.FromResult(new StatisticsPresentationResponse("Moments that move with us", true));
+    public Task<CmsOperationResult<StatisticsPresentationResponse>> SaveStatisticsPresentationAsync(SaveStatisticsPresentationRequest request, CancellationToken cancellationToken) => Disabled<StatisticsPresentationResponse>();
     public Task<IReadOnlyList<AdminPartnerResponse>> GetAdminPartnersAsync(CancellationToken cancellationToken) => Task.FromResult(NoAdminPartners);
     public Task<CmsOperationResult<AdminPartnerResponse>> CreatePartnerAsync(SavePartnerRequest request, CancellationToken cancellationToken) => Disabled<AdminPartnerResponse>();
     public Task<CmsOperationResult<AdminPartnerResponse>> UpdatePartnerAsync(Guid id, SavePartnerRequest request, CancellationToken cancellationToken) => Disabled<AdminPartnerResponse>();
     public Task<CmsOperationResult<AdminPartnerResponse>> SetPartnerVisibilityAsync(Guid id, bool visible, CancellationToken cancellationToken) => Disabled<AdminPartnerResponse>();
+    public Task<CmsOperationResult<IReadOnlyList<AdminPartnerResponse>>> ReorderPartnersAsync(ReorderHomepageItemsRequest request, CancellationToken cancellationToken) => Disabled<IReadOnlyList<AdminPartnerResponse>>();
 
     private static Task<CmsOperationResult<T>> Disabled<T>() => Task.FromResult(
         CmsOperationResult.Failure<T>(CmsFailureKind.Conflict, "Persistence is not enabled."));

@@ -39,6 +39,11 @@ export interface PublicHomepageResponse {
   content: PublicHomepageContent | null;
   statistics: PublicStatisticItem[];
   partners: PublicPartner[];
+  statisticsPresentation: StatisticsPresentation;
+}
+export interface StatisticsPresentation {
+  phrase: string;
+  isEnabled: boolean;
 }
 
 export interface UpdateHomepageContentRequest extends PublicHomepageContent {
@@ -78,6 +83,7 @@ export interface CreatePartnerRequest {
   sortOrder: number;
   isVisible: boolean;
   isFeatured: boolean;
+  logoMediaAssetId: string | null;
 }
 
 export type UpdatePartnerRequest = CreatePartnerRequest;

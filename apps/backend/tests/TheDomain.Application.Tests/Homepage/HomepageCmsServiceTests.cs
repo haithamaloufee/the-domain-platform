@@ -7,6 +7,28 @@ namespace TheDomain.Application.Tests.Homepage;
 public sealed class HomepageCmsServiceTests
 {
     [Fact]
+    public async Task StatisticsAndPartnersReorderRequireCompleteUniqueIds()
+    {
+        var firstStatistic = new StatisticItem(Guid.NewGuid(), "First", "1", null, null, 0, true, true, DateTimeOffset.UtcNow);
+        var secondStatistic = new StatisticItem(Guid.NewGuid(), "Second", "2", null, null, 1, true, true, DateTimeOffset.UtcNow);
+        var firstPartner = new Partner(Guid.NewGuid(), "First", "first", null, null, null, 0, true, false, DateTimeOffset.UtcNow);
+        var secondPartner = new Partner(Guid.NewGuid(), "Second", "second", null, null, null, 1, true, false, DateTimeOffset.UtcNow);
+        var service = new HomepageCmsService(new FakeRepository { Statistics = [firstStatistic, secondStatistic], Partners = [firstPartner, secondPartner] }, TimeProvider.System);
+        Assert.False((await service.ReorderStatisticsAsync(new([firstStatistic.Id, firstStatistic.Id]), default)).IsSuccess);
+        Assert.True((await service.ReorderStatisticsAsync(new([secondStatistic.Id, firstStatistic.Id]), default)).IsSuccess);
+        Assert.True((await service.ReorderPartnersAsync(new([secondPartner.Id, firstPartner.Id]), default)).IsSuccess);
+        Assert.Equal(0, secondStatistic.SortOrder); Assert.Equal(0, secondPartner.SortOrder);
+    }
+
+    [Fact]
+    public async Task StatisticsPhrasePersistsAndValidatesLength()
+    {
+        var repository = new FakeRepository { Homepage = CreateHomepage(false) }; var service = new HomepageCmsService(repository, TimeProvider.System);
+        Assert.False((await service.SaveStatisticsPresentationAsync(new("", true), default)).IsSuccess);
+        Assert.True((await service.SaveStatisticsPresentationAsync(new("Experience in motion", true), default)).IsSuccess);
+        Assert.Equal("Experience in motion", (await service.GetStatisticsPresentationAsync(default)).Phrase);
+    }
+    [Fact]
     public async Task PublicStatisticsIncludeOnlyVisibleVerifiedItems()
     {
         var repository = new FakeRepository
@@ -116,6 +138,7 @@ public sealed class HomepageCmsServiceTests
         public Task<IReadOnlyList<Partner>> ListPartnersAsync(CancellationToken cancellationToken) => Task.FromResult(Partners);
         public Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(Partners.SingleOrDefault(item => item.Id == id));
         public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => Task.FromResult(DuplicatePartnerSlug);
+        public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaAsset?>(null);
         public void AddHomepage(HomepageContent content) => Homepage = content;
         public void AddStatistic(StatisticItem statistic) { }
         public void AddPartner(Partner partner) { }

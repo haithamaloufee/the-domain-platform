@@ -29,6 +29,7 @@ public sealed class StatisticItem
 
     public void Show(DateTimeOffset updatedAtUtc) { IsVisible = true; UpdatedAtUtc = updatedAtUtc; }
     public void Hide(DateTimeOffset updatedAtUtc) { IsVisible = false; UpdatedAtUtc = updatedAtUtc; }
+    public void SetSortOrder(int value, DateTimeOffset now) { ArgumentOutOfRangeException.ThrowIfNegative(value); SortOrder = value; UpdatedAtUtc = now; }
 
     private void Apply(string label, string value, string? suffix, string? description,
         int sortOrder, bool isVisible, bool isVerified, DateTimeOffset updatedAtUtc)

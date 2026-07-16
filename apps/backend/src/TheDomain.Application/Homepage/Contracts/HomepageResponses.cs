@@ -25,6 +25,7 @@ public sealed record PublicStatisticResponse(
     string Value,
     string? Suffix,
     string? Description);
+public sealed record StatisticsPresentationResponse(string Phrase, bool IsEnabled);
 
 public sealed record PublicPartnerResponse(
     string Name,
@@ -37,7 +38,8 @@ public sealed record PublicPartnerResponse(
 public sealed record PublicHomepageResponse(
     PublicHomepageContentResponse? Content,
     IReadOnlyList<PublicStatisticResponse> Statistics,
-    IReadOnlyList<PublicPartnerResponse> Partners);
+    IReadOnlyList<PublicPartnerResponse> Partners,
+    StatisticsPresentationResponse StatisticsPresentation);
 
 public sealed record AdminHomepageContentResponse(
     Guid Id,
@@ -86,4 +88,5 @@ public sealed record AdminPartnerResponse(
     bool IsVisible,
     bool IsFeatured,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    Guid? LogoMediaAssetId);

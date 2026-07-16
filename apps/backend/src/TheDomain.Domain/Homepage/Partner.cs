@@ -6,17 +6,19 @@ public sealed class Partner
 
     public Partner(Guid id, string name, string slug, string? logoUrl, string? websiteUrl,
         string? description, int sortOrder, bool isVisible, bool isFeatured,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc, Guid? logoMediaAssetId = null)
     {
         Id = id;
         Apply(name, slug, logoUrl, websiteUrl, description, sortOrder, isVisible, isFeatured, createdAtUtc);
         CreatedAtUtc = createdAtUtc;
+        LogoMediaAssetId = logoMediaAssetId;
     }
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public string? LogoUrl { get; private set; }
+    public Guid? LogoMediaAssetId { get; private set; }
     public string? WebsiteUrl { get; private set; }
     public string? Description { get; private set; }
     public int SortOrder { get; private set; }
@@ -27,8 +29,10 @@ public sealed class Partner
 
     public void Update(string name, string slug, string? logoUrl, string? websiteUrl,
         string? description, int sortOrder, bool isVisible, bool isFeatured,
-        DateTimeOffset updatedAtUtc) =>
-        Apply(name, slug, logoUrl, websiteUrl, description, sortOrder, isVisible, isFeatured, updatedAtUtc);
+        DateTimeOffset updatedAtUtc, Guid? logoMediaAssetId = null) {
+        Apply(name, slug, logoUrl, websiteUrl, description, sortOrder, isVisible, isFeatured, updatedAtUtc); LogoMediaAssetId = logoMediaAssetId;
+    }
+    public void SetSortOrder(int value, DateTimeOffset now) { ArgumentOutOfRangeException.ThrowIfNegative(value); SortOrder = value; UpdatedAtUtc = now; }
 
     public void Show(DateTimeOffset updatedAtUtc) { IsVisible = true; UpdatedAtUtc = updatedAtUtc; }
     public void Hide(DateTimeOffset updatedAtUtc) { IsVisible = false; UpdatedAtUtc = updatedAtUtc; }

@@ -33,5 +33,7 @@ public sealed class HomepageContentConfiguration : IEntityTypeConfiguration<Home
         builder.Property(item => item.CreatedAtUtc).HasColumnType("timestamp with time zone");
         builder.Property(item => item.UpdatedAtUtc).HasColumnType("timestamp with time zone");
         builder.HasIndex(item => item.IsPublished);
+        builder.Property(item => item.StatisticsPhrase).HasMaxLength(180).HasDefaultValue("Moments that move with us");
+        builder.Property(item => item.IsStatisticsPhraseEnabled).HasDefaultValue(true);
     }
 }

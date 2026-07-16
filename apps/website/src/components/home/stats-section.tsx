@@ -1,9 +1,15 @@
-import type { PublicStatisticItem } from "@the-domain/types";
+import type { PublicStatisticItem, StatisticsPresentation } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import { homepageContent } from "@/content/homepage-content";
 import { StatisticValue } from "./statistic-value";
 
-export function StatsSection({ statistics }: { statistics: PublicStatisticItem[] }) {
+export function StatsSection({
+  statistics,
+  presentation,
+}: {
+  statistics: PublicStatisticItem[];
+  presentation: StatisticsPresentation;
+}) {
   const items = statistics.length
     ? statistics.map((statistic) => ({
         label: statistic.label,
@@ -44,6 +50,30 @@ export function StatsSection({ statistics }: { statistics: PublicStatisticItem[]
             </div>
           ))}
         </dl>
+        {presentation.isEnabled && (
+          <div
+            className="mt-8 overflow-hidden border-y border-line py-2"
+            aria-label={presentation.phrase}
+          >
+            <svg
+              aria-hidden="true"
+              className="h-24 w-full text-gold motion-safe:animate-pulse"
+              preserveAspectRatio="none"
+              viewBox="0 0 1200 120"
+            >
+              <path
+                d="M-40 75 C180 5 350 115 560 52 S940 15 1240 72"
+                fill="none"
+                id="statistics-phrase-path"
+              />
+              <text className="fill-current font-display text-[25px] font-bold italic tracking-[.12em]">
+                <textPath href="#statistics-phrase-path" startOffset="2%">
+                  {presentation.phrase} · {presentation.phrase} · {presentation.phrase}
+                </textPath>
+              </text>
+            </svg>
+          </div>
+        )}
       </Container>
     </section>
   );

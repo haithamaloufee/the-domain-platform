@@ -110,6 +110,7 @@ function parsePartnerFields(value: Record<string, unknown>): CreatePartnerReques
     sortOrder: nonNegativeInteger(value.sortOrder),
     isVisible: booleanValue(value.isVisible),
     isFeatured: booleanValue(value.isFeatured),
+    logoMediaAssetId: nullableBoundedString(value.logoMediaAssetId, 64),
   };
 }
 

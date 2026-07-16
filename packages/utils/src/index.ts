@@ -33,3 +33,8 @@ export {
   fallbackBranding,
   safeBrandingUrl,
 } from "./branding";
+export {
+  moveHomepageItem,
+  partnerLogoEligible,
+  statisticsPhraseRequest,
+} from "./homepage-management";

@@ -1,5 +1,6 @@
 using TheDomain.Application.Homepage.Contracts;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Homepage;
 
@@ -11,7 +12,8 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         var content = await repository.GetHomepageAsync(cancellationToken);
         var statistics = await GetPublicStatisticsAsync(cancellationToken);
         var partners = await GetPublicPartnersAsync(cancellationToken);
-        return new(content is { IsPublished: true } ? MapPublic(content) : null, statistics, partners);
+        return new(content is { IsPublished: true } ? MapPublic(content) : null, statistics, partners,
+            content is null ? new("Moments that move with us", true) : new(content.StatisticsPhrase, content.IsStatisticsPhraseEnabled));
     }
 
     public async Task<IReadOnlyList<PublicStatisticResponse>> GetPublicStatisticsAsync(CancellationToken cancellationToken) =>
@@ -100,6 +102,17 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         return CmsOperationResult.Success(MapAdmin(item));
     }
 
+    public async Task<CmsOperationResult<IReadOnlyList<AdminStatisticResponse>>> ReorderStatisticsAsync(ReorderHomepageItemsRequest request, CancellationToken cancellationToken)
+    {
+        var items = await repository.ListStatisticsAsync(cancellationToken); if (!ValidOrder(request.Ids, items.Select(item => item.Id))) return CmsOperationResult.Failure<IReadOnlyList<AdminStatisticResponse>>(CmsFailureKind.Validation, "Statistic order must contain every statistic exactly once.");
+        var byId = items.ToDictionary(item => item.Id); var now = timeProvider.GetUtcNow(); for (var index = 0; index < request.Ids.Count; index++) byId[request.Ids[index]].SetSortOrder(index, now); await repository.SaveChangesAsync(cancellationToken); return CmsOperationResult.Success<IReadOnlyList<AdminStatisticResponse>>((await GetAdminStatisticsAsync(cancellationToken)).ToArray());
+    }
+    public async Task<StatisticsPresentationResponse> GetStatisticsPresentationAsync(CancellationToken cancellationToken) => await repository.GetHomepageAsync(cancellationToken) is { } item ? new(item.StatisticsPhrase, item.IsStatisticsPhraseEnabled) : new("Moments that move with us", true);
+    public async Task<CmsOperationResult<StatisticsPresentationResponse>> SaveStatisticsPresentationAsync(SaveStatisticsPresentationRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phrase) || request.Phrase.Trim().Length > 180) return CmsOperationResult.Failure<StatisticsPresentationResponse>(CmsFailureKind.Validation, "Animated phrase must be between 1 and 180 characters."); var item = await repository.GetHomepageAsync(cancellationToken); if (item is null) return CmsOperationResult.Failure<StatisticsPresentationResponse>(CmsFailureKind.Conflict, "Create homepage content before configuring its statistics presentation."); item.UpdateStatisticsPresentation(request.Phrase, request.IsEnabled, timeProvider.GetUtcNow()); await repository.SaveChangesAsync(cancellationToken); return CmsOperationResult.Success<StatisticsPresentationResponse>(new(item.StatisticsPhrase, item.IsStatisticsPhraseEnabled));
+    }
+
     public async Task<IReadOnlyList<AdminPartnerResponse>> GetAdminPartnersAsync(CancellationToken cancellationToken) =>
         (await repository.ListPartnersAsync(cancellationToken))
             .OrderBy(item => item.SortOrder)
@@ -114,10 +127,11 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         if (errors.Count > 0) return Failure<AdminPartnerResponse>(CmsFailureKind.Validation, errors);
         if (await repository.PartnerSlugExistsAsync(request.Slug, null, cancellationToken))
             return CmsOperationResult.Failure<AdminPartnerResponse>(CmsFailureKind.Conflict, "Partner slug is already in use.");
+        var media = await ValidateLogo(request.LogoMediaAssetId, cancellationToken); if (request.LogoMediaAssetId.HasValue && media is null) return CmsOperationResult.Failure<AdminPartnerResponse>(CmsFailureKind.Validation, "Partner logo must be an approved, non-archived HTTPS image.");
         var now = timeProvider.GetUtcNow();
         var item = new Partner(Guid.NewGuid(), request.Name.Trim(), request.Slug.Trim(),
-            Clean(request.LogoUrl), Clean(request.WebsiteUrl), Clean(request.Description),
-            request.SortOrder, request.IsVisible, request.IsFeatured, now);
+            media?.Url ?? Clean(request.LogoUrl), Clean(request.WebsiteUrl), Clean(request.Description),
+            request.SortOrder, request.IsVisible, request.IsFeatured, now, request.LogoMediaAssetId);
         repository.AddPartner(item);
         await repository.SaveChangesAsync(cancellationToken);
         return CmsOperationResult.Success(MapAdmin(item));
@@ -132,9 +146,10 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         if (item is null) return CmsOperationResult.Failure<AdminPartnerResponse>(CmsFailureKind.NotFound, "Partner was not found.");
         if (await repository.PartnerSlugExistsAsync(request.Slug, id, cancellationToken))
             return CmsOperationResult.Failure<AdminPartnerResponse>(CmsFailureKind.Conflict, "Partner slug is already in use.");
-        item.Update(request.Name.Trim(), request.Slug.Trim(), Clean(request.LogoUrl),
+        var media = await ValidateLogo(request.LogoMediaAssetId, cancellationToken); if (request.LogoMediaAssetId.HasValue && media is null) return CmsOperationResult.Failure<AdminPartnerResponse>(CmsFailureKind.Validation, "Partner logo must be an approved, non-archived HTTPS image.");
+        item.Update(request.Name.Trim(), request.Slug.Trim(), media?.Url ?? Clean(request.LogoUrl),
             Clean(request.WebsiteUrl), Clean(request.Description), request.SortOrder,
-            request.IsVisible, request.IsFeatured, timeProvider.GetUtcNow());
+            request.IsVisible, request.IsFeatured, timeProvider.GetUtcNow(), request.LogoMediaAssetId);
         await repository.SaveChangesAsync(cancellationToken);
         return CmsOperationResult.Success(MapAdmin(item));
     }
@@ -148,6 +163,12 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         await repository.SaveChangesAsync(cancellationToken);
         return CmsOperationResult.Success(MapAdmin(item));
     }
+    public async Task<CmsOperationResult<IReadOnlyList<AdminPartnerResponse>>> ReorderPartnersAsync(ReorderHomepageItemsRequest request, CancellationToken cancellationToken)
+    {
+        var items = await repository.ListPartnersAsync(cancellationToken); if (!ValidOrder(request.Ids, items.Select(item => item.Id))) return CmsOperationResult.Failure<IReadOnlyList<AdminPartnerResponse>>(CmsFailureKind.Validation, "Partner order must contain every partner exactly once."); var byId = items.ToDictionary(item => item.Id); var now = timeProvider.GetUtcNow(); for (var index = 0; index < request.Ids.Count; index++) byId[request.Ids[index]].SetSortOrder(index, now); await repository.SaveChangesAsync(cancellationToken); return CmsOperationResult.Success<IReadOnlyList<AdminPartnerResponse>>((await GetAdminPartnersAsync(cancellationToken)).ToArray());
+    }
+    private async Task<MediaAsset?> ValidateLogo(Guid? id, CancellationToken token) { if (!id.HasValue) return null; var item = await repository.FindMediaAsync(id.Value, token); return item is { MediaType: MediaType.Image, ApprovalStatus: MediaApprovalStatus.Approved, IsArchived: false } && Uri.TryCreate(item.Url, UriKind.Absolute, out var url) && url.Scheme == Uri.UriSchemeHttps ? item : null; }
+    private static bool ValidOrder(IReadOnlyList<Guid>? ids, IEnumerable<Guid> expected) { if (ids is null) return false; var values = expected.ToArray(); return ids.Count == values.Length && ids.Distinct().Count() == ids.Count && ids.ToHashSet().SetEquals(values); }
 
     private static List<string> ValidateHomepage(UpdateHomepageContentRequest request)
     {
@@ -275,5 +296,5 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         item.CreatedAtUtc, item.UpdatedAtUtc);
     private static AdminPartnerResponse MapAdmin(Partner item) => new(item.Id, item.Name, item.Slug,
         item.LogoUrl, item.WebsiteUrl, item.Description, item.SortOrder, item.IsVisible,
-        item.IsFeatured, item.CreatedAtUtc, item.UpdatedAtUtc);
+        item.IsFeatured, item.CreatedAtUtc, item.UpdatedAtUtc, item.LogoMediaAssetId);
 }

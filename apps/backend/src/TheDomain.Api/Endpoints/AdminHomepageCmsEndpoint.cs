@@ -21,6 +21,9 @@ public static class AdminHomepageCmsEndpoint
         statistics.MapGet("/", (IHomepageCmsService service, CancellationToken token) =>
             service.GetAdminStatisticsAsync(token));
         statistics.MapPost("/", CreateStatisticAsync);
+        statistics.MapPost("/reorder", async (ReorderHomepageItemsRequest request, IHomepageCmsService service, CancellationToken token) => ToResult(await service.ReorderStatisticsAsync(request, token)));
+        statistics.MapGet("/presentation", (IHomepageCmsService service, CancellationToken token) => service.GetStatisticsPresentationAsync(token));
+        statistics.MapPut("/presentation", async (SaveStatisticsPresentationRequest request, IHomepageCmsService service, CancellationToken token) => ToResult(await service.SaveStatisticsPresentationAsync(request, token)));
         statistics.MapPut("/{id:guid}", async (Guid id, SaveStatisticRequest request,
             IHomepageCmsService service, CancellationToken token) =>
             ToResult(await service.UpdateStatisticAsync(id, request, token)));
@@ -36,6 +39,7 @@ public static class AdminHomepageCmsEndpoint
         partners.MapGet("/", (IHomepageCmsService service, CancellationToken token) =>
             service.GetAdminPartnersAsync(token));
         partners.MapPost("/", CreatePartnerAsync);
+        partners.MapPost("/reorder", async (ReorderHomepageItemsRequest request, IHomepageCmsService service, CancellationToken token) => ToResult(await service.ReorderPartnersAsync(request, token)));
         partners.MapPut("/{id:guid}", async (Guid id, SavePartnerRequest request,
             IHomepageCmsService service, CancellationToken token) =>
             ToResult(await service.UpdatePartnerAsync(id, request, token)));

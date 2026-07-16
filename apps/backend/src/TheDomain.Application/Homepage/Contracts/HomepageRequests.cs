@@ -38,4 +38,7 @@ public sealed record SavePartnerRequest(
     string? Description,
     int SortOrder,
     bool IsVisible,
-    bool IsFeatured);
+    bool IsFeatured,
+    Guid? LogoMediaAssetId = null);
+public sealed record ReorderHomepageItemsRequest(IReadOnlyList<Guid> Ids);
+public sealed record SaveStatisticsPresentationRequest(string Phrase, bool IsEnabled);

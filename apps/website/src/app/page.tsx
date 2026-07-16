@@ -4,6 +4,7 @@ import type {
   PublicHomepageContent,
   PublicPartner,
   PublicStatisticItem,
+  StatisticsPresentation,
 } from "@the-domain/types";
 import type { Metadata } from "next";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
@@ -49,7 +50,7 @@ export default async function HomePage() {
         <HomepageEventsSection events={programme} unavailable={data.unavailable.events} />
       </CinematicReveal>
       <CinematicReveal>
-        <StatsSection statistics={data.statistics} />
+        <StatsSection statistics={data.statistics} presentation={data.statisticsPresentation} />
       </CinematicReveal>
       <CinematicReveal>
         <WhyDomainSection cmsContent={data.content} />
@@ -108,6 +109,7 @@ interface HomepageData {
   albums: PublicGalleryAlbum[];
   content: PublicHomepageContent | null;
   statistics: PublicStatisticItem[];
+  statisticsPresentation: StatisticsPresentation;
   partners: PublicPartner[];
   unavailable: {
     events: boolean;
@@ -138,6 +140,10 @@ async function loadHomepageData(): Promise<HomepageData> {
     content: homepageValue?.content ?? null,
     statistics:
       statistics.status === "fulfilled" ? statistics.value : (homepageValue?.statistics ?? []),
+    statisticsPresentation: homepageValue?.statisticsPresentation ?? {
+      phrase: "Moments that move with us",
+      isEnabled: true,
+    },
     partners: partners.status === "fulfilled" ? partners.value : (homepageValue?.partners ?? []),
     unavailable: {
       events: featured.status === "rejected" && upcoming.status === "rejected",

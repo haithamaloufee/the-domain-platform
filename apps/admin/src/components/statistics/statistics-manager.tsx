@@ -17,6 +17,8 @@ import {
   listAdminStatistics,
   showAdminStatistic,
   updateAdminStatistic,
+  getStatisticsPresentation,
+  saveStatisticsPresentation,
 } from "@/lib/cms/admin-cms-client";
 
 const emptyStatistic: CreateStatisticRequest = {
@@ -38,13 +40,15 @@ export function StatisticsManager() {
     tone: "success",
   });
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [phrase, setPhrase] = useState({ phrase: "Moments that move with us", isEnabled: true });
 
   useEffect(() => {
     let active = true;
-    listAdminStatistics()
-      .then((values) => {
+    Promise.all([listAdminStatistics(), getStatisticsPresentation()])
+      .then(([values, presentation]) => {
         if (!active) return;
         setItems(sortStatistics(values));
+        setPhrase(presentation);
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -81,6 +85,36 @@ export function StatisticsManager() {
       setBusyId(null);
     }
   }
+  function move(id: string, direction: -1 | 1) {
+    setItems((current) => {
+      const index = current.findIndex((item) => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      if (item) next.splice(target, 0, item);
+      return next.map((value, order) => ({ ...value, sortOrder: order }));
+    });
+  }
+  async function saveOrder() {
+    setBusyId("order");
+    try {
+      const saved = await Promise.all(
+        items.map((item) =>
+          updateAdminStatistic(item.id, { ...toRequest(item), sortOrder: item.sortOrder }),
+        ),
+      );
+      setItems(sortStatistics(saved));
+      setFeedback({ message: "Statistic order saved.", tone: "success" });
+    } catch (error) {
+      setFeedback({
+        message: error instanceof Error ? error.message : "Unable to save order.",
+        tone: "error",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (state === "loading") return <ManagerLoading label="statistics" />;
   if (state === "error") return <LoadError feedback={feedback.message} />;
@@ -103,6 +137,57 @@ export function StatisticsManager() {
       </div>
 
       <CmsFeedback message={feedback.message} tone={feedback.tone} />
+      <button
+        className={buttonClasses("secondary")}
+        disabled={busyId === "order"}
+        onClick={() => void saveOrder()}
+        type="button"
+      >
+        Save visual order
+      </button>
+      <Card className="p-6">
+        <h2 className="font-display text-2xl font-bold text-ink">Animated curved phrase</h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          A decorative phrase shown with the public statistics. Motion respects the visitor&apos;s
+          reduced-motion preference.
+        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
+          <Input
+            maxLength={180}
+            onChange={(event) => setPhrase({ ...phrase, phrase: event.target.value })}
+            value={phrase.phrase}
+          />
+          <CmsCheckbox
+            checked={phrase.isEnabled}
+            description="Show the phrase publicly."
+            label="Enabled"
+            name="statistics-phrase-enabled"
+            onChange={(value) => setPhrase({ ...phrase, isEnabled: value })}
+          />
+        </div>
+        <div className="mt-5 overflow-hidden border-y border-line py-4 text-center font-display text-xl font-bold italic tracking-[.12em] text-gold">
+          ~ {phrase.phrase} ~
+        </div>
+        <button
+          className={buttonClasses("secondary", "mt-4")}
+          onClick={() =>
+            void saveStatisticsPresentation(phrase)
+              .then((value) => {
+                setPhrase(value);
+                setFeedback({ message: "Statistics phrase saved.", tone: "success" });
+              })
+              .catch((error: unknown) =>
+                setFeedback({
+                  message: error instanceof Error ? error.message : "Unable to save phrase.",
+                  tone: "error",
+                }),
+              )
+          }
+          type="button"
+        >
+          Save phrase
+        </button>
+      </Card>
 
       {editing && (
         <StatisticForm
@@ -168,6 +253,22 @@ export function StatisticsManager() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 lg:max-w-72 lg:justify-end">
+                <button
+                  aria-label={`Move ${item.label} up`}
+                  className={buttonClasses("ghost", "px-2")}
+                  onClick={() => move(item.id, -1)}
+                  type="button"
+                >
+                  Up
+                </button>
+                <button
+                  aria-label={`Move ${item.label} down`}
+                  className={buttonClasses("ghost", "px-2")}
+                  onClick={() => move(item.id, 1)}
+                  type="button"
+                >
+                  Down
+                </button>
                 <button
                   className={buttonClasses("secondary", "min-h-10 px-3")}
                   disabled={busyId === item.id}

@@ -45,6 +45,9 @@ public sealed class HomepageContent
     public bool IsPublished { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
+    public string StatisticsPhrase { get; private set; } = "Moments that move with us";
+    public bool IsStatisticsPhraseEnabled { get; private set; } = true;
+    public void UpdateStatisticsPresentation(string phrase, bool enabled, DateTimeOffset now) { var value = phrase?.Trim() ?? string.Empty; if (value.Length is < 1 or > 180) throw new ArgumentException("Statistics phrase must be between 1 and 180 characters.", nameof(phrase)); StatisticsPhrase = value; IsStatisticsPhraseEnabled = enabled; UpdatedAtUtc = now; }
 
     public void Update(string heroEyebrow, string heroTitle, string? heroAccent,
         string heroDescription, string primaryCtaLabel, string primaryCtaHref,

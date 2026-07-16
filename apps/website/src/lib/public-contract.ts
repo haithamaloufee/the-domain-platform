@@ -101,7 +101,12 @@ export function parsePublicHomepage(value: unknown): PublicHomepageResponse {
     content: value.content === null ? null : parsePublicHomepageContent(value.content),
     statistics: parsePublicStatistics(value.statistics),
     partners: parsePublicPartners(value.partners),
+    statisticsPresentation: parseStatisticsPresentation(value.statisticsPresentation),
   };
+}
+function parseStatisticsPresentation(value: unknown) {
+  if (!isRecord(value)) return { phrase: "Moments that move with us", isEnabled: true };
+  return { phrase: requiredString(value.phrase), isEnabled: booleanValue(value.isEnabled) };
 }
 
 export function parsePublicStatistics(value: unknown): PublicStatisticItem[] {

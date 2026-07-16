@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TheDomain.Application.Homepage;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Infrastructure.Persistence;
 
@@ -26,6 +27,8 @@ public sealed class HomepageCmsRepository(TheDomainDbContext dbContext) : IHomep
     public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) =>
         dbContext.Partners.AnyAsync(item => item.Slug == slug
             && (!excludingId.HasValue || item.Id != excludingId.Value), cancellationToken);
+    public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
     public void AddHomepage(HomepageContent content) => dbContext.HomepageContent.Add(content);
     public void AddStatistic(StatisticItem statistic) => dbContext.HomepageStatistics.Add(statistic);

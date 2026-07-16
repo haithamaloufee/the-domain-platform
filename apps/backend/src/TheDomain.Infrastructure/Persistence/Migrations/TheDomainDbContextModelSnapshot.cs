@@ -284,6 +284,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsStatisticsPhraseEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("PartnersDescription")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -321,6 +326,13 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StatisticsPhrase")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasDefaultValue("Moments that move with us");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -363,6 +375,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsVisible")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("LogoMediaAssetId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
@@ -390,6 +405,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsFeatured");
+
+                    b.HasIndex("LogoMediaAssetId");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -817,6 +834,14 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
                         .WithMany()
                         .HasForeignKey("SocialImageMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TheDomain.Domain.Homepage.Partner", b =>
+                {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("LogoMediaAssetId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
