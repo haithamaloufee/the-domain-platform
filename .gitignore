@@ -55,3 +55,4 @@ docker/volumes/
 .cache/
 .nyc_output/
 TestResults/
+scripts/dev/.demo-content-manifest.json
