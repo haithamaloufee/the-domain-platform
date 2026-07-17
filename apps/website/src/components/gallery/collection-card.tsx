@@ -3,6 +3,7 @@ import { Badge, MediaFrame } from "@the-domain/ui";
 import { cn, galleryMediaImageSource } from "@the-domain/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function CollectionCard({
   className,
@@ -74,11 +75,11 @@ export function CollectionCard({
               variant === "wide" ? "text-4xl sm:text-6xl" : "text-3xl sm:text-5xl",
             )}
           >
-            {collection.title}
+            <DynamicText kind="heading">{collection.title}</DynamicText>
           </h2>
           {collection.description && (
             <p className="mt-3 line-clamp-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-              {collection.description}
+              <DynamicText>{collection.description}</DynamicText>
             </p>
           )}
           <p className="mt-4 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
@@ -87,7 +88,7 @@ export function CollectionCard({
             {videos > 0 ? ` / ${videos} ${videos === 1 ? "video" : "videos"}` : ""}
           </p>
           <span className="mt-6 inline-flex min-h-11 items-center border border-gold bg-gold px-5 font-label text-xs font-semibold uppercase tracking-[0.12em] text-canvas transition group-hover:bg-gold-bright">
-            View collection
+            <DynamicText kind="action">View collection</DynamicText>
           </span>
         </div>
       </Link>

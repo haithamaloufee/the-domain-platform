@@ -3,12 +3,12 @@ import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { HomepageEventPreview } from "./homepage-event-preview";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function HomepageEventsSection({
   events,
   unavailable,
   title,
-  description,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
@@ -19,12 +19,6 @@ export function HomepageEventsSection({
     <Section>
       <Container>
         <HomeSectionHeader
-          actionHref="/events"
-          actionLabel="View All Events"
-          description={
-            description ??
-            "Featured experiences lead the programme, followed by what is coming next. Booking remains on the event's verified external platform."
-          }
           eyebrow="Featured & Upcoming"
           title={title ?? "The next frame is taking shape."}
         />
@@ -49,7 +43,7 @@ export function HomepageEventsSection({
         {events.length > 0 && (
           <div className="mt-10 text-center">
             <Link className={buttonClasses("secondary")} href="/events">
-              View All Events
+              <DynamicText kind="action">View All Events</DynamicText>
             </Link>
           </div>
         )}

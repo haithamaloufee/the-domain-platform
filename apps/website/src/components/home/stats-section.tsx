@@ -2,8 +2,10 @@
 
 import type { PublicStatisticItem, StatisticsPresentation } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { homepageContent } from "@/content/homepage-content";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
+import { ScrollSnakeText } from "./scroll-snake-text";
 
 export function StatsSection({
   statistics,
@@ -13,43 +15,68 @@ export function StatsSection({
   presentation: StatisticsPresentation;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
-  const [progress, setProgress] = useState(0);
+  const numberRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const fallback = homepageContent.statistics.map((item) => ({
     label: item.label,
     value: item.value,
-    suffix: null,
+    suffix: item.suffix,
     description: null,
   }));
   const items = Array.from({ length: 4 }, (_, index) => statistics[index] ?? fallback[index]!);
+  const valueSignature = items.map((item) => item.value).join("|");
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      const reducedFrame = requestAnimationFrame(() => setProgress(1));
-      return () => cancelAnimationFrame(reducedFrame);
-    }
+    if (!section || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let frame = 0;
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      observer.disconnect();
+      const sourceValues = valueSignature.split("|");
+      const numbers = sourceValues.map((value) => Number(value));
+      const valid = numbers.every(Number.isFinite);
+      if (!valid) return;
+      const startedAt = performance.now();
+      const duration = 820;
+      numberRefs.current.forEach((element) => {
+        if (element) updateVisibleNumber(element, "0", element.dataset.source ?? "0");
+      });
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        numbers.forEach((value, index) => {
+          const element = numberRefs.current[index];
+          if (element)
+            updateVisibleNumber(
+              element,
+              formatNumber(value * eased, sourceValues[index]!),
+              sourceValues[index]!,
+            );
+        });
+        if (progress < 1) frame = requestAnimationFrame(tick);
+        else
+          numberRefs.current.forEach((element, index) => {
+            if (element) updateVisibleNumber(element, sourceValues[index]!, sourceValues[index]!);
+          });
+      };
+      frame = requestAnimationFrame(tick);
+    };
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        observer.disconnect();
-        const start = performance.now();
-        const tick = (now: number) => {
-          const elapsed = Math.min(1, (now - start) / 1050);
-          setProgress(1 - Math.pow(1 - elapsed, 3));
-          if (elapsed < 1) frame = requestAnimationFrame(tick);
-        };
-        frame = requestAnimationFrame(tick);
+        if (entry?.isIntersecting) start();
       },
-      { threshold: 0.35 },
+      { rootMargin: "0px 0px -8%", threshold: 0.08 },
     );
     observer.observe(section);
+    const bounds = section.getBoundingClientRect();
+    if (bounds.top < window.innerHeight && bounds.bottom > 0) start();
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [valueSignature]);
 
   return (
     <section
@@ -58,101 +85,61 @@ export function StatsSection({
       ref={sectionRef}
     >
       <Container>
-        <p className="type-eyebrow text-gold">The record</p>
+        <p className="type-eyebrow text-gold" data-reveal="label">
+          <DynamicText kind="label">The record</DynamicText>
+        </p>
         <h2 className="sr-only" id="homepage-statistics">
           The Domain statistics
         </h2>
-        <dl className="relative z-10 mt-12 grid grid-cols-2 gap-x-5 gap-y-14 lg:grid-cols-4 lg:gap-x-8">
-          {items.map((item, index) => (
-            <div
-              className="grid min-w-0 text-center lg:odd:-translate-y-5 lg:even:translate-y-8"
-              key={`${index}-${item.label}`}
-            >
-              <dt className="order-2 mt-3 text-sm font-semibold leading-5 text-ink sm:text-base">
-                {item.label}
-              </dt>
-              <dd className="order-1 text-[clamp(3rem,7vw,7rem)] font-extrabold leading-none tracking-[-.06em] text-ink">
-                {formatStatistic(item.value, progress)}
-                {item.suffix}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        {presentation.isEnabled && <ScrollTextPath phrase={presentation.phrase} />}
+        <div className="relative mt-8 min-h-[31rem] sm:min-h-[38rem] lg:min-h-[43rem]">
+          {presentation.isEnabled && <ScrollSnakeText phrase={presentation.phrase} />}
+          <dl className="relative z-10 grid grid-cols-2 items-start gap-x-6 gap-y-12 pt-9 sm:gap-x-10 sm:gap-y-16 lg:grid-cols-4 lg:gap-x-8 lg:pt-28">
+            {items.map((item, index) => (
+              <div
+                className="statistic-composition-item flex min-h-40 min-w-0 flex-col items-center justify-start text-center sm:min-h-48"
+                data-reveal="statistic"
+                key={`${index}-${item.label}`}
+              >
+                <dt className="order-2 mt-3 max-w-[14rem] text-sm font-semibold leading-5 text-ink sm:text-base">
+                  <DynamicText kind="label">{item.label}</DynamicText>
+                </dt>
+                <dd
+                  aria-label={`${item.value}${item.suffix ?? ""}`}
+                  className="order-1 whitespace-nowrap text-[clamp(3.75rem,7.2vw,8.5rem)] font-extrabold leading-none tracking-[-.065em] text-ink"
+                >
+                  <span
+                    aria-hidden="true"
+                    data-source={item.value}
+                    ref={(element) => {
+                      numberRefs.current[index] = element;
+                    }}
+                  >
+                    <DynamicText kind="statistic">{item.value}</DynamicText>
+                  </span>
+                  {item.suffix && (
+                    <span aria-hidden="true" className="tracking-[-.04em]">
+                      {item.suffix}
+                    </span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </Container>
     </section>
   );
 }
 
-function ScrollTextPath({ phrase }: { phrase: string }) {
-  const id = useId().replaceAll(":", "");
-  const textRef = useRef<SVGTextElement>(null);
-  const pathRef = useRef<SVGTextPathElement>(null);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let lastY = window.scrollY;
-    let velocity = 0;
-    let target = 0;
-    let offset = 0;
-    let frame = 0;
-    let unit = 420;
-    const measure = () => {
-      unit = Math.max(1, (textRef.current?.getComputedTextLength() ?? 2520) / 6);
-    };
-    const tick = () => {
-      velocity += (target - velocity) * 0.2;
-      target *= 0.78;
-      offset = (((offset + velocity) % unit) + unit) % unit;
-      pathRef.current?.setAttribute("startOffset", `${-offset}px`);
-      if (Math.abs(velocity) < 0.015 && Math.abs(target) < 0.015) {
-        frame = 0;
-        return;
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    const scroll = () => {
-      const current = window.scrollY;
-      target = Math.max(-7, Math.min(7, (current - lastY) * 0.28));
-      lastY = current;
-      if (!frame) frame = requestAnimationFrame(tick);
-    };
-    const resize = new ResizeObserver(measure);
-    if (textRef.current) resize.observe(textRef.current);
-    measure();
-    window.addEventListener("scroll", scroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", scroll);
-      resize.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, []);
-  const repeated = Array.from({ length: 6 }, () => `${phrase} · `).join("");
-  return (
-    <div className="relative z-0 -mx-gutter mt-8 h-40 sm:mt-10 sm:h-56">
-      <span className="sr-only">{phrase}</span>
-      <svg
-        aria-hidden="true"
-        className="h-full w-full overflow-visible text-gold"
-        preserveAspectRatio="none"
-        viewBox="0 0 1200 220"
-      >
-        <path d="M-260 28 C130 250 410 250 620 120 C820 -5 1060 -5 1460 185" fill="none" id={id} />
-        <text
-          className="fill-current text-[clamp(1.15rem,2.3vw,2rem)] font-semibold uppercase tracking-[.17em]"
-          ref={textRef}
-        >
-          <textPath href={`#${id}`} ref={pathRef}>
-            {repeated}
-          </textPath>
-        </text>
-      </svg>
-    </div>
-  );
+function formatNumber(value: number, source: string) {
+  const decimals = source.includes(".") ? (source.split(".")[1]?.length ?? 0) : 0;
+  return value.toFixed(decimals);
 }
 
-function formatStatistic(value: string, progress: number) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return value;
-  const decimals = value.includes(".") ? (value.split(".")[1]?.length ?? 0) : 0;
-  return (numeric * progress).toFixed(decimals);
+function updateVisibleNumber(element: HTMLElement, value: string, source: string) {
+  const glyphs = Array.from(element.querySelectorAll<HTMLElement>(".dynamic-text__glyph"));
+  const characters = value.padStart(source.length, "0").slice(-source.length);
+  glyphs.forEach((glyph, index) => {
+    glyph.textContent = characters[index] ?? "0";
+  });
 }

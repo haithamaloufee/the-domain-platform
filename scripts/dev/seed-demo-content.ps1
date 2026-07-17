@@ -126,7 +126,7 @@ Invoke-Api Put '/api/admin/statistics/presentation' @{ phrase = 'We create momen
 
 $statistics = @(
   @{label='Years creating experiences';value='10';suffix='+'}, @{label='Events produced';value='75';suffix='+'},
-  @{label='Guests welcomed';value='120';suffix='K'}, @{label='Creative partners';value='25';suffix='+'}
+  @{label='Guests welcomed';value='120';suffix='K+'}, @{label='Creative partners';value='50';suffix='+'}
 )
 $adminStats = @(Expand-Items (Invoke-Api Get '/api/admin/statistics')) | Sort-Object slotNumber
 for ($index=0; $index -lt $statistics.Count; $index++) {
@@ -170,6 +170,15 @@ $eventSpecs=@(
   @{slug='demo-city-lights-live';title='City Lights Live';days=60;description='An open-air entertainment experience shaped around sound, movement, and the city after dark.';featured=$false},
   @{slug='demo-afterglow-sessions';title='Afterglow Sessions';days=90;description='A curated night bringing artists, audiences, and cinematic production into one shared space.';featured=$false}
 )
+# Events intentionally have no archived-to-draft API transition. Restore only marker-owned local
+# demo rows so a reset/seed cycle remains repeatable without touching real development content.
+@"
+UPDATE events
+SET "PublicationStatus" = 'Draft'
+WHERE "Slug" LIKE 'demo-%'
+  AND "LongDescription" LIKE '%THE_DOMAIN_DEMO%'
+  AND "PublicationStatus" = 'Archived';
+"@ | docker compose -f docker/compose/docker-compose.local.yml exec -T postgres psql -U the_domain -d the_domain -v ON_ERROR_STOP=1 | Out-Null
 $events=@(Expand-Items (Invoke-Api Get '/api/admin/events'))
 foreach($spec in $eventSpecs){$existing=Find-ByProperty $events 'slug' $spec.slug;$start=[DateTimeOffset]::UtcNow.AddDays($spec.days).Date.AddHours(18);$body=@{slug=$spec.slug;title=$spec.title;shortDescription=$spec.description;longDescription="$($spec.description) $marker local development event.";eventType='Live Entertainment';startAtUtc=$start.ToString('o');endAtUtc=$start.AddHours(4).ToString('o');timeZoneId='Asia/Amman';city='Amman';venueName='The Domain Demo Venue';venueAddress='Amman, Jordan';mapUrl=$null;externalBookingUrl=$null;isBookingEnabled=$false;bookingOpensAtUtc=$null;bookingClosesAtUtc=$null;isFeatured=$spec.featured;showOnHomepage=$true;bookingStatus=1};$saved=if($existing){Invoke-Api Put "/api/admin/events/$($existing.id)" $body}else{Invoke-Api Post '/api/admin/events' $body};$eventMedia=@(Invoke-Api Get "/api/admin/events/$($saved.id)/media");$assetIds=@($stageMediaId,$productionMediaId,'0eaf1f6a-1a6e-46b2-8a87-00fbfdfad5bb');for($i=0;$i-lt$assetIds.Count;$i++){if(-not(Find-ByProperty $eventMedia 'mediaAssetId' $assetIds[$i])){Invoke-Api Post "/api/admin/events/$($saved.id)/media" @{mediaAssetId=$assetIds[$i];usage=if($i-eq0){2}else{4};sortOrder=$i;isFeatured=($i-eq0)}|Out-Null}};$eventMedia=@(Invoke-Api Get "/api/admin/events/$($saved.id)/media");$cover=Find-ByProperty $eventMedia 'mediaAssetId' $stageMediaId;if($cover){Invoke-Api Post "/api/admin/events/$($saved.id)/media/$($cover.id)/cover"|Out-Null;Invoke-Api Put "/api/admin/events/$($saved.id)/media/$($cover.id)/presentation" @{focalPointX=0.5;focalPointY=0.5;zoom=1.0}|Out-Null};Invoke-Api Post "/api/admin/events/$($saved.id)/publish"|Out-Null;$manifest.eventIds+=$saved.id}
 

@@ -2,6 +2,7 @@ import type { PublicHomepageContent, PublicPartner } from "@the-domain/types";
 import { Container, Section } from "@the-domain/ui";
 import Image from "next/image";
 import { homepageContent } from "@/content/homepage-content";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function PartnersPreviewSection({
   cmsContent,
@@ -13,18 +14,18 @@ export function PartnersPreviewSection({
   const content = {
     eyebrow: homepageContent.partners.eyebrow,
     title: cmsContent?.partnersTitle ?? homepageContent.partners.title,
-    description: cmsContent?.partnersDescription ?? homepageContent.partners.emptyMessage,
   };
   return (
     <Section className="overflow-hidden bg-canvas">
-      <Container className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(20rem,0.45fr)] lg:items-end">
-        <div>
-          <p className="type-eyebrow text-gold">{content.eyebrow}</p>
-          <h2 className="type-section-heading mt-4 max-w-3xl text-ink">{content.title}</h2>
+      <Container>
+        <div className="mx-auto max-w-6xl text-center" data-reveal="heading">
+          <p className="type-eyebrow text-gold" data-reveal="label">
+            <DynamicText kind="label">{content.eyebrow}</DynamicText>
+          </p>
+          <h2 className="mt-4 text-[clamp(2.6rem,6vw,6rem)] font-extrabold leading-[.92] tracking-[-.055em] text-ink">
+            <DynamicText kind="heading">{content.title}</DynamicText>
+          </h2>
         </div>
-        <p className="max-w-lg text-sm leading-7 text-ink-muted sm:text-base lg:justify-self-end">
-          {content.description}
-        </p>
       </Container>
 
       {partners.length ? (
@@ -112,7 +113,7 @@ function PartnerIdentity({ partner }: { partner: PublicPartner }) {
     />
   ) : (
     <span className="text-center font-label text-sm font-semibold uppercase tracking-[0.12em] text-ink">
-      {partner.name}
+      <DynamicText kind="label">{partner.name}</DynamicText>
     </span>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@the-domain/utils";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 export function CinematicReveal({
   children,
@@ -11,19 +11,20 @@ export function CinematicReveal({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = ref.current;
-    if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setVisible(false);
+    if (!element) return;
+    document.documentElement.dataset.motionReady = "true";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
         setVisible(true);
         observer.disconnect();
       },
-      { rootMargin: "-8% 0px -12%", threshold: 0.08 },
+      { rootMargin: "0px 0px -9%", threshold: 0.06 },
     );
     observer.observe(element);
     return () => observer.disconnect();

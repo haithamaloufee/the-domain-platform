@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { getWebsiteUrl } from "@/lib/seo";
 import { getPublicBranding } from "@/lib/public-api";
 import { fallbackBranding } from "@the-domain/utils";
-import { DynamicWeightController } from "@/components/motion/dynamic-weight-controller";
+import { DynamicWeightProvider } from "@/components/motion/dynamic-weight-controller";
 import "./globals.css";
 
 const siteFont = localFont({
@@ -49,20 +49,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html className={siteFont.variable} lang="en">
       <body>
-        <DynamicWeightController />
-        <a
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-gold focus:px-4 focus:py-3 focus:text-canvas"
-          href="#main-content"
-        >
-          Skip to content
-        </a>
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader branding={branding} />
-          <main className="flex-1" id="main-content">
-            {children}
-          </main>
-          <SiteFooter branding={branding} />
-        </div>
+        <DynamicWeightProvider>
+          <a
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-gold focus:px-4 focus:py-3 focus:text-canvas"
+            href="#main-content"
+          >
+            Skip to content
+          </a>
+          <div className="flex min-h-screen flex-col">
+            <SiteHeader branding={branding} />
+            <main className="flex-1" id="main-content">
+              {children}
+            </main>
+            <SiteFooter branding={branding} />
+          </div>
+        </DynamicWeightProvider>
       </body>
     </html>
   );

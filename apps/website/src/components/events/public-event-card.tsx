@@ -14,6 +14,7 @@ import {
   formatEventTime,
 } from "./event-presentation";
 import { EventCoverImage } from "./event-cover-image";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 type EventCardVariant = "listing" | "featured" | "archive" | "compact";
 
@@ -65,13 +66,15 @@ export function PublicEventCard({
             {formatEventDate(event.startAtUtc, event.timeZoneId)}
           </time>
           <h3 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-4xl">
-            {event.title}
+            <DynamicText kind="heading">{event.title}</DynamicText>
           </h3>
           <p className="mt-3 text-sm text-ink-muted">
-            {event.city} / {event.venueName}
+            <DynamicText>{`${event.city} / ${event.venueName}`}</DynamicText>
           </p>
           <p className="mt-2 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
-            {bookingAvailabilityLabels[event.bookingAvailability]}
+            <DynamicText kind="label">
+              {bookingAvailabilityLabels[event.bookingAvailability]}
+            </DynamicText>
           </p>
           <EventActions canBook={canBook} event={event} />
         </div>
@@ -145,7 +148,7 @@ export function PublicEventCard({
             className="transition-colors hover:text-gold focus-visible:text-gold"
             href={`/events/${event.slug}`}
           >
-            {event.title}
+            <DynamicText kind="heading">{event.title}</DynamicText>
           </Link>
         </h3>
         {event.shortDescription.trim() && (
@@ -155,7 +158,7 @@ export function PublicEventCard({
               featured ? "max-w-2xl text-base" : "line-clamp-2 text-sm",
             )}
           >
-            {event.shortDescription}
+            <DynamicText>{event.shortDescription}</DynamicText>
           </p>
         )}
         <p className="mt-3 text-sm text-ink">
@@ -207,7 +210,7 @@ function EventActions({ canBook, event }: { canBook: boolean; event: PublicEvent
           rel="noopener noreferrer"
           target="_blank"
         >
-          Book now
+          <DynamicText kind="action">Book now</DynamicText>
           <span className="sr-only"> for {event.title} (opens in a new tab)</span>
         </a>
       )}
@@ -215,7 +218,7 @@ function EventActions({ canBook, event }: { canBook: boolean; event: PublicEvent
         className={buttonClasses(canBook ? "secondary" : "primary")}
         href={`/events/${event.slug}`}
       >
-        {isFinished ? "View highlights" : "View event"}
+        <DynamicText kind="action">{isFinished ? "View highlights" : "View event"}</DynamicText>
       </Link>
     </div>
   );

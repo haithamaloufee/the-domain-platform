@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CollectionMediaGrid } from "@/components/gallery/collection-media-grid";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { getGalleryCollection, PublicApiError } from "@/lib/public-api";
 import { createPageMetadata, getGalleryMediaSeoImage } from "@/lib/seo";
 
@@ -63,22 +64,24 @@ export default async function GalleryCollectionPage({ params }: Props) {
                 )}
                 href="/gallery"
               >
-                <span aria-hidden="true">←</span> Back to Gallery
+                <span aria-hidden="true">←</span>{" "}
+                <DynamicText kind="action">Back to Gallery</DynamicText>
               </Link>
               <p className="mt-8 font-label text-xs uppercase tracking-[0.14em] text-gold">
-                Curated collection
+                <DynamicText kind="label">Curated collection</DynamicText>
               </p>
               <h1 className="mt-4 max-w-[12ch] break-words font-display text-4xl font-extrabold leading-[0.94] tracking-[-0.05em] text-ink sm:text-6xl lg:text-7xl">
-                {collection.title}
+                <DynamicText kind="heading">{collection.title}</DynamicText>
               </h1>
               {collection.description && (
                 <p className="mt-6 max-w-xl text-base leading-7 text-ink-muted">
-                  {collection.description}
+                  <DynamicText>{collection.description}</DynamicText>
                 </p>
               )}
               <p className="mt-5 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
-                {collection.media.length}{" "}
-                {collection.media.length === 1 ? "highlight" : "highlights"}
+                <DynamicText kind="label">
+                  {`${collection.media.length} ${collection.media.length === 1 ? "highlight" : "highlights"}`}
+                </DynamicText>
               </p>
             </div>
 

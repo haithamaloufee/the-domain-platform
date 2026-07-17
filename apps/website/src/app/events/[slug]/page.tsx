@@ -13,6 +13,7 @@ import {
 } from "@/components/events/event-presentation";
 import { GalleryMediaGrid } from "@/components/gallery/gallery-media-grid";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getEventBySlug, PublicApiError } from "@/lib/public-api";
 import {
@@ -103,11 +104,11 @@ export default async function EventPage({ params }: EventPageProps) {
             </div>
 
             <h1 className="mt-5 max-w-[14ch] break-words font-display text-4xl font-extrabold leading-[0.94] tracking-[-0.05em] text-ink sm:text-6xl lg:text-7xl">
-              {event.title}
+              <DynamicText kind="heading">{event.title}</DynamicText>
             </h1>
             {event.shortDescription.trim() && (
               <p className="mt-6 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg">
-                {event.shortDescription}
+                <DynamicText>{event.shortDescription}</DynamicText>
               </p>
             )}
             <div className="mt-8 flex flex-wrap gap-3">
@@ -118,12 +119,12 @@ export default async function EventPage({ params }: EventPageProps) {
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  Book now
+                  <DynamicText kind="action">Book now</DynamicText>
                   <span className="sr-only"> (opens in a new tab)</span>
                 </a>
               )}
               <Link className={buttonClasses("secondary")} href="/events">
-                All events
+                <DynamicText kind="action">All events</DynamicText>
               </Link>
             </div>
           </div>
@@ -136,7 +137,7 @@ export default async function EventPage({ params }: EventPageProps) {
             {event.displayStatus === EventDisplayStatus.Upcoming && (
               <div className="mb-14 max-w-4xl">
                 <p className="mb-4 font-label text-xs uppercase tracking-[0.14em] text-gold">
-                  Until the event begins
+                  <DynamicText kind="label">Until the event begins</DynamicText>
                 </p>
                 <EventCountdown endAtUtc={event.endAtUtc} startAtUtc={event.startAtUtc} />
               </div>
@@ -156,13 +157,13 @@ export default async function EventPage({ params }: EventPageProps) {
             <div className="grid gap-12 border-t border-line pt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)] lg:gap-20">
               <div>
                 <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
-                  The experience
+                  <DynamicText kind="label">The experience</DynamicText>
                 </p>
                 <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">
-                  About the event
+                  <DynamicText kind="heading">About the event</DynamicText>
                 </h2>
                 <div className="mt-6 max-w-3xl whitespace-pre-line text-base leading-8 text-ink-muted">
-                  {event.longDescription || event.shortDescription}
+                  <DynamicText>{event.longDescription || event.shortDescription}</DynamicText>
                 </div>
               </div>
               <dl className="architectural-grid grid content-start gap-6 border border-line bg-surface/35 p-6 lg:p-8">
@@ -181,7 +182,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    Open map
+                    <DynamicText kind="action">Open map</DynamicText>
                     <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                 )}
@@ -198,15 +199,16 @@ export default async function EventPage({ params }: EventPageProps) {
               <header className="mb-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.65fr)] lg:items-end">
                 <div>
                   <p className="font-label text-xs uppercase tracking-[0.14em] text-gold">
-                    Approved media
+                    <DynamicText kind="label">Approved media</DynamicText>
                   </p>
                   <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">
-                    Event highlights
+                    <DynamicText kind="heading">Event highlights</DynamicText>
                   </h2>
                 </div>
                 <p className="max-w-xl text-sm leading-7 text-ink-muted lg:justify-self-end">
-                  Browse {orderedMedia.length} approved{" "}
-                  {orderedMedia.length === 1 ? "moment" : "moments"} from this event.
+                  <DynamicText>
+                    {`Browse ${orderedMedia.length} approved ${orderedMedia.length === 1 ? "moment" : "moments"} from this event.`}
+                  </DynamicText>
                 </p>
               </header>
               <GalleryMediaGrid media={orderedMedia} showFilters={false} />
@@ -274,9 +276,11 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
-        {label}
+        <DynamicText kind="label">{label}</DynamicText>
       </dt>
-      <dd className="mt-2 text-sm leading-6 text-ink">{value}</dd>
+      <dd className="mt-2 text-sm leading-6 text-ink">
+        <DynamicText>{value}</DynamicText>
+      </dd>
     </div>
   );
 }
@@ -295,7 +299,9 @@ function StateNotice({
       className={`mb-12 border-l-2 px-5 py-4 ${tone === "error" ? "border-error bg-error/10" : "border-gold bg-gold/10"}`}
       role="status"
     >
-      <p className="font-display text-xl font-bold text-ink">{title}</p>
+      <p className="font-display text-xl font-bold text-ink">
+        <DynamicText kind="heading">{title}</DynamicText>
+      </p>
       <p className="mt-2 text-sm leading-6 text-ink-muted">{children}</p>
     </div>
   );

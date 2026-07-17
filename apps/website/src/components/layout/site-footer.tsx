@@ -1,6 +1,7 @@
 import type { PublicBrandingSettings } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import Link from "next/link";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { BrandLogo } from "./brand-logo";
 
 const groups = [
@@ -35,14 +36,16 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
           </Link>
           {branding.brandDescription && (
             <p className="mt-4 max-w-md text-sm leading-7 text-ink-muted">
-              {branding.brandDescription}
+              <DynamicText>{branding.brandDescription}</DynamicText>
             </p>
           )}
         </div>
         <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-8 lg:col-span-5">
           {groups.map((group) => (
             <div key={group.label}>
-              <p className="text-[0.68rem] uppercase tracking-[0.16em] text-gold">{group.label}</p>
+              <p className="text-[0.68rem] uppercase tracking-[0.16em] text-gold">
+                <DynamicText kind="label">{group.label}</DynamicText>
+              </p>
               <ul className="mt-3 space-y-1 text-sm text-ink-muted">
                 {group.links.map((link) => (
                   <li key={link.href}>
@@ -50,7 +53,7 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
                       className="inline-flex min-h-11 items-center hover:text-ink"
                       href={link.href}
                     >
-                      {link.label}
+                      <DynamicText kind="action">{link.label}</DynamicText>
                     </Link>
                   </li>
                 ))}

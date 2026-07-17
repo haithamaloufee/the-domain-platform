@@ -6,6 +6,7 @@ import { cn } from "@the-domain/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { BrandLogo } from "./brand-logo";
 
 const links = [
@@ -75,11 +76,12 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-300",
+        "fixed inset-x-0 top-0 z-50 transition-[background-color,backdrop-filter] duration-300 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-12 after:content-['']",
         overlay
-          ? "border-transparent bg-gradient-to-b from-black/70 to-transparent"
-          : "border-line/80 bg-canvas/92 shadow-[0_1rem_4rem_rgb(0_0_0/.18)] backdrop-blur-xl",
+          ? "bg-[linear-gradient(to_bottom,rgb(0_0_0/.96),rgb(0_0_0/.72))] after:bg-gradient-to-b after:from-black/70 after:to-transparent"
+          : "bg-black/92 backdrop-blur-xl after:bg-gradient-to-b after:from-black/35 after:to-transparent",
       )}
+      data-site-header
       ref={rootRef}
     >
       <Container
@@ -93,10 +95,10 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
           className="inline-flex min-h-11 items-center"
           href="/"
         >
-          <BrandLogo className="h-auto w-[clamp(10rem,17vw,14rem)]" priority />
+          <BrandLogo className="h-auto w-[clamp(10.5rem,17vw,15.5rem)]" priority />
         </Link>
         <nav aria-label="Primary navigation" className="hidden md:block">
-          <ul className="flex items-center gap-x-8 text-[0.72rem] uppercase tracking-[0.16em] text-ink/75">
+          <ul className="flex items-center gap-x-[clamp(1.8rem,3vw,4rem)] text-[clamp(1.05rem,1.12vw,1.35rem)] font-semibold tracking-[-.015em] text-ink/88">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
@@ -109,7 +111,7 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
                   )}
                   href={link.href}
                 >
-                  {link.label}
+                  <DynamicText kind="action">{link.label}</DynamicText>
                 </Link>
               </li>
             ))}
@@ -149,7 +151,7 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
       <nav
         aria-label="Mobile navigation"
         className={cn(
-          "fixed inset-x-0 top-16 z-50 h-[calc(100dvh-4rem)] overflow-y-auto bg-canvas/98 px-gutter py-7 backdrop-blur-2xl transition-[opacity,transform] md:hidden",
+          "fixed inset-x-0 top-16 z-[70] h-[calc(100dvh-4rem)] overflow-y-auto bg-canvas/98 px-gutter py-7 backdrop-blur-2xl transition-[opacity,transform] md:hidden",
           menuOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-4 opacity-0",
         )}
         id="mobile-navigation"
@@ -168,7 +170,7 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
               >
-                <span>{link.label}</span>
+                <DynamicText kind="action">{link.label}</DynamicText>
                 <span className="text-[0.65rem] font-normal tracking-[0.16em] text-ink-muted">
                   {String(index + 1).padStart(2, "0")}
                 </span>

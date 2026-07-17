@@ -1,7 +1,8 @@
-import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
+import { Container, EmptyState, Section } from "@the-domain/ui";
 import type { Metadata } from "next";
 import { CollectionCard } from "@/components/gallery/collection-card";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { getGalleryCollections } from "@/lib/public-api";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -23,11 +24,20 @@ export default async function GalleryPage() {
     <>
       <Section className="architectural-grid border-b border-line py-20 sm:py-28 lg:py-32">
         <Container>
-          <SectionHeader
-            description="Curated photography and film from the experiences that continue to define The Domain."
-            eyebrow="Visual archive"
-            title="Gallery"
-          />
+          <header className="max-w-5xl">
+            <p className="type-eyebrow text-gold">
+              <DynamicText kind="label">Visual archive</DynamicText>
+            </p>
+            <h1 className="type-page-heading mt-5 text-ink">
+              <DynamicText kind="heading">Gallery</DynamicText>
+            </h1>
+            <p className="type-body-lead mt-7 text-ink-muted">
+              <DynamicText>
+                Curated photography and film from the experiences that continue to define The
+                Domain.
+              </DynamicText>
+            </p>
+          </header>
         </Container>
       </Section>
 

@@ -3,12 +3,12 @@ import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { HomepageEventPreview } from "./homepage-event-preview";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function PreviousEventsSection({
   events,
   unavailable,
   title,
-  description,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
@@ -19,12 +19,6 @@ export function PreviousEventsSection({
     <Section className="border-y border-line bg-surface/25">
       <Container>
         <HomeSectionHeader
-          actionHref="/events"
-          actionLabel="Explore The Archive"
-          description={
-            description ??
-            "Finished events return as approved highlights—an evolving record of the rooms, stages, and audiences that shaped each experience."
-          }
           eyebrow="Previous Events"
           title={title ?? "The night ends. The story remains."}
         />
@@ -53,7 +47,7 @@ export function PreviousEventsSection({
         {events.length > 0 && (
           <div className="mt-10 text-center">
             <Link className={buttonClasses("secondary")} href="/events">
-              Explore The Archive
+              <DynamicText kind="action">Explore The Archive</DynamicText>
             </Link>
           </div>
         )}

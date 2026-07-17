@@ -3,6 +3,7 @@ import { Container, Section, buttonClasses } from "@the-domain/ui";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { getPublicAbout, getPublicBranding } from "@/lib/public-api";
 import { createPageMetadata, defaultDescription } from "@/lib/seo";
 
@@ -37,12 +38,14 @@ export default async function AboutPage() {
           <Container className="flex min-h-[inherit] items-end py-20">
             <div className="max-w-5xl">
               <p className="font-label text-xs uppercase tracking-[.16em] text-gold">
-                {settings.heroEyebrow}
+                <DynamicText kind="label">{settings.heroEyebrow}</DynamicText>
               </p>
               <h1 className="mt-5 break-words font-display text-[clamp(3.5rem,11vw,8rem)] font-bold leading-[.9] tracking-[-.06em]">
-                {settings.heroHeading}
+                <DynamicText kind="heading">{settings.heroHeading}</DynamicText>
               </h1>
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-ink-muted">{settings.heroText}</p>
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-ink-muted">
+                <DynamicText>{settings.heroText}</DynamicText>
+              </p>
             </div>
           </Container>
         </section>
@@ -50,7 +53,7 @@ export default async function AboutPage() {
       <Section>
         <Container>
           <p className="max-w-6xl break-words font-display text-4xl font-bold leading-tight tracking-[-.04em] sm:text-7xl">
-            {settings.introStatement}
+            <DynamicText kind="heading">{settings.introStatement}</DynamicText>
           </p>
         </Container>
       </Section>
@@ -58,15 +61,15 @@ export default async function AboutPage() {
         <Section className="border-y border-line bg-surface/25">
           <Container className="grid gap-10 lg:grid-cols-12">
             <h2 className="break-words font-display text-4xl font-bold lg:col-span-5 sm:text-6xl">
-              {settings.storyHeading}
+              <DynamicText kind="heading">{settings.storyHeading}</DynamicText>
             </h2>
             <div className="lg:col-span-6 lg:col-start-7">
               <div className="whitespace-pre-line text-base leading-8 text-ink-muted">
-                {settings.storyText}
+                <DynamicText>{settings.storyText}</DynamicText>
               </div>
               {settings.storyHighlight && (
                 <blockquote className="mt-8 border-l border-gold pl-5 font-display text-2xl font-bold">
-                  {settings.storyHighlight}
+                  <DynamicText kind="heading">{settings.storyHighlight}</DynamicText>
                 </blockquote>
               )}
             </div>
@@ -77,9 +80,11 @@ export default async function AboutPage() {
         <Section>
           <Container>
             <h2 className="max-w-4xl break-words font-display text-4xl font-bold sm:text-6xl">
-              {settings.teamHeading}
+              <DynamicText kind="heading">{settings.teamHeading}</DynamicText>
             </h2>
-            <p className="mt-5 max-w-2xl leading-7 text-ink-muted">{settings.teamText}</p>
+            <p className="mt-5 max-w-2xl leading-7 text-ink-muted">
+              <DynamicText>{settings.teamText}</DynamicText>
+            </p>
             {data.team.length ? (
               <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {data.team.map((person) => (
@@ -94,10 +99,16 @@ export default async function AboutPage() {
                       />
                     </div>
                     <div className="p-5">
-                      <h3 className="break-words font-display text-2xl font-bold">{person.name}</h3>
-                      <p className="mt-1 break-words text-sm text-gold">{person.role}</p>
+                      <h3 className="break-words font-display text-2xl font-bold">
+                        <DynamicText kind="heading">{person.name}</DynamicText>
+                      </h3>
+                      <p className="mt-1 break-words text-sm text-gold">
+                        <DynamicText kind="label">{person.role}</DynamicText>
+                      </p>
                       {person.biography && (
-                        <p className="mt-3 text-sm leading-6 text-ink-muted">{person.biography}</p>
+                        <p className="mt-3 text-sm leading-6 text-ink-muted">
+                          <DynamicText>{person.biography}</DynamicText>
+                        </p>
                       )}
                       {person.profileUrl && (
                         <a
@@ -106,7 +117,7 @@ export default async function AboutPage() {
                           rel="noreferrer"
                           target="_blank"
                         >
-                          Public profile{" "}
+                          <DynamicText kind="action">Public profile</DynamicText>{" "}
                           <span className="sr-only">for {person.name} (opens in a new tab)</span>
                         </a>
                       )}
@@ -126,9 +137,11 @@ export default async function AboutPage() {
         <Section className="border-y border-line">
           <Container>
             <h2 className="max-w-4xl break-words font-display text-4xl font-bold sm:text-6xl">
-              {settings.partnersHeading}
+              <DynamicText kind="heading">{settings.partnersHeading}</DynamicText>
             </h2>
-            <p className="mt-4 max-w-2xl text-ink-muted">{settings.partnersText}</p>
+            <p className="mt-4 max-w-2xl text-ink-muted">
+              <DynamicText>{settings.partnersText}</DynamicText>
+            </p>
             {data.partners.length > 0 && (
               <ul className="mt-8 grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-4">
                 {data.partners.map((partner) => (
@@ -142,7 +155,9 @@ export default async function AboutPage() {
                         width={140}
                       />
                     ) : (
-                      <span className="text-center text-sm font-semibold">{partner.name}</span>
+                      <span className="text-center text-sm font-semibold">
+                        <DynamicText kind="label">{partner.name}</DynamicText>
+                      </span>
                     )}
                   </li>
                 ))}
@@ -156,15 +171,17 @@ export default async function AboutPage() {
           <Container className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <h2 className="max-w-5xl break-words font-display text-5xl font-bold sm:text-7xl">
-                {settings.reachOutHeading}
+                <DynamicText kind="heading">{settings.reachOutHeading}</DynamicText>
               </h2>
-              <p className="mt-5 max-w-2xl text-lg text-ink-muted">{settings.reachOutText}</p>
+              <p className="mt-5 max-w-2xl text-lg text-ink-muted">
+                <DynamicText>{settings.reachOutText}</DynamicText>
+              </p>
             </div>
             <Link
               className={buttonClasses("primary", "w-full sm:w-auto")}
               href={settings.reachOutCtaHref}
             >
-              {settings.reachOutCtaLabel}
+              <DynamicText kind="action">{settings.reachOutCtaLabel}</DynamicText>
             </Link>
           </Container>
         </Section>

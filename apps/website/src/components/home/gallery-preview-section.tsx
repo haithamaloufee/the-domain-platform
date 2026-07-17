@@ -4,13 +4,13 @@ import Link from "next/link";
 import { AlbumCard } from "@/components/gallery/album-card";
 import { CollectionCard } from "@/components/gallery/collection-card";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function GalleryPreviewSection({
   albums,
   unavailable,
   collection,
   title,
-  description,
 }: {
   albums: PublicGalleryAlbum[];
   unavailable: boolean;
@@ -22,12 +22,6 @@ export function GalleryPreviewSection({
     <Section>
       <Container>
         <HomeSectionHeader
-          actionHref="/gallery"
-          actionLabel="Open The Gallery"
-          description={
-            description ??
-            "A focused selection of approved event albums, using cover imagery only until a visitor chooses to enter the full gallery."
-          }
           eyebrow="Gallery Preview"
           title={title ?? "Moments with their own afterlife."}
         />
@@ -65,7 +59,7 @@ export function GalleryPreviewSection({
         {(collection || albums.length > 0) && (
           <div className="mt-10 text-center">
             <Link className={buttonClasses("secondary")} href="/gallery">
-              Open The Gallery
+              <DynamicText kind="action">Open The Gallery</DynamicText>
             </Link>
           </div>
         )}

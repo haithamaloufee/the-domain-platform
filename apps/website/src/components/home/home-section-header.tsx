@@ -1,23 +1,14 @@
-export function HomeSectionHeader({
-  description,
-  eyebrow,
-  title,
-}: {
-  actionHref?: string;
-  actionLabel?: string;
-  description: string;
-  eyebrow: string;
-  title: string;
-}) {
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
+
+export function HomeSectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <header className="mx-auto max-w-5xl text-center">
-      <p className="type-eyebrow text-gold">{eyebrow}</p>
-      <h2 className="mt-4 text-[clamp(2.6rem,6vw,6rem)] font-extrabold leading-[.95] tracking-[-.055em] text-ink">
-        {title}
-      </h2>
-      <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-ink-muted sm:text-base">
-        {description}
+    <header className="mx-auto max-w-6xl text-center" data-reveal="heading">
+      <p className="type-eyebrow text-gold" data-reveal="label">
+        <DynamicText kind="label">{eyebrow}</DynamicText>
       </p>
+      <h2 className="mt-4 text-[clamp(2.6rem,6vw,6rem)] font-extrabold leading-[.92] tracking-[-.055em] text-ink">
+        <DynamicText kind="heading">{title}</DynamicText>
+      </h2>
     </header>
   );
 }

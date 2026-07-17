@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import { RouteIntro } from "@/components/layout/route-intro";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { homepageContent } from "@/content/homepage-content";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -31,19 +32,21 @@ export default function ServicesPage() {
                 key={service.title}
               >
                 <span className="font-label text-xs tracking-[0.18em] text-gold">
-                  {String(index + 1).padStart(2, "0")}
+                  <DynamicText kind="label">{String(index + 1).padStart(2, "0")}</DynamicText>
                 </span>
                 <div>
                   <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-                    {service.title}
+                    <DynamicText kind="heading">{service.title}</DynamicText>
                   </h2>
-                  <p className="mt-3 max-w-2xl leading-7 text-ink-muted">{service.description}</p>
+                  <p className="mt-3 max-w-2xl leading-7 text-ink-muted">
+                    <DynamicText>{service.description}</DynamicText>
+                  </p>
                 </div>
               </li>
             ))}
           </ol>
           <Link className={buttonClasses("secondary", "mt-10")} href="/contact">
-            Discuss a project
+            <DynamicText kind="action">Discuss a project</DynamicText>
           </Link>
         </Container>
       </Section>
