@@ -38,7 +38,7 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
       <Container
         className={cn(
           "flex items-center justify-between gap-4 transition-[min-height] duration-300",
-          compact ? "min-h-16" : "min-h-20",
+          compact ? "min-h-16" : "min-h-[4.5rem]",
         )}
       >
         <Link

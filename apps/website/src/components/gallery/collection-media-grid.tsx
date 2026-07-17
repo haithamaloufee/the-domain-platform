@@ -82,20 +82,42 @@ function MediaTile({
       }
       variant="media"
     >
-      <div>
-        {media.mediaType === MediaType.Video ? (
-          <video
-            className="max-h-[68svh] w-full bg-canvas object-contain"
-            controls
-            playsInline
-            poster={media.posterUrl ?? undefined}
-            preload="metadata"
-            src={media.url}
+      {({ close, open }) => <CollectionDialogContent close={close} media={media} open={open} />}
+    </Dialog>
+  );
+}
+
+function CollectionDialogContent({
+  media,
+  close,
+  open,
+}: {
+  media: GalleryPublicMedia;
+  close: () => void;
+  open: boolean;
+}) {
+  return (
+    <div>
+      {media.mediaType === MediaType.Video ? (
+        <video
+          autoPlay={open}
+          className="max-h-[68svh] w-full bg-canvas object-contain"
+          controls
+          playsInline
+          poster={media.posterUrl ?? undefined}
+          preload="metadata"
+          src={media.url}
+        >
+          Your browser does not support video playback.
+        </video>
+      ) : (
+        <div className="relative h-[min(68svh,52rem)] bg-canvas">
+          <button
+            aria-label="Close enlarged image"
+            className="relative h-full w-full cursor-zoom-out"
+            onClick={close}
+            type="button"
           >
-            Your browser does not support video playback.
-          </video>
-        ) : (
-          <div className="relative h-[min(68svh,52rem)] bg-canvas">
             <Image
               alt={media.altText ?? ""}
               className="object-contain"
@@ -103,10 +125,10 @@ function MediaTile({
               sizes="100vw"
               src={media.url}
             />
-          </div>
-        )}
-        {media.caption && <p className="mt-4 text-sm leading-6 text-ink-muted">{media.caption}</p>}
-      </div>
-    </Dialog>
+          </button>
+        </div>
+      )}
+      {media.caption && <p className="mt-4 text-sm leading-6 text-ink-muted">{media.caption}</p>}
+    </div>
   );
 }

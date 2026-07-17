@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Inter, Syne } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getWebsiteUrl } from "@/lib/seo";
@@ -7,9 +7,11 @@ import { getPublicBranding } from "@/lib/public-api";
 import { fallbackBranding } from "@the-domain/utils";
 import "./globals.css";
 
-const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const siteFont = Manrope({
+  subsets: ["latin"],
+  variable: "--font-site",
+  display: "swap",
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await loadBranding();
@@ -41,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const branding = await loadBranding();
   return (
-    <html className={`${syne.variable} ${inter.variable} ${geist.variable}`} lang="en">
+    <html className={siteFont.variable} lang="en">
       <body>
         <a
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-gold focus:px-4 focus:py-3 focus:text-canvas"

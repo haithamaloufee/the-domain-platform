@@ -1,5 +1,8 @@
+"use client";
+
 import type { PublicStatisticItem, StatisticsPresentation } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { homepageContent } from "@/content/homepage-content";
 import { StatisticValue } from "./statistic-value";
 
@@ -10,6 +13,8 @@ export function StatsSection({
   statistics: PublicStatisticItem[];
   presentation: StatisticsPresentation;
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [pathOffset, setPathOffset] = useState(8);
   const items = statistics.length
     ? statistics.map((statistic) => ({
         label: statistic.label,
@@ -19,55 +24,72 @@ export function StatsSection({
       }))
     : homepageContent.statistics.map((statistic) => ({ ...statistic, suffix: null }));
 
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = section.getBoundingClientRect();
+      const range = window.innerHeight + rect.height;
+      const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / range));
+      setPathOffset(8 + progress * 28);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <section
       aria-labelledby="homepage-statistics"
-      className="relative isolate overflow-hidden border-y border-line bg-surface/45"
+      className="statistics-stage relative isolate overflow-hidden bg-canvas"
+      ref={sectionRef}
     >
-      <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
-      <Container className="py-12 sm:py-16">
+      <Container className="py-section">
         <h2 className="sr-only" id="homepage-statistics">
           The Domain statistics
         </h2>
-        <p className="mb-8 font-label text-xs font-semibold uppercase tracking-[0.16em] text-gold">
-          The record
-        </p>
-        <dl className="grid grid-cols-2 border-l border-t border-line lg:grid-cols-4">
-          {items.map((stat) => (
+        <p className="type-eyebrow text-gold">The record</p>
+        <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-14 sm:mt-16 lg:grid-cols-4 lg:gap-x-10">
+          {items.map((stat, index) => (
             <div
-              className="group border-b border-r border-line p-5 transition-colors hover:bg-surface-raised/55 sm:p-7"
-              key={stat.label}
+              className="statistic-item min-w-0 text-center lg:odd:-translate-y-6 lg:even:translate-y-8"
+              key={`${stat.label}-${index}`}
+              style={{ "--stat-delay": `${index * 90}ms` } as CSSProperties}
             >
-              <dt className="font-label text-xs uppercase tracking-[0.14em] text-ink">
-                {stat.label}
-              </dt>
-              <dd className="mt-4 font-display text-4xl font-bold tracking-[-0.04em] text-ink sm:text-5xl">
+              <dd className="font-display text-[clamp(2.75rem,6vw,6.5rem)] font-bold leading-none tracking-[-0.055em] text-ink">
                 <StatisticValue suffix={stat.suffix} value={stat.value} />
               </dd>
-              <p className="mt-2 text-xs leading-5 text-ink-muted">
-                {stat.note || "Verified by The Domain"}
-              </p>
+              <dt className="mt-3 text-sm font-medium leading-5 text-ink sm:text-base">
+                {stat.label}
+              </dt>
+              {stat.note && <p className="mt-2 text-xs leading-5 text-ink-muted">{stat.note}</p>}
             </div>
           ))}
         </dl>
         {presentation.isEnabled && (
-          <div
-            className="mt-8 overflow-hidden border-y border-line py-2"
-            aria-label={presentation.phrase}
-          >
+          <div className="mt-14 overflow-hidden sm:mt-20" aria-label={presentation.phrase}>
+            <p className="type-eyebrow mb-4 text-center text-gold sm:hidden">
+              {presentation.phrase}
+            </p>
             <svg
               aria-hidden="true"
-              className="h-24 w-full text-gold motion-safe:animate-pulse"
+              className="hidden h-44 w-full overflow-visible text-gold sm:block lg:h-56"
               preserveAspectRatio="none"
-              viewBox="0 0 1200 120"
+              viewBox="0 0 1200 220"
             >
-              <path
-                d="M-40 75 C180 5 350 115 560 52 S940 15 1240 72"
-                fill="none"
-                id="statistics-phrase-path"
-              />
-              <text className="fill-current font-display text-[25px] font-bold italic tracking-[.12em]">
-                <textPath href="#statistics-phrase-path" startOffset="2%">
+              <path d="M-40 22 Q600 250 1240 22" fill="none" id="statistics-curve" />
+              <text className="fill-current font-label text-[24px] font-semibold uppercase tracking-[.18em]">
+                <textPath href="#statistics-curve" startOffset={`${pathOffset}%`}>
                   {presentation.phrase} · {presentation.phrase} · {presentation.phrase}
                 </textPath>
               </text>

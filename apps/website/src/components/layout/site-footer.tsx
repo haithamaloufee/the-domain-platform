@@ -26,7 +26,7 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
     <footer className="relative isolate overflow-hidden border-t border-line bg-canvas">
       <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-35" />
       <Container className="border-b border-line py-12 sm:py-16">
-        <p className="max-w-6xl font-display text-[clamp(3.5rem,12vw,10rem)] font-extrabold leading-[0.78] tracking-[-0.075em] text-ink/10">
+        <p className="max-w-6xl break-words font-display text-[clamp(2.75rem,8vw,7rem)] font-extrabold leading-[0.9] tracking-[-0.05em] text-ink/10">
           {branding.siteName}
         </p>
       </Container>

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { EventCoverImage } from "@/components/events/event-cover-image";
 import { formatEventDate } from "@/components/events/event-presentation";
 import { homepageContent } from "@/content/homepage-content";
+import { HeroBackgroundVideo } from "./hero-background-video";
 
 export function HomeHero({
   content,
@@ -36,18 +37,11 @@ export function HomeHero({
       };
 
   return (
-    <section className="relative isolate flex min-h-[calc(100svh-4rem)] items-end overflow-hidden border-b border-line">
+    <section className="relative isolate mx-gutter mt-3 flex min-h-[clamp(36rem,76svh,48rem)] items-end overflow-hidden rounded-[var(--td-radius-md)] border border-line/70 sm:mt-5">
       <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
       {configuredMedia?.mediaType === MediaType.Video ? (
-        <video
-          aria-hidden="true"
-          autoPlay
-          className="cinematic-media absolute inset-0 -z-20 h-full w-full object-cover"
-          loop
-          muted
-          playsInline
+        <HeroBackgroundVideo
           poster={configuredMedia.posterUrl ?? undefined}
-          preload="metadata"
           src={configuredMedia.url}
         />
       ) : configuredMedia?.mediaType === MediaType.Image ? (
@@ -73,23 +67,21 @@ export function HomeHero({
           className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_18%,rgba(212,175,55,0.12),transparent_30%),linear-gradient(145deg,#1a1b1f_0%,#0d0e12_55%)]"
         />
       )}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-canvas via-canvas/65 to-canvas/15" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(13_14_18/92%)_0%,rgb(13_14_18/48%)_52%,rgb(13_14_18/12%)_100%)]" />
       <div
         aria-hidden="true"
         className="absolute inset-y-0 left-[8vw] -z-10 hidden w-px bg-gradient-to-b from-transparent via-line to-transparent lg:block"
       />
 
-      <Container className="pb-16 pt-28 sm:pb-20 lg:pb-24">
-        <div className="max-w-5xl">
+      <Container className="pb-12 pt-24 sm:pb-14 sm:pt-28 lg:pb-16">
+        <div className="max-w-4xl">
           <Badge>{hero.eyebrow}</Badge>
-          <h1 className="mt-7 max-w-6xl break-words font-display text-[clamp(3.25rem,12vw,6.5rem)] font-extrabold leading-[0.9] tracking-[-0.06em] text-ink">
+          <h1 className="type-display mt-6 break-words text-ink">
             {hero.headline}
             {hero.accent && <span className="block text-gold">{hero.accent}</span>}
           </h1>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg sm:leading-8">
-            {hero.description}
-          </p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+          <p className="type-body-lead mt-5 max-w-xl text-ink-muted">{hero.description}</p>
+          <div className="mt-7 flex flex-wrap gap-3">
             <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryHref}>
               {hero.primaryLabel}
             </Link>
@@ -103,7 +95,7 @@ export function HomeHero({
 
         {featuredEvent && (
           <Link
-            className="mt-14 grid min-h-20 max-w-xl gap-2 border-l border-gold py-2 pl-5 transition-[border-color,transform] hover:translate-x-1 hover:border-gold-bright focus-visible:outline-2 focus-visible:outline-offset-4 sm:grid-cols-[auto_1fr] sm:gap-x-5"
+            className="mt-10 grid min-h-20 max-w-xl gap-2 border-l border-gold py-2 pl-5 transition-[border-color,transform] hover:translate-x-1 hover:border-gold-bright sm:grid-cols-[auto_1fr] sm:gap-x-5"
             href={`/events/${featuredEvent.slug}`}
           >
             <span className="font-label text-[0.6875rem] uppercase tracking-[0.14em] text-gold">

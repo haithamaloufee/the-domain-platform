@@ -27,9 +27,7 @@ export function RouteIntro({
       <Container className="grid min-h-[calc(72svh-10rem)] content-between gap-16 lg:grid-cols-12 lg:items-end">
         <div className="cinematic-reveal max-w-4xl lg:col-span-9">
           <p className="font-label text-xs uppercase tracking-[0.24em] text-gold">{eyebrow}</p>
-          <h1 className="mt-7 max-w-[14ch] break-words font-display text-[clamp(3.7rem,10vw,9rem)] leading-[0.84] tracking-[-0.055em] text-ink">
-            {title}
-          </h1>
+          <h1 className="type-page-heading mt-7 break-words text-ink">{title}</h1>
           <p className="mt-8 max-w-2xl text-base leading-8 text-ink-muted sm:text-lg">
             {description}
           </p>

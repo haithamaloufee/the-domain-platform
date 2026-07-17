@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@the-domain/utils";
 import { buttonClasses } from "./button";
@@ -9,7 +9,7 @@ export interface DialogProps {
   trigger: ReactNode;
   title: string;
   description?: string;
-  children: ReactNode;
+  children: ReactNode | ((controls: { close: () => void; open: boolean }) => ReactNode);
   variant?: "default" | "media";
 }
 
@@ -20,8 +20,9 @@ export function Dialog({
   children,
   variant = "default",
 }: DialogProps) {
+  const [open, setOpen] = useState(false);
   return (
-    <DialogPrimitive.Root>
+    <DialogPrimitive.Root onOpenChange={setOpen} open={open}>
       <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-canvas/80 backdrop-blur-sm" />
@@ -39,7 +40,11 @@ export function Dialog({
               {description}
             </DialogPrimitive.Description>
           )}
-          <div className={variant === "media" ? "mt-4" : "mt-6"}>{children}</div>
+          <div className={variant === "media" ? "mt-4" : "mt-6"}>
+            {typeof children === "function"
+              ? children({ close: () => setOpen(false), open })
+              : children}
+          </div>
           <DialogPrimitive.Close
             className={buttonClasses("ghost", "absolute right-3 top-3 min-h-9 px-3")}
             aria-label="Close dialog"

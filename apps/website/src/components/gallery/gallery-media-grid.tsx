@@ -72,7 +72,7 @@ export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
                 }
                 variant="media"
               >
-                <MediaDialogContent media={item} />
+                {({ close, open }) => <MediaDialogContent close={close} media={item} open={open} />}
               </Dialog>
             </div>
           ))}
@@ -93,12 +93,21 @@ export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
   );
 }
 
-function MediaDialogContent({ media }: { media: PublicMediaItem }) {
+function MediaDialogContent({
+  media,
+  close,
+  open,
+}: {
+  media: PublicMediaItem;
+  close: () => void;
+  open: boolean;
+}) {
   return (
     <div>
       <div className="relative h-[min(68svh,52rem)] overflow-hidden bg-canvas">
         {media.mediaType === MediaType.Video ? (
           <video
+            autoPlay={open}
             className="h-full w-full object-contain"
             controls
             playsInline
@@ -109,13 +118,20 @@ function MediaDialogContent({ media }: { media: PublicMediaItem }) {
             Your browser does not support video playback.
           </video>
         ) : (
-          <Image
-            alt={media.altText ?? ""}
-            className="object-contain"
-            fill
-            sizes="(max-width: 640px) 100vw, 64rem"
-            src={media.url}
-          />
+          <button
+            aria-label="Close enlarged image"
+            className="relative h-full w-full cursor-zoom-out"
+            onClick={close}
+            type="button"
+          >
+            <Image
+              alt={media.altText ?? ""}
+              className="object-contain"
+              fill
+              sizes="(max-width: 640px) 100vw, 64rem"
+              src={media.url}
+            />
+          </button>
         )}
       </div>
       {media.caption && <p className="mt-4 text-sm leading-6 text-ink-muted">{media.caption}</p>}

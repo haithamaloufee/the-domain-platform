@@ -16,57 +16,87 @@ export function PartnersPreviewSection({
     description: cmsContent?.partnersDescription ?? homepageContent.partners.emptyMessage,
   };
   return (
-    <Section>
-      <Container className="grid gap-10 lg:grid-cols-12 lg:items-end">
-        <div className="lg:col-span-7">
-          <p className="font-label text-xs font-semibold uppercase tracking-[0.16em] text-gold">
-            {content.eyebrow}
-          </p>
-          <h2 className="mt-4 max-w-3xl font-display text-4xl font-bold tracking-[-0.04em] text-ink sm:text-6xl">
-            {content.title}
-          </h2>
+    <Section className="overflow-hidden bg-canvas">
+      <Container className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(20rem,0.45fr)] lg:items-end">
+        <div>
+          <p className="type-eyebrow text-gold">{content.eyebrow}</p>
+          <h2 className="type-section-heading mt-4 max-w-3xl text-ink">{content.title}</h2>
         </div>
-        <div className="border-l border-line pl-6 lg:col-span-5 lg:pl-9">
-          {partners.length ? (
-            <>
-              <p className="mb-6 max-w-lg text-sm leading-7 text-ink-muted">
-                {content.description}
-              </p>
-              <ul className="grid grid-cols-2 gap-px bg-line" aria-label="Partners and sponsors">
-                {partners.slice(0, 12).map((partner) => (
-                  <li
-                    className="cinematic-card group flex min-h-28 items-center justify-center bg-canvas p-4"
-                    key={partner.slug}
-                  >
-                    {partner.websiteUrl ? (
-                      <a
-                        className="flex h-full w-full items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4"
-                        href={partner.websiteUrl}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        <PartnerIdentity partner={partner} />
-                      </a>
-                    ) : (
-                      <PartnerIdentity partner={partner} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <>
-              <p className="font-label text-[0.6875rem] uppercase tracking-[0.14em] text-ink-muted">
-                Data-ready section
-              </p>
-              <p className="mt-4 max-w-lg text-sm leading-7 text-ink-muted sm:text-base">
-                {content.description}
-              </p>
-            </>
-          )}
-        </div>
+        <p className="max-w-lg text-sm leading-7 text-ink-muted sm:text-base lg:justify-self-end">
+          {content.description}
+        </p>
       </Container>
+
+      {partners.length ? (
+        <div className="partner-marquees mt-12 space-y-5 sm:mt-16 sm:space-y-7">
+          {["forward", "reverse", "forward-slow"].map((direction, rowIndex) => (
+            <div
+              aria-hidden={rowIndex === 0 ? undefined : true}
+              className={`partner-marquee partner-marquee--${direction}`}
+              key={direction}
+            >
+              <ul
+                aria-label={rowIndex === 0 ? "Partners and sponsors" : undefined}
+                className="partner-marquee__track"
+              >
+                <PartnerSequence partners={partners} interactive={rowIndex === 0} />
+                <PartnerSequence clone partners={partners} />
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Container className="mt-10">
+          <p className="type-eyebrow text-ink-muted">Partner profiles are being prepared</p>
+        </Container>
+      )}
     </Section>
+  );
+}
+
+function PartnerSequence({
+  partners,
+  clone = false,
+  interactive = false,
+}: {
+  partners: PublicPartner[];
+  clone?: boolean;
+  interactive?: boolean;
+}) {
+  const displayPartners = Array.from(
+    { length: Math.max(partners.length, 8) },
+    (_, index) => partners[index % partners.length]!,
+  );
+  return (
+    <li
+      aria-hidden={clone || !interactive ? true : undefined}
+      className="partner-marquee__sequence"
+    >
+      {displayPartners.map((partner, index) => {
+        const original = index < partners.length;
+        const identity = <PartnerIdentity partner={partner} />;
+        return partner.websiteUrl && interactive && original ? (
+          <a
+            className="partner-mark focus-visible:outline-2 focus-visible:outline-offset-4"
+            href={partner.websiteUrl}
+            key={`${partner.slug}-${index}`}
+            rel="noreferrer noopener"
+            target="_blank"
+          >
+            {identity}
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        ) : (
+          <span
+            aria-hidden={!original || !interactive ? true : undefined}
+            className="partner-mark"
+            key={`${partner.slug}-${index}`}
+          >
+            {identity}
+          </span>
+        );
+      })}
+    </li>
   );
 }
 
@@ -74,15 +104,15 @@ function PartnerIdentity({ partner }: { partner: PublicPartner }) {
   return partner.logoUrl ? (
     <Image
       alt={`${partner.name} logo`}
-      className="max-h-16 w-auto object-contain grayscale transition duration-500 group-hover:grayscale-0"
+      className="max-h-12 w-auto max-w-40 object-contain grayscale transition duration-500 hover:grayscale-0 sm:max-h-16 sm:max-w-48"
       height={64}
       loader={externalImageLoader}
       src={partner.logoUrl}
       unoptimized
-      width={140}
+      width={180}
     />
   ) : (
-    <span className="text-center font-label text-xs font-semibold uppercase tracking-[0.12em] text-ink">
+    <span className="text-center font-label text-sm font-semibold uppercase tracking-[0.12em] text-ink">
       {partner.name}
     </span>
   );
