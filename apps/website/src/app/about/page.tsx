@@ -52,7 +52,10 @@ export default async function AboutPage() {
       )}
       <Section>
         <Container>
-          <p className="max-w-6xl break-words font-display text-4xl font-bold leading-tight tracking-[-.04em] sm:text-7xl">
+          <p
+            className="max-w-6xl break-words font-display text-4xl font-bold leading-tight tracking-[-.04em] sm:text-7xl"
+            data-site-heading
+          >
             <DynamicText kind="heading">{settings.introStatement}</DynamicText>
           </p>
         </Container>
@@ -68,7 +71,10 @@ export default async function AboutPage() {
                 <DynamicText>{settings.storyText}</DynamicText>
               </div>
               {settings.storyHighlight && (
-                <blockquote className="mt-8 border-l border-gold pl-5 font-display text-2xl font-bold">
+                <blockquote
+                  className="mt-8 border-l border-gold pl-5 font-display text-2xl font-bold"
+                  data-site-heading
+                >
                   <DynamicText kind="heading">{settings.storyHighlight}</DynamicText>
                 </blockquote>
               )}

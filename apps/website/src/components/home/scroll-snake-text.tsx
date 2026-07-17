@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  snakeVelocityFromScrollDelta,
+  stepSnakeMotion,
+  type SnakeMotionState,
+} from "@/lib/homepage-ux";
 
 const defaultSize = { width: 1440, height: 560 };
 
@@ -58,33 +63,34 @@ export function ScrollSnakeText({ phrase }: { phrase: string }) {
 
     let visible = false;
     let lastScrollY = window.scrollY;
-    let targetVelocity = 0;
-    let velocity = 0;
-    let offset = 0;
+    let motion: SnakeMotionState = { offset: 0, targetVelocity: 0, velocity: 0 };
     let frame = 0;
     const period = Math.max(1, unitWidth);
 
     const animate = () => {
       frame = 0;
-      velocity += (targetVelocity - velocity) * 0.24;
-      targetVelocity *= 0.68;
-      offset = (((offset + velocity) % period) + period) % period;
-      textPath.setAttribute("startOffset", `${offset}px`);
-      if (Math.abs(velocity) > 0.025 || Math.abs(targetVelocity) > 0.025)
-        frame = requestAnimationFrame(animate);
+      const next = stepSnakeMotion(motion, period);
+      motion = next;
+      textPath.setAttribute("startOffset", `${next.offset}px`);
+      if (next.active) frame = requestAnimationFrame(animate);
     };
     const onScroll = () => {
       const current = window.scrollY;
       const delta = current - lastScrollY;
       lastScrollY = current;
       if (!visible || delta === 0) return;
-      targetVelocity = Math.max(-18, Math.min(18, -delta * 0.72));
+      motion = { ...motion, targetVelocity: snakeVelocityFromScrollDelta(delta) };
       if (!frame) frame = requestAnimationFrame(animate);
     };
     const intersection = new IntersectionObserver(
       ([entry]) => {
         visible = Boolean(entry?.isIntersecting);
         lastScrollY = window.scrollY;
+        if (!visible) {
+          cancelAnimationFrame(frame);
+          frame = 0;
+          motion = { ...motion, targetVelocity: 0, velocity: 0 };
+        }
       },
       { rootMargin: "15% 0px", threshold: 0 },
     );
@@ -109,7 +115,7 @@ export function ScrollSnakeText({ phrase }: { phrase: string }) {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-[calc(50%-50vw)] top-0 z-0 h-[30rem] overflow-hidden sm:h-[36rem] lg:h-[42rem]"
+      className="pointer-events-none absolute inset-x-[calc(50%-50vw)] top-0 z-0 h-[22rem] overflow-hidden sm:h-[28rem] lg:h-[30rem]"
       ref={containerRef}
     >
       <span className="sr-only">{phrase}</span>
@@ -139,17 +145,18 @@ export function ScrollSnakeText({ phrase }: { phrase: string }) {
 }
 
 function createWavePath(width: number, height: number) {
-  const fontReserve = width < 640 ? 28 : 42;
-  const cycles = width < 640 ? 1.5 : 2;
+  const mobile = width < 640;
+  const fontReserve = mobile ? 20 : 32;
+  const cycles = mobile ? 1.5 : 2;
   const halfCycles = Math.max(3, Math.round(cycles * 2));
   const halfWidth = width / halfCycles;
   const overflow = Math.max(160, width * 0.32);
   const leftSteps = Math.ceil(overflow / halfWidth);
   const rightSteps = Math.ceil(overflow / halfWidth);
-  const totalSteps = halfCycles + leftSteps + rightSteps;
-  const startX = -leftSteps * halfWidth;
-  const centerY = height / 2;
-  const amplitude = Math.max(0, Math.min(height * 0.31, height / 2 - fontReserve));
+  const totalSteps = halfCycles + leftSteps + rightSteps + 2;
+  const startX = -leftSteps * halfWidth - halfWidth / 2;
+  const centerY = height * (mobile ? 0.8 : 0.82);
+  const amplitude = Math.max(0, Math.min(height * 0.07, height - centerY - fontReserve));
   const controlAmplitude = amplitude * (4 / 3);
   const startSign = leftSteps % 2 === 0 ? -1 : 1;
   let path = `M ${startX},${centerY}`;

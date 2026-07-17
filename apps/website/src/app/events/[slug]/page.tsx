@@ -299,7 +299,7 @@ function StateNotice({
       className={`mb-12 border-l-2 px-5 py-4 ${tone === "error" ? "border-error bg-error/10" : "border-gold bg-gold/10"}`}
       role="status"
     >
-      <p className="font-display text-xl font-bold text-ink">
+      <p className="font-display text-xl font-bold text-ink" data-site-heading>
         <DynamicText kind="heading">{title}</DynamicText>
       </p>
       <p className="mt-2 text-sm leading-6 text-ink-muted">{children}</p>

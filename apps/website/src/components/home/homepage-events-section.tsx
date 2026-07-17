@@ -23,7 +23,7 @@ export function HomepageEventsSection({
           title={title ?? "The next frame is taking shape."}
         />
         {events.length > 0 ? (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5">
             {events.map((event, index) => (
               <HomepageEventPreview event={event} key={event.id} priority={index === 0} />
             ))}
@@ -41,8 +41,14 @@ export function HomepageEventsSection({
           </div>
         )}
         {events.length > 0 && (
-          <div className="mt-10 text-center">
-            <Link className={buttonClasses("secondary")} href="/events">
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/events"
+            >
               <DynamicText kind="action">View All Events</DynamicText>
             </Link>
           </div>

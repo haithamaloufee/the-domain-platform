@@ -33,7 +33,7 @@ export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageCo
           </p>
         </div>
         <Link
-          className={buttonClasses("primary", "w-full sm:w-auto sm:min-w-48")}
+          className={buttonClasses("primary", "homepage-section-cta w-full sm:w-auto sm:min-w-48")}
           href={content.href}
         >
           <DynamicText kind="action">{content.label}</DynamicText>

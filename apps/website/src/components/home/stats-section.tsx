@@ -5,6 +5,13 @@ import { Container } from "@the-domain/ui";
 import { useEffect, useRef } from "react";
 import { homepageContent } from "@/content/homepage-content";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
+import {
+  countUpDurationMs,
+  easeOutCubic,
+  formatStatisticValue,
+  parseStatisticTarget,
+  statisticFinalLabel,
+} from "@/lib/homepage-ux";
 import { ScrollSnakeText } from "./scroll-snake-text";
 
 export function StatsSection({
@@ -16,6 +23,7 @@ export function StatsSection({
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const numberRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const hasCountedRef = useRef(false);
   const fallback = homepageContent.statistics.map((item) => ({
     label: item.label,
     value: item.value,
@@ -27,43 +35,58 @@ export function StatsSection({
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!section) return;
     let frame = 0;
-    let started = false;
+    let observer: IntersectionObserver | null = null;
+    const sourceValues = valueSignature.split("|");
+    const targets = sourceValues.map(parseStatisticTarget);
+
+    const showFinalValues = () => {
+      numberRefs.current.forEach((element, index) => {
+        if (!element) return;
+        updateVisibleNumber(element, sourceValues[index] ?? "0");
+        element.dataset.counting = "false";
+        element.dataset.countComplete = "true";
+      });
+    };
+
+    if (
+      hasCountedRef.current ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      !("IntersectionObserver" in window) ||
+      targets.some((target) => target === null)
+    ) {
+      showFinalValues();
+      return;
+    }
+
     const start = () => {
-      if (started) return;
-      started = true;
-      observer.disconnect();
-      const sourceValues = valueSignature.split("|");
-      const numbers = sourceValues.map((value) => Number(value));
-      const valid = numbers.every(Number.isFinite);
-      if (!valid) return;
+      if (hasCountedRef.current) return;
+      hasCountedRef.current = true;
+      observer?.disconnect();
       const startedAt = performance.now();
-      const duration = 820;
       numberRefs.current.forEach((element) => {
-        if (element) updateVisibleNumber(element, "0", element.dataset.source ?? "0");
+        if (!element) return;
+        updateVisibleNumber(element, formatStatisticValue(0, element.dataset.statTarget ?? "0"));
+        element.dataset.counting = "true";
+        element.dataset.countComplete = "false";
       });
       const tick = (now: number) => {
-        const progress = Math.min(1, (now - startedAt) / duration);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        numbers.forEach((value, index) => {
+        const progress = Math.min(1, (now - startedAt) / countUpDurationMs);
+        const eased = easeOutCubic(progress);
+        targets.forEach((target, index) => {
           const element = numberRefs.current[index];
-          if (element)
-            updateVisibleNumber(
-              element,
-              formatNumber(value * eased, sourceValues[index]!),
-              sourceValues[index]!,
-            );
+          const source = sourceValues[index];
+          if (element && target !== null && source)
+            updateVisibleNumber(element, formatStatisticValue(target * eased, source));
         });
         if (progress < 1) frame = requestAnimationFrame(tick);
-        else
-          numberRefs.current.forEach((element, index) => {
-            if (element) updateVisibleNumber(element, sourceValues[index]!, sourceValues[index]!);
-          });
+        else showFinalValues();
       };
       frame = requestAnimationFrame(tick);
     };
-    const observer = new IntersectionObserver(
+
+    observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) start();
       },
@@ -73,7 +96,7 @@ export function StatsSection({
     const bounds = section.getBoundingClientRect();
     if (bounds.top < window.innerHeight && bounds.bottom > 0) start();
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       cancelAnimationFrame(frame);
     };
   }, [valueSignature]);
@@ -84,32 +107,35 @@ export function StatsSection({
       className="relative isolate overflow-hidden py-section"
       ref={sectionRef}
     >
-      <Container>
+      <Container className="px-[clamp(.5rem,2.5vw,2rem)]">
         <p className="type-eyebrow text-gold" data-reveal="label">
           <DynamicText kind="label">The record</DynamicText>
         </p>
         <h2 className="sr-only" id="homepage-statistics">
           The Domain statistics
         </h2>
-        <div className="relative mt-8 min-h-[31rem] sm:min-h-[38rem] lg:min-h-[43rem]">
+        <div className="relative mt-8 min-h-[22rem] sm:min-h-[28rem] lg:min-h-[30rem]">
           {presentation.isEnabled && <ScrollSnakeText phrase={presentation.phrase} />}
-          <dl className="relative z-10 grid grid-cols-2 items-start gap-x-6 gap-y-12 pt-9 sm:gap-x-10 sm:gap-y-16 lg:grid-cols-4 lg:gap-x-8 lg:pt-28">
+          <dl className="relative z-10 grid grid-cols-4 items-start gap-x-[clamp(.25rem,1.5vw,2rem)] pt-14 sm:pt-20 lg:pt-24">
             {items.map((item, index) => (
               <div
-                className="statistic-composition-item flex min-h-40 min-w-0 flex-col items-center justify-start text-center sm:min-h-48"
+                className="statistic-composition-item flex min-w-0 flex-col items-center justify-start text-center"
                 data-reveal="statistic"
                 key={`${index}-${item.label}`}
               >
-                <dt className="order-2 mt-3 max-w-[14rem] text-sm font-semibold leading-5 text-ink sm:text-base">
+                <dt className="order-2 mt-2 max-w-[14rem] break-words text-[clamp(.625rem,2.2vw,1rem)] font-semibold leading-[1.25] text-ink [overflow-wrap:anywhere] sm:mt-3">
                   <DynamicText kind="label">{item.label}</DynamicText>
                 </dt>
                 <dd
-                  aria-label={`${item.value}${item.suffix ?? ""}`}
-                  className="order-1 whitespace-nowrap text-[clamp(3.75rem,7.2vw,8.5rem)] font-extrabold leading-none tracking-[-.065em] text-ink"
+                  aria-label={statisticFinalLabel(item.value, item.suffix)}
+                  className="order-1 min-w-0 whitespace-nowrap text-[clamp(1.45rem,7.2vw,8.5rem)] font-extrabold leading-none tracking-[-.065em] text-ink"
                 >
                   <span
                     aria-hidden="true"
-                    data-source={item.value}
+                    data-count-complete="false"
+                    data-counting="false"
+                    data-stat-current={item.value}
+                    data-stat-target={item.value}
                     ref={(element) => {
                       numberRefs.current[index] = element;
                     }}
@@ -117,7 +143,10 @@ export function StatsSection({
                     <DynamicText kind="statistic">{item.value}</DynamicText>
                   </span>
                   {item.suffix && (
-                    <span aria-hidden="true" className="tracking-[-.04em]">
+                    <span
+                      aria-hidden="true"
+                      className="inline-block align-[.16em] text-[.58em] tracking-[-.04em]"
+                    >
                       {item.suffix}
                     </span>
                   )}
@@ -131,15 +160,9 @@ export function StatsSection({
   );
 }
 
-function formatNumber(value: number, source: string) {
-  const decimals = source.includes(".") ? (source.split(".")[1]?.length ?? 0) : 0;
-  return value.toFixed(decimals);
-}
-
-function updateVisibleNumber(element: HTMLElement, value: string, source: string) {
-  const glyphs = Array.from(element.querySelectorAll<HTMLElement>(".dynamic-text__glyph"));
-  const characters = value.padStart(source.length, "0").slice(-source.length);
-  glyphs.forEach((glyph, index) => {
-    glyph.textContent = characters[index] ?? "0";
-  });
+function updateVisibleNumber(element: HTMLElement, value: string) {
+  const target = element.querySelector<HTMLElement>(".dynamic-text");
+  if (!target) return;
+  target.textContent = value;
+  element.dataset.statCurrent = value;
 }

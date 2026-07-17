@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { NavigationTransitionProvider } from "@/components/layout/navigation-transition-provider";
 import { getWebsiteUrl } from "@/lib/seo";
 import { getPublicBranding } from "@/lib/public-api";
 import { fallbackBranding } from "@the-domain/utils";
-import { DynamicWeightProvider } from "@/components/motion/dynamic-weight-controller";
 import "./globals.css";
 
 const siteFont = localFont({
@@ -48,8 +48,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const branding = await loadBranding();
   return (
     <html className={siteFont.variable} lang="en">
-      <body>
-        <DynamicWeightProvider>
+      <body data-public-site>
+        <NavigationTransitionProvider>
           <a
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-gold focus:px-4 focus:py-3 focus:text-canvas"
             href="#main-content"
@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </main>
             <SiteFooter branding={branding} />
           </div>
-        </DynamicWeightProvider>
+        </NavigationTransitionProvider>
       </body>
     </html>
   );

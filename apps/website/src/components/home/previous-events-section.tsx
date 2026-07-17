@@ -23,7 +23,7 @@ export function PreviousEventsSection({
           title={title ?? "The night ends. The story remains."}
         />
         {events.length > 0 ? (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5">
             {events.map((event) => (
               <HomepageEventPreview event={event} key={event.id} />
             ))}
@@ -45,8 +45,14 @@ export function PreviousEventsSection({
           </div>
         )}
         {events.length > 0 && (
-          <div className="mt-10 text-center">
-            <Link className={buttonClasses("secondary")} href="/events">
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/events"
+            >
               <DynamicText kind="action">Explore The Archive</DynamicText>
             </Link>
           </div>

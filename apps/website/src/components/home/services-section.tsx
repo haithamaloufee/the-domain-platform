@@ -32,7 +32,7 @@ export function ServicesSection({ content }: { content: PublicHomepageContent | 
             </li>
           ))}
         </ol>
-        <Link className={buttonClasses("secondary", "mt-9")} href="/services">
+        <Link className={buttonClasses("secondary", "homepage-section-cta mt-9")} href="/services">
           <DynamicText kind="action">Explore Services</DynamicText>
         </Link>
       </Container>

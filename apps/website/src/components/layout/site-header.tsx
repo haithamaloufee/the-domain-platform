@@ -98,17 +98,13 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
           <BrandLogo className="h-auto w-[clamp(10.5rem,17vw,15.5rem)]" priority />
         </Link>
         <nav aria-label="Primary navigation" className="hidden md:block">
-          <ul className="flex items-center gap-x-[clamp(1.8rem,3vw,4rem)] text-[clamp(1.05rem,1.12vw,1.35rem)] font-semibold tracking-[-.015em] text-ink/88">
+          <ul className="flex items-center gap-x-[clamp(1.8rem,3vw,4rem)] text-[clamp(1.05rem,1.12vw,1.35rem)] tracking-[-.015em]">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
                   aria-current={isActive(pathname, link.href) ? "page" : undefined}
-                  className={cn(
-                    "relative inline-flex min-h-11 items-center transition-colors after:absolute after:inset-x-0 after:bottom-1 after:h-px after:origin-left after:bg-gold after:transition-transform",
-                    isActive(pathname, link.href)
-                      ? "text-ink after:scale-x-100"
-                      : "after:scale-x-0 hover:text-gold hover:after:scale-x-100 focus-visible:text-gold",
-                  )}
+                  className="relative inline-flex min-h-11 items-center"
+                  data-site-nav-link
                   href={link.href}
                 >
                   <DynamicText kind="action">{link.label}</DynamicText>
@@ -163,10 +159,8 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
             <li key={link.href}>
               <Link
                 aria-current={isActive(pathname, link.href) ? "page" : undefined}
-                className={cn(
-                  "flex min-h-16 items-center justify-between text-2xl font-bold",
-                  isActive(pathname, link.href) ? "text-gold" : "text-ink",
-                )}
+                className="flex min-h-16 items-center justify-between text-2xl"
+                data-site-nav-link
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
               >

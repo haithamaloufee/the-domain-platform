@@ -26,7 +26,7 @@ export function GalleryPreviewSection({
           title={title ?? "Moments with their own afterlife."}
         />
         {collection ? (
-          <div className="mt-10">
+          <div className="mt-10" data-reveal="card">
             <CollectionCard collection={collection} priority={false} />
           </div>
         ) : albums.length > 0 ? (
@@ -34,6 +34,7 @@ export function GalleryPreviewSection({
             {albums.map((album, index) => (
               <div
                 className={index === 0 ? "md:col-span-2 lg:col-span-1" : undefined}
+                data-reveal="card"
                 key={album.eventId}
               >
                 <AlbumCard album={album} compact headingLevel="h3" />
@@ -57,8 +58,14 @@ export function GalleryPreviewSection({
           </div>
         )}
         {(collection || albums.length > 0) && (
-          <div className="mt-10 text-center">
-            <Link className={buttonClasses("secondary")} href="/gallery">
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/gallery"
+            >
               <DynamicText kind="action">Open The Gallery</DynamicText>
             </Link>
           </div>
