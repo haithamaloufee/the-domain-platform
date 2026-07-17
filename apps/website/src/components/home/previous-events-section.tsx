@@ -1,6 +1,7 @@
 import type { PublicEventListItem } from "@the-domain/types";
-import { Container, EmptyState, Section } from "@the-domain/ui";
-import { PublicEventCard } from "@/components/events/public-event-card";
+import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
+import Link from "next/link";
+import { HomepageEventPreview } from "./homepage-event-preview";
 import { HomeSectionHeader } from "./home-section-header";
 
 export function PreviousEventsSection({
@@ -30,7 +31,7 @@ export function PreviousEventsSection({
         {events.length > 0 ? (
           <div className="mt-10 grid gap-5 lg:grid-cols-2">
             {events.map((event) => (
-              <PublicEventCard event={event} key={event.id} variant="compact" />
+              <HomepageEventPreview event={event} key={event.id} />
             ))}
           </div>
         ) : (
@@ -47,6 +48,13 @@ export function PreviousEventsSection({
                   : "The archive is being prepared"
               }
             />
+          </div>
+        )}
+        {events.length > 0 && (
+          <div className="mt-10 text-center">
+            <Link className={buttonClasses("secondary")} href="/events">
+              Explore The Archive
+            </Link>
           </div>
         )}
       </Container>

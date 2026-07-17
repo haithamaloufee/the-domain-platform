@@ -82,10 +82,14 @@ $manifest = [ordered]@{ marker = $marker; createdAtUtc = if ($previousManifest) 
 $manifest.originalBranding = if ($previousManifest) { $previousManifest.originalBranding } else { Invoke-Api Get '/api/admin/branding' }
 $manifest.originalHomepage = if ($previousManifest) { $previousManifest.originalHomepage } else { Invoke-Api Get '/api/admin/homepage' }
 $manifest.originalAbout = if ($previousManifest) { $previousManifest.originalAbout } else { Invoke-Api Get '/api/admin/about' }
+$manifest.originalStatistics = if ($previousManifest -and $previousManifest.originalStatistics) { $previousManifest.originalStatistics } else { @(Expand-Items (Invoke-Api Get '/api/admin/statistics')) }
 
 $stageMediaId = Upload-DemoImage 'demo-cinematic-stage.png' 'Development cinematic stage' 'A dark event venue with a gold-lit stage and audience silhouettes.'
 $productionMediaId = Upload-DemoImage 'demo-production-space.png' 'Development production space' 'A modern stage being prepared under gold and violet production lighting.'
-$manifest.mediaIds = @($stageMediaId, $productionMediaId)
+$northstarLogoId = Upload-DemoImage 'partner-northstar.png' 'Northstar demo partner mark' 'Abstract gold Northstar partner logo on black.'
+$orbitLogoId = Upload-DemoImage 'partner-orbit.png' 'Orbit demo partner mark' 'Abstract gold Orbit partner logo on black.'
+$prismLogoId = Upload-DemoImage 'partner-prism.png' 'Prism demo partner mark' 'Abstract gold Prism partner logo on black.'
+$manifest.mediaIds = @($stageMediaId, $productionMediaId, $northstarLogoId, $orbitLogoId, $prismLogoId)
 
 $branding = $manifest.originalBranding
 Invoke-Api Put '/api/admin/branding' @{
@@ -115,31 +119,32 @@ $homepageBody = @{
   eventsTitle = 'Experiences on the horizon'; eventsDescription = 'Discover the next live moments taking shape at The Domain.'
   previousEventsTitle = 'The night ends. The story remains.'; previousEventsDescription = 'Return to the stages, rooms, and audiences that shaped earlier experiences.'
   galleryTitle = 'Moments with their own afterlife'; galleryDescription = 'A curated view of live atmosphere and the craft behind every event.'
+  isFloatingVideoEnabled = $false; floatingVideoMediaAssetId = $null; floatingVideoPosterMediaAssetId = $null
 }
 Invoke-Api Put '/api/admin/homepage' $homepageBody | Out-Null
 Invoke-Api Put '/api/admin/statistics/presentation' @{ phrase = 'We create moments that move with you'; isEnabled = $true } | Out-Null
 
 $statistics = @(
-  @{label='Years creating experiences';value='10+'}, @{label='Events produced';value='75+'},
-  @{label='Guests welcomed';value='120K'}, @{label='Creative partners';value='25'}
+  @{label='Years creating experiences';value='10';suffix='+'}, @{label='Events produced';value='75';suffix='+'},
+  @{label='Guests welcomed';value='120';suffix='K'}, @{label='Creative partners';value='25';suffix='+'}
 )
-$adminStats = @(Expand-Items (Invoke-Api Get '/api/admin/statistics'))
-$statisticsByLabel = @{}
-foreach ($item in $adminStats) { $statisticsByLabel[[string]$item.label] = $item }
+$adminStats = @(Expand-Items (Invoke-Api Get '/api/admin/statistics')) | Sort-Object slotNumber
 for ($index=0; $index -lt $statistics.Count; $index++) {
-  $label = $statistics[$index].label; $existing = $statisticsByLabel[[string]$label]
-  $body = @{label=$label;value=$statistics[$index].value;suffix=$null;description="$marker verified development content";sortOrder=$index;isVisible=$true;isVerified=$true}
-  $saved = if ($existing) { Invoke-Api Put "/api/admin/statistics/$($existing.id)" $body } else { Invoke-Api Post '/api/admin/statistics' $body }
+  $existing = $adminStats[$index]
+  if (-not $existing) { throw "The database must contain four permanent statistic slots before demo seeding." }
+  $body = @{label=$statistics[$index].label;value=$statistics[$index].value;suffix=$statistics[$index].suffix;description=$null;sortOrder=$index;isVisible=$true;isVerified=$true}
+  $saved = Invoke-Api Put "/api/admin/statistics/$($existing.id)" $body
   $manifest.statisticIds += $saved.id
 }
 
 $partnerNames = @('Northstar','Orbit','Pulse','Frame','Nova','Atlas','Horizon','Tempo','Prism')
+$partnerLogoIds = @($northstarLogoId, $orbitLogoId, $null, $null, $null, $null, $null, $null, $prismLogoId)
 $adminPartners = @(Expand-Items (Invoke-Api Get '/api/admin/partners'))
 $partnersBySlug = @{}
 foreach ($item in $adminPartners) { $partnersBySlug[[string]$item.slug] = $item }
 for ($index=0; $index -lt $partnerNames.Count; $index++) {
   $name=$partnerNames[$index];$slug="demo-$($name.ToLowerInvariant())";$existing=$partnersBySlug[[string]$slug]
-  $body=@{name=$name;slug=$slug;logoUrl=$null;websiteUrl=$null;description="$marker original typographic demo identity";sortOrder=$index;isVisible=$true;isFeatured=($index-lt3);logoMediaAssetId=$null}
+  $body=@{name=$name;slug=$slug;logoUrl=$null;websiteUrl=$null;description="$marker original graphical demo identity";sortOrder=$index;isVisible=$true;isFeatured=($index-lt3);logoMediaAssetId=$partnerLogoIds[$index]}
   $saved=if($existing){Invoke-Api Put "/api/admin/partners/$($existing.id)" $body}else{Invoke-Api Post '/api/admin/partners' $body};$manifest.partnerIds+=$saved.id
 }
 

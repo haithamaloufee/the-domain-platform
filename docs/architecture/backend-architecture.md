@@ -36,6 +36,6 @@ Application defines media storage, query, management, repository, and validation
 
 ## Homepage CMS
 
-Domain owns `HomepageContent`, `StatisticItem`, and `Partner` without EF references. Homepage content uses a fixed application-owned identifier plus a database check constraint, allowing PUT to act as a singleton upsert without seeded copy. Application owns validation, public/admin DTO projection, published/visible/verified filtering, ordering, slug-conflict detection, and soft-hide behavior. Infrastructure owns EF configurations and the repository; API endpoints remain transport-only.
+Domain owns `HomepageContent`, `StatisticItem`, and `Partner` without EF references. Homepage content uses a fixed application-owned identifier plus a database check constraint, allowing PUT to act as a singleton upsert. The builder stores independent approved-media references for the Hero and optional floating video/poster. Application owns validation, public/admin DTO projection, four fixed statistic slots, partner ordering and slug conflicts, and current-media eligibility checks. Infrastructure owns EF configurations and batched media resolution; API endpoints remain transport-only.
 
 Public projections never include draft state, verification flags, ordering controls, identifiers, or audit timestamps. Admin CMS routes use `AdminDashboardAccess`. When persistence is disabled, anonymous CMS endpoints return null/empty projections and protected mutations return a controlled conflict rather than resolving a DbContext.

@@ -12,15 +12,16 @@ namespace TheDomain.Api.Tests.Endpoints;
 public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
     [Fact]
-    public async Task PublicStatisticsReturnsOnlyVisibleVerifiedItems()
+    public async Task PublicStatisticsReturnsTheFourPermanentSlots()
     {
         var repository = new FakeRepository
         {
             Statistics =
             [
-                Statistic("public", visible: true, verified: true),
-                Statistic("hidden", visible: false, verified: true),
-                Statistic("unverified", visible: true, verified: false)
+                Statistic("fourth", 4),
+                Statistic("first", 1),
+                Statistic("third", 3),
+                Statistic("second", 2)
             ]
         };
         using var cmsFactory = FactoryWithRepository(repository);
@@ -28,8 +29,8 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
 
         var response = await client.GetFromJsonAsync<List<PublicStatisticResponse>>("/api/public/statistics");
 
-        var item = Assert.Single(response!);
-        Assert.Equal("public", item.Label);
+        Assert.Equal(4, response!.Count);
+        Assert.Equal(["first", "second", "third", "fourth"], response.Select(item => item.Label));
     }
 
     [Fact]
@@ -71,8 +72,8 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
         services.AddScoped<IHomepageCmsService, HomepageCmsService>();
     }));
 
-    private static StatisticItem Statistic(string label, bool visible, bool verified) =>
-        new(Guid.NewGuid(), label, "1", null, null, 0, visible, verified, DateTimeOffset.UtcNow);
+    private static StatisticItem Statistic(string label, int slotNumber) =>
+        new(Guid.NewGuid(), label, "1", null, null, slotNumber - 1, true, true, DateTimeOffset.UtcNow, slotNumber);
 
     private static Partner PartnerItem(string slug, bool visible) =>
         new(Guid.NewGuid(), slug, slug, null, null, null, 0, visible, false, DateTimeOffset.UtcNow);
@@ -88,6 +89,10 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
         public Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<Partner?>(null);
         public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaAsset?>(null);
+        public Task<IReadOnlyDictionary<Guid, TheDomain.Domain.Media.MediaAsset>> ListMediaAsync(
+            IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, TheDomain.Domain.Media.MediaAsset>>(
+                new Dictionary<Guid, TheDomain.Domain.Media.MediaAsset>());
         public Task<TheDomain.Domain.Media.MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaCollection?>(null);
         public void AddHomepage(HomepageContent content) { }
         public void AddStatistic(StatisticItem statistic) { }

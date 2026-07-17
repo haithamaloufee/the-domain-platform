@@ -33,6 +33,7 @@ export function parseAdminStatistic(value: unknown): AdminStatisticItem {
   if (!isRecord(value)) throw new Error("The server returned an invalid statistic.");
   return {
     id: requiredString(value.id),
+    slotNumber: positiveInteger(value.slotNumber),
     ...parseStatisticFields(value),
     createdAtUtc: dateString(value.createdAtUtc),
     updatedAtUtc: dateString(value.updatedAtUtc),
@@ -110,6 +111,17 @@ function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageCont
     ),
     galleryTitle: boundedString(value.galleryTitle ?? builder?.galleryTitle, 160),
     galleryDescription: boundedString(value.galleryDescription ?? builder?.galleryDescription, 500),
+    isFloatingVideoEnabled: booleanValue(
+      value.isFloatingVideoEnabled ?? builder?.isFloatingVideoEnabled ?? false,
+    ),
+    floatingVideoMediaAssetId: nullableBoundedString(
+      value.floatingVideoMediaAssetId ?? builder?.floatingVideoMediaAssetId ?? null,
+      64,
+    ),
+    floatingVideoPosterMediaAssetId: nullableBoundedString(
+      value.floatingVideoPosterMediaAssetId ?? builder?.floatingVideoPosterMediaAssetId ?? null,
+      64,
+    ),
   };
 }
 function parseBuilder(value: unknown) {
@@ -118,6 +130,16 @@ function parseBuilder(value: unknown) {
     heroMediaAssetId: nullableBoundedString(value.heroMediaAssetId, 64),
     galleryCollectionId: nullableBoundedString(value.galleryCollectionId, 64),
     heroMedia: value.heroMedia === null ? null : parseHeroMedia(value.heroMedia),
+    isFloatingVideoEnabled: booleanValue(value.isFloatingVideoEnabled),
+    floatingVideoMediaAssetId: nullableBoundedString(value.floatingVideoMediaAssetId, 64),
+    floatingVideoPosterMediaAssetId: nullableBoundedString(
+      value.floatingVideoPosterMediaAssetId,
+      64,
+    ),
+    floatingVideoMedia:
+      value.floatingVideoMedia === null ? null : parseHeroMedia(value.floatingVideoMedia),
+    floatingVideoPoster:
+      value.floatingVideoPoster === null ? null : parseHeroMedia(value.floatingVideoPoster),
     sectionOrder: sectionKeys(value.sectionOrder),
     disabledSections: sectionKeys(value.disabledSections, true),
     eventsTitle: boundedString(value.eventsTitle, 160),
@@ -204,6 +226,12 @@ function booleanValue(value: unknown): boolean {
 function nonNegativeInteger(value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0)
     throw new Error("Expected a non-negative integer.");
+  return value;
+}
+
+function positiveInteger(value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1)
+    throw new Error("Expected a positive integer.");
   return value;
 }
 

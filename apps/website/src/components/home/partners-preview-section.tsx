@@ -1,6 +1,6 @@
 import type { PublicHomepageContent, PublicPartner } from "@the-domain/types";
 import { Container, Section } from "@the-domain/ui";
-import Image, { type ImageLoaderProps } from "next/image";
+import Image from "next/image";
 import { homepageContent } from "@/content/homepage-content";
 
 export function PartnersPreviewSection({
@@ -106,7 +106,6 @@ function PartnerIdentity({ partner }: { partner: PublicPartner }) {
       alt={`${partner.name} logo`}
       className="max-h-12 w-auto max-w-40 object-contain grayscale transition duration-500 hover:grayscale-0 sm:max-h-16 sm:max-w-48"
       height={64}
-      loader={externalImageLoader}
       src={partner.logoUrl}
       unoptimized
       width={180}
@@ -116,8 +115,4 @@ function PartnerIdentity({ partner }: { partner: PublicPartner }) {
       {partner.name}
     </span>
   );
-}
-
-function externalImageLoader({ src }: ImageLoaderProps) {
-  return src;
 }

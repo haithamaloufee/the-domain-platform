@@ -1,9 +1,9 @@
+import type { PublicBrandingSettings } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import Link from "next/link";
-import type { PublicBrandingSettings } from "@the-domain/types";
-import Image from "next/image";
+import { BrandLogo } from "./brand-logo";
 
-const footerGroups = [
+const groups = [
   {
     label: "Explore",
     links: [
@@ -23,51 +23,31 @@ const footerGroups = [
 
 export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
   return (
-    <footer className="relative isolate overflow-hidden border-t border-line bg-canvas">
-      <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-35" />
-      <Container className="border-b border-line py-12 sm:py-16">
-        <p className="max-w-6xl break-words font-display text-[clamp(2.75rem,8vw,7rem)] font-extrabold leading-[0.9] tracking-[-0.05em] text-ink/10">
-          {branding.siteName}
-        </p>
-      </Container>
-      <Container className="grid gap-12 py-14 sm:py-16 lg:grid-cols-12">
+    <footer className="border-t border-line bg-canvas">
+      <Container className="grid gap-10 py-12 sm:py-14 lg:grid-cols-12 lg:gap-8">
         <div className="lg:col-span-7">
           <Link
             aria-label={`${branding.siteName} home`}
-            className="inline-flex min-h-11 items-center font-display text-2xl font-extrabold tracking-[-0.04em] text-ink focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="inline-flex min-h-11 items-center"
             href="/"
           >
-            {branding.alternateLogo ? (
-              <Image
-                alt={`${branding.siteName} logo`}
-                className="h-14 w-auto object-contain"
-                height={56}
-                width={220}
-                src={branding.alternateLogo.url}
-              />
-            ) : (
-              <>
-                {branding.siteName}
-                <span className="text-gold">.</span>
-              </>
-            )}
+            <BrandLogo className="h-auto w-[clamp(12rem,22vw,18rem)]" />
           </Link>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-ink-muted sm:text-base">
-            {branding.brandDescription}
-          </p>
+          {branding.brandDescription && (
+            <p className="mt-4 max-w-md text-sm leading-7 text-ink-muted">
+              {branding.brandDescription}
+            </p>
+          )}
         </div>
-
         <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-8 lg:col-span-5">
-          {footerGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.label}>
-              <p className="font-label text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gold">
-                {group.label}
-              </p>
-              <ul className="mt-5 space-y-2 text-sm text-ink-muted">
+              <p className="text-[0.68rem] uppercase tracking-[0.16em] text-gold">{group.label}</p>
+              <ul className="mt-3 space-y-1 text-sm text-ink-muted">
                 {group.links.map((link) => (
                   <li key={link.href}>
                     <Link
-                      className="inline-flex min-h-11 items-center transition hover:text-ink focus-visible:text-gold"
+                      className="inline-flex min-h-11 items-center hover:text-ink"
                       href={link.href}
                     >
                       {link.label}
@@ -79,16 +59,18 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
           ))}
         </nav>
       </Container>
-      <Container className="border-t border-line py-6">
-        <div className="flex flex-col gap-3 font-label text-[0.625rem] uppercase tracking-[0.14em] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+      <Container className="border-t border-line py-5">
+        <div className="flex flex-col gap-3 text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {branding.siteName}. All rights reserved.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
             {branding.publicEmail && (
               <a href={`mailto:${branding.publicEmail}`}>{branding.publicEmail}</a>
             )}
-            {branding.publicPhone && <span>{branding.publicPhone}</span>}
+            {branding.publicPhone && (
+              <a href={`tel:${branding.publicPhone.replace(/\s/g, "")}`}>{branding.publicPhone}</a>
+            )}
             {Object.entries(branding.socialLinks).map(([platform, url]) => (
               <a href={url} key={platform} rel="noreferrer noopener" target="_blank">
                 {platform}

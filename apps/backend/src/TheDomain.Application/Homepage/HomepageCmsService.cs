@@ -7,6 +7,8 @@ namespace TheDomain.Application.Homepage;
 public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimeProvider timeProvider, TheDomain.Application.Media.IMediaDeliveryUrlResolver? delivery = null)
     : IHomepageCmsService
 {
+    private const int StatisticSlotCount = 4;
+
     public async Task<PublicHomepageResponse> GetPublicHomepageAsync(CancellationToken cancellationToken)
     {
         var content = await repository.GetHomepageAsync(cancellationToken);
@@ -18,19 +20,23 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
 
     public async Task<IReadOnlyList<PublicStatisticResponse>> GetPublicStatisticsAsync(CancellationToken cancellationToken) =>
         (await repository.ListStatisticsAsync(cancellationToken))
-            .Where(item => item.IsVisible && item.IsVerified)
-            .OrderBy(item => item.SortOrder)
-            .ThenBy(item => item.Label)
+            .Where(item => item.SlotNumber is >= 1 and <= StatisticSlotCount)
+            .OrderBy(item => item.SlotNumber)
             .Select(MapPublic)
             .ToArray();
 
-    public async Task<IReadOnlyList<PublicPartnerResponse>> GetPublicPartnersAsync(CancellationToken cancellationToken) =>
-        (await repository.ListPartnersAsync(cancellationToken))
+    public async Task<IReadOnlyList<PublicPartnerResponse>> GetPublicPartnersAsync(CancellationToken cancellationToken)
+    {
+        var partners = (await repository.ListPartnersAsync(cancellationToken))
             .Where(item => item.IsVisible)
             .OrderBy(item => item.SortOrder)
             .ThenBy(item => item.Name)
-            .Select(MapPublic)
             .ToArray();
+        var mediaIds = partners.Where(item => item.LogoMediaAssetId.HasValue)
+            .Select(item => item.LogoMediaAssetId!.Value).Distinct().ToArray();
+        var media = await repository.ListMediaAsync(mediaIds, cancellationToken);
+        return partners.Select(item => MapPublic(item, media)).ToArray();
+    }
 
     public async Task<AdminHomepageContentResponse?> GetAdminHomepageAsync(CancellationToken cancellationToken) =>
         await repository.GetHomepageAsync(cancellationToken) is { } content ? await MapAdminAsync(content, cancellationToken) : null;
@@ -41,6 +47,14 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         var errors = ValidateHomepage(request);
         var builder = ValidateBuilder(request); errors.AddRange(builder.Errors);
         if (request.HeroMediaAssetId is { } heroId) { var hero = await repository.FindMediaAsync(heroId, cancellationToken); if (hero is null || hero.IsArchived || hero.ApprovalStatus != MediaApprovalStatus.Approved || hero.MediaType is not (MediaType.Image or MediaType.Video) || !Uri.TryCreate(hero.Url, UriKind.Absolute, out var heroUrl) || heroUrl.Scheme != Uri.UriSchemeHttps) errors.Add("Hero media must be an approved, non-archived HTTPS image or video."); }
+        var floatingVideo = await ValidateHomepageMedia(request.FloatingVideoMediaAssetId, MediaType.Video, cancellationToken);
+        if (request.FloatingVideoMediaAssetId.HasValue && floatingVideo is null)
+            errors.Add("Floating video must be an approved, non-archived HTTPS video.");
+        if (request.IsFloatingVideoEnabled && floatingVideo is null)
+            errors.Add("Enable the floating player only after selecting a valid video.");
+        var floatingPoster = await ValidateHomepageMedia(request.FloatingVideoPosterMediaAssetId, MediaType.Image, cancellationToken);
+        if (request.FloatingVideoPosterMediaAssetId.HasValue && floatingPoster is null)
+            errors.Add("Floating video poster must be an approved, non-archived HTTPS image.");
         if (request.GalleryCollectionId is { } collectionId && await repository.FindCollectionAsync(collectionId, cancellationToken) is not { IsPublishedInGallery: true, IsArchived: false }) errors.Add("Gallery highlight must use a published, non-archived Collection.");
         if (errors.Count > 0) return Failure<AdminHomepageContentResponse>(CmsFailureKind.Validation, errors);
 
@@ -55,7 +69,9 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         {
             Apply(content, request, now);
         }
-        content.UpdateBuilder(request.HeroMediaAssetId, request.GalleryCollectionId, builder.Order, builder.Disabled,
+        content.UpdateBuilder(request.HeroMediaAssetId, request.GalleryCollectionId,
+            request.IsFloatingVideoEnabled, request.FloatingVideoMediaAssetId,
+            request.FloatingVideoPosterMediaAssetId, builder.Order, builder.Disabled,
             request.EventsTitle?.Trim() ?? content.EventsTitle, request.EventsDescription?.Trim() ?? content.EventsDescription,
             request.PreviousEventsTitle?.Trim() ?? content.PreviousEventsTitle, request.PreviousEventsDescription?.Trim() ?? content.PreviousEventsDescription,
             request.GalleryTitle?.Trim() ?? content.GalleryTitle, request.GalleryDescription?.Trim() ?? content.GalleryDescription, now);
@@ -66,24 +82,16 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
 
     public async Task<IReadOnlyList<AdminStatisticResponse>> GetAdminStatisticsAsync(CancellationToken cancellationToken) =>
         (await repository.ListStatisticsAsync(cancellationToken))
-            .OrderBy(item => item.SortOrder)
-            .ThenBy(item => item.Label)
+            .Where(item => item.SlotNumber is >= 1 and <= StatisticSlotCount)
+            .OrderBy(item => item.SlotNumber)
             .Select(MapAdmin)
             .ToArray();
 
     public async Task<CmsOperationResult<AdminStatisticResponse>> CreateStatisticAsync(
         SaveStatisticRequest request, CancellationToken cancellationToken)
-    {
-        var errors = ValidateStatistic(request);
-        if (errors.Count > 0) return Failure<AdminStatisticResponse>(CmsFailureKind.Validation, errors);
-        var now = timeProvider.GetUtcNow();
-        var item = new StatisticItem(Guid.NewGuid(), request.Label.Trim(), request.Value.Trim(),
-            Clean(request.Suffix), Clean(request.Description), request.SortOrder, request.IsVisible,
-            request.IsVerified, now);
-        repository.AddStatistic(item);
-        await repository.SaveChangesAsync(cancellationToken);
-        return CmsOperationResult.Success(MapAdmin(item));
-    }
+        => await Task.FromResult(CmsOperationResult.Failure<AdminStatisticResponse>(
+            CmsFailureKind.Conflict,
+            "The homepage has four permanent statistic slots. Edit an existing slot instead."));
 
     public async Task<CmsOperationResult<AdminStatisticResponse>> UpdateStatisticAsync(
         Guid id, SaveStatisticRequest request, CancellationToken cancellationToken)
@@ -92,8 +100,10 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         if (errors.Count > 0) return Failure<AdminStatisticResponse>(CmsFailureKind.Validation, errors);
         var item = await repository.FindStatisticAsync(id, cancellationToken);
         if (item is null) return CmsOperationResult.Failure<AdminStatisticResponse>(CmsFailureKind.NotFound, "Statistic was not found.");
+        if (item.SlotNumber is not (>= 1 and <= StatisticSlotCount))
+            return CmsOperationResult.Failure<AdminStatisticResponse>(CmsFailureKind.NotFound, "Statistic slot was not found.");
         item.Update(request.Label.Trim(), request.Value.Trim(), Clean(request.Suffix),
-            Clean(request.Description), request.SortOrder, request.IsVisible, request.IsVerified,
+            Clean(request.Description), item.SlotNumber.Value - 1, true, true,
             timeProvider.GetUtcNow());
         await repository.SaveChangesAsync(cancellationToken);
         return CmsOperationResult.Success(MapAdmin(item));
@@ -101,19 +111,14 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
 
     public async Task<CmsOperationResult<AdminStatisticResponse>> SetStatisticVisibilityAsync(
         Guid id, bool visible, CancellationToken cancellationToken)
-    {
-        var item = await repository.FindStatisticAsync(id, cancellationToken);
-        if (item is null) return CmsOperationResult.Failure<AdminStatisticResponse>(CmsFailureKind.NotFound, "Statistic was not found.");
-        if (visible) item.Show(timeProvider.GetUtcNow()); else item.Hide(timeProvider.GetUtcNow());
-        await repository.SaveChangesAsync(cancellationToken);
-        return CmsOperationResult.Success(MapAdmin(item));
-    }
+        => await Task.FromResult(CmsOperationResult.Failure<AdminStatisticResponse>(
+            CmsFailureKind.Conflict,
+            "Statistic slots are permanent and always visible."));
 
     public async Task<CmsOperationResult<IReadOnlyList<AdminStatisticResponse>>> ReorderStatisticsAsync(ReorderHomepageItemsRequest request, CancellationToken cancellationToken)
-    {
-        var items = await repository.ListStatisticsAsync(cancellationToken); if (!ValidOrder(request.Ids, items.Select(item => item.Id))) return CmsOperationResult.Failure<IReadOnlyList<AdminStatisticResponse>>(CmsFailureKind.Validation, "Statistic order must contain every statistic exactly once.");
-        var byId = items.ToDictionary(item => item.Id); var now = timeProvider.GetUtcNow(); for (var index = 0; index < request.Ids.Count; index++) byId[request.Ids[index]].SetSortOrder(index, now); await repository.SaveChangesAsync(cancellationToken); return CmsOperationResult.Success<IReadOnlyList<AdminStatisticResponse>>((await GetAdminStatisticsAsync(cancellationToken)).ToArray());
-    }
+        => await Task.FromResult(CmsOperationResult.Failure<IReadOnlyList<AdminStatisticResponse>>(
+            CmsFailureKind.Conflict,
+            "Statistic slot order is fixed."));
     public async Task<StatisticsPresentationResponse> GetStatisticsPresentationAsync(CancellationToken cancellationToken) => await repository.GetHomepageAsync(cancellationToken) is { } item ? new(item.StatisticsPhrase, item.IsStatisticsPhraseEnabled) : new("Moments that move with us", true);
     public async Task<CmsOperationResult<StatisticsPresentationResponse>> SaveStatisticsPresentationAsync(SaveStatisticsPresentationRequest request, CancellationToken cancellationToken)
     {
@@ -175,6 +180,18 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         var items = await repository.ListPartnersAsync(cancellationToken); if (!ValidOrder(request.Ids, items.Select(item => item.Id))) return CmsOperationResult.Failure<IReadOnlyList<AdminPartnerResponse>>(CmsFailureKind.Validation, "Partner order must contain every partner exactly once."); var byId = items.ToDictionary(item => item.Id); var now = timeProvider.GetUtcNow(); for (var index = 0; index < request.Ids.Count; index++) byId[request.Ids[index]].SetSortOrder(index, now); await repository.SaveChangesAsync(cancellationToken); return CmsOperationResult.Success<IReadOnlyList<AdminPartnerResponse>>((await GetAdminPartnersAsync(cancellationToken)).ToArray());
     }
     private async Task<MediaAsset?> ValidateLogo(Guid? id, CancellationToken token) { if (!id.HasValue) return null; var item = await repository.FindMediaAsync(id.Value, token); return item is { MediaType: MediaType.Image, ApprovalStatus: MediaApprovalStatus.Approved, IsArchived: false } && Uri.TryCreate(item.Url, UriKind.Absolute, out var url) && url.Scheme == Uri.UriSchemeHttps ? item : null; }
+    private async Task<MediaAsset?> ValidateHomepageMedia(Guid? id, MediaType mediaType, CancellationToken token)
+    {
+        if (!id.HasValue) return null;
+        var item = await repository.FindMediaAsync(id.Value, token);
+        return IsEligibleMedia(item, mediaType) ? item : null;
+    }
+
+    private static bool IsEligibleMedia(MediaAsset? item, MediaType mediaType) =>
+        item is { ApprovalStatus: MediaApprovalStatus.Approved, IsArchived: false }
+        && item.MediaType == mediaType
+        && Uri.TryCreate(item.Url, UriKind.Absolute, out var url)
+        && url.Scheme == Uri.UriSchemeHttps;
     private static bool ValidOrder(IReadOnlyList<Guid>? ids, IEnumerable<Guid> expected) { if (ids is null) return false; var values = expected.ToArray(); return ids.Count == values.Length && ids.Distinct().Count() == ids.Count && ids.ToHashSet().SetEquals(values); }
 
     private static List<string> ValidateHomepage(UpdateHomepageContentRequest request)
@@ -211,9 +228,12 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         List<string> errors = [];
         Required(request.Label, 100, "Statistic label", errors);
         Required(request.Value, 50, "Statistic value", errors);
+        if (!decimal.TryParse(request.Value, System.Globalization.NumberStyles.AllowDecimalPoint |
+            System.Globalization.NumberStyles.AllowLeadingSign,
+            System.Globalization.CultureInfo.InvariantCulture, out _))
+            errors.Add("Statistic value must contain numeric text only. Put +, K, or % in the suffix field.");
         Optional(request.Suffix, 20, "Statistic suffix", errors);
         Optional(request.Description, 500, "Statistic description", errors);
-        if (request.SortOrder < 0) errors.Add("Statistic sort order must be non-negative.");
         return errors;
     }
 
@@ -300,7 +320,22 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         item.PartnersTitle, item.PartnersDescription, item.ContactTitle, item.ContactDescription,
         item.ContactCtaLabel, item.ContactCtaHref, await Builder(item, token));
     private static PublicStatisticResponse MapPublic(StatisticItem item) => new(item.Label, item.Value, item.Suffix, item.Description);
-    private static PublicPartnerResponse MapPublic(Partner item) => new(item.Name, item.Slug, item.LogoUrl, item.WebsiteUrl, item.Description, item.IsFeatured);
+    private static PublicPartnerResponse MapPublic(Partner item, IReadOnlyDictionary<Guid, MediaAsset> media)
+    {
+        string? logoUrl = null;
+        if (item.LogoMediaAssetId is { } mediaId)
+        {
+            if (media.TryGetValue(mediaId, out var logo) && IsEligibleMedia(logo, MediaType.Image))
+                logoUrl = logo.Url;
+        }
+        else if (Uri.TryCreate(item.LogoUrl, UriKind.Absolute, out var legacyLogo)
+            && legacyLogo.Scheme == Uri.UriSchemeHttps)
+        {
+            logoUrl = item.LogoUrl;
+        }
+
+        return new(item.Name, item.Slug, logoUrl, item.WebsiteUrl, item.Description, item.IsFeatured);
+    }
     private async Task<AdminHomepageContentResponse> MapAdminAsync(HomepageContent item, CancellationToken token) => new(
         item.Id, item.HeroEyebrow, item.HeroTitle, item.HeroAccent, item.HeroDescription,
         item.PrimaryCtaLabel, item.PrimaryCtaHref, item.SecondaryCtaLabel, item.SecondaryCtaHref,
@@ -308,8 +343,45 @@ public sealed class HomepageCmsService(IHomepageCmsRepository repository, TimePr
         item.PartnersTitle, item.PartnersDescription, item.ContactTitle, item.ContactDescription,
         item.ContactCtaLabel, item.ContactCtaHref, item.IsPublished, item.CreatedAtUtc, item.UpdatedAtUtc, await Builder(item, token));
     private async Task<HomepageBuilderResponse> Builder(HomepageContent item, CancellationToken token)
-    { HomepageHeroMediaResponse? hero = null; if (item.HeroMediaAssetId is { } id && await repository.FindMediaAsync(id, token) is { } media && !media.IsArchived && media.ApprovalStatus == MediaApprovalStatus.Approved) hero = new(media.Id, media.MediaType, media.Url, media.MediaType == MediaType.Video ? delivery?.ResolveThumbnailUrl(media.MediaType, media.Url, media.ThumbnailUrl, media.CloudinaryPublicId) ?? media.ThumbnailUrl : null, media.AltText); return new(item.HeroMediaAssetId, item.GalleryCollectionId, hero, item.SectionOrder.Split(',', StringSplitOptions.RemoveEmptyEntries), item.DisabledSections.Split(',', StringSplitOptions.RemoveEmptyEntries), item.EventsTitle, item.EventsDescription, item.PreviousEventsTitle, item.PreviousEventsDescription, item.GalleryTitle, item.GalleryDescription); }
-    private static AdminStatisticResponse MapAdmin(StatisticItem item) => new(item.Id, item.Label,
+    {
+        async Task<HomepageHeroMediaResponse?> Resolve(Guid? id, MediaType? requiredType = null)
+        {
+            if (id is null) return null;
+            var media = await repository.FindMediaAsync(id.Value, token);
+            if (media is null || media.IsArchived || media.ApprovalStatus != MediaApprovalStatus.Approved
+                || requiredType.HasValue && media.MediaType != requiredType.Value
+                || media.MediaType is not (MediaType.Image or MediaType.Video)
+                || !Uri.TryCreate(media.Url, UriKind.Absolute, out var url)
+                || url.Scheme != Uri.UriSchemeHttps)
+                return null;
+
+            var posterUrl = media.MediaType == MediaType.Video
+                ? delivery?.ResolveThumbnailUrl(media.MediaType, media.Url, media.ThumbnailUrl, media.CloudinaryPublicId)
+                    ?? media.ThumbnailUrl
+                : null;
+            return new(media.Id, media.MediaType, media.Url, posterUrl, media.AltText);
+        }
+
+        return new(
+            item.HeroMediaAssetId,
+            item.GalleryCollectionId,
+            await Resolve(item.HeroMediaAssetId),
+            item.IsFloatingVideoEnabled,
+            item.FloatingVideoMediaAssetId,
+            item.FloatingVideoPosterMediaAssetId,
+            await Resolve(item.FloatingVideoMediaAssetId, MediaType.Video),
+            await Resolve(item.FloatingVideoPosterMediaAssetId, MediaType.Image),
+            item.SectionOrder.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            item.DisabledSections.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            item.EventsTitle,
+            item.EventsDescription,
+            item.PreviousEventsTitle,
+            item.PreviousEventsDescription,
+            item.GalleryTitle,
+            item.GalleryDescription);
+    }
+    private static AdminStatisticResponse MapAdmin(StatisticItem item) => new(item.Id,
+        item.SlotNumber ?? throw new InvalidOperationException("Homepage statistic is not assigned to a slot."), item.Label,
         item.Value, item.Suffix, item.Description, item.SortOrder, item.IsVisible, item.IsVerified,
         item.CreatedAtUtc, item.UpdatedAtUtc);
     private static AdminPartnerResponse MapAdmin(Partner item) => new(item.Id, item.Name, item.Slug,

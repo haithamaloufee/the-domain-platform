@@ -1,10 +1,9 @@
 import { MediaType, type PublicEventListItem, type PublicHomepageContent } from "@the-domain/types";
-import { Badge, Container, buttonClasses } from "@the-domain/ui";
+import { Container, buttonClasses } from "@the-domain/ui";
 import { eventCoverRenderData } from "@the-domain/utils";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { EventCoverImage } from "@/components/events/event-cover-image";
-import { formatEventDate } from "@/components/events/event-presentation";
 import { homepageContent } from "@/content/homepage-content";
 import { HeroBackgroundVideo } from "./hero-background-video";
 
@@ -37,8 +36,7 @@ export function HomeHero({
       };
 
   return (
-    <section className="relative isolate mx-gutter mt-3 flex min-h-[clamp(36rem,76svh,48rem)] items-end overflow-hidden rounded-[var(--td-radius-md)] border border-line/70 sm:mt-5">
-      <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
+    <section className="relative isolate -mt-[var(--site-header-height)] flex min-h-[max(42rem,100svh)] items-end overflow-hidden">
       {configuredMedia?.mediaType === MediaType.Video ? (
         <HeroBackgroundVideo
           poster={configuredMedia.posterUrl ?? undefined}
@@ -48,7 +46,7 @@ export function HomeHero({
         <Image
           alt=""
           aria-hidden="true"
-          className="cinematic-media -z-20 object-cover"
+          className="-z-20 object-cover"
           fill
           priority
           sizes="100vw"
@@ -56,7 +54,7 @@ export function HomeHero({
         />
       ) : source ? (
         <EventCoverImage
-          className="cinematic-media -z-20 object-cover"
+          className="-z-20 object-cover"
           media={featuredEvent!.coverMedia!}
           priority
           sizes="100vw"
@@ -64,24 +62,24 @@ export function HomeHero({
       ) : (
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_18%,rgba(212,175,55,0.12),transparent_30%),linear-gradient(145deg,#1a1b1f_0%,#0d0e12_55%)]"
+          className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_18%,rgba(212,175,55,.18),transparent_30%),linear-gradient(145deg,#1a1b1f_0%,#0d0e12_55%)]"
         />
       )}
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(13_14_18/92%)_0%,rgb(13_14_18/48%)_52%,rgb(13_14_18/12%)_100%)]" />
       <div
         aria-hidden="true"
-        className="absolute inset-y-0 left-[8vw] -z-10 hidden w-px bg-gradient-to-b from-transparent via-line to-transparent lg:block"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgb(7_8_10/.76)_0%,transparent_27%),linear-gradient(90deg,rgb(7_8_10/.84)_0%,rgb(7_8_10/.34)_48%,rgb(7_8_10/.12)_100%),radial-gradient(ellipse_at_center,transparent_44%,rgb(7_8_10/.38)_100%),linear-gradient(to_top,var(--td-color-canvas)_0%,rgb(13_14_18/.72)_18%,transparent_58%)]"
       />
-
-      <Container className="pb-12 pt-24 sm:pb-14 sm:pt-28 lg:pb-16">
-        <div className="max-w-4xl">
-          <Badge>{hero.eyebrow}</Badge>
-          <h1 className="type-display mt-6 break-words text-ink">
+      <Container className="pb-20 pt-36 sm:pb-24 sm:pt-40 lg:pb-28">
+        <div className="max-w-5xl">
+          <p className="type-eyebrow text-gold">{hero.eyebrow}</p>
+          <h1 className="mt-6 max-w-[13ch] break-words text-[clamp(3.35rem,8vw,7.75rem)] font-extrabold leading-[.88] tracking-[-.06em] text-ink">
             {hero.headline}
             {hero.accent && <span className="block text-gold">{hero.accent}</span>}
           </h1>
-          <p className="type-body-lead mt-5 max-w-xl text-ink-muted">{hero.description}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <p className="mt-7 max-w-xl text-[clamp(1rem,1.4vw,1.3rem)] leading-8 text-ink/76">
+            {hero.description}
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryHref}>
               {hero.primaryLabel}
             </Link>
@@ -92,24 +90,6 @@ export function HomeHero({
             )}
           </div>
         </div>
-
-        {featuredEvent && (
-          <Link
-            className="mt-10 grid min-h-20 max-w-xl gap-2 border-l border-gold py-2 pl-5 transition-[border-color,transform] hover:translate-x-1 hover:border-gold-bright sm:grid-cols-[auto_1fr] sm:gap-x-5"
-            href={`/events/${featuredEvent.slug}`}
-          >
-            <span className="font-label text-[0.6875rem] uppercase tracking-[0.14em] text-gold">
-              Featured
-            </span>
-            <span className="font-display text-xl font-bold text-ink sm:col-span-2 sm:row-start-2 sm:text-2xl">
-              {featuredEvent.title}
-            </span>
-            <span className="text-sm text-ink-muted sm:col-start-2 sm:row-start-1 sm:text-right">
-              {formatEventDate(featuredEvent.startAtUtc, featuredEvent.timeZoneId)} ·{" "}
-              {featuredEvent.city}
-            </span>
-          </Link>
-        )}
       </Container>
     </section>
   );

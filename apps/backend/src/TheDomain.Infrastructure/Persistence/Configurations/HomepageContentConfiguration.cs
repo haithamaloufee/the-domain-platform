@@ -42,6 +42,9 @@ public sealed class HomepageContentConfiguration : IEntityTypeConfiguration<Home
         builder.Property(item => item.PreviousEventsTitle).HasMaxLength(160).HasDefaultValue("Previous events"); builder.Property(item => item.PreviousEventsDescription).HasMaxLength(500).HasDefaultValue("Moments that continue to shape The Domain.");
         builder.Property(item => item.GalleryTitle).HasMaxLength(160).HasDefaultValue("Gallery highlights"); builder.Property(item => item.GalleryDescription).HasMaxLength(500).HasDefaultValue("Curated photography and film from The Domain.");
         builder.HasOne<MediaAsset>().WithMany().HasForeignKey(item => item.HeroMediaAssetId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property(item => item.IsFloatingVideoEnabled).HasDefaultValue(false);
+        builder.HasOne<MediaAsset>().WithMany().HasForeignKey(item => item.FloatingVideoMediaAssetId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<MediaAsset>().WithMany().HasForeignKey(item => item.FloatingVideoPosterMediaAssetId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<MediaCollection>().WithMany().HasForeignKey(item => item.GalleryCollectionId).OnDelete(DeleteBehavior.SetNull);
     }
 }

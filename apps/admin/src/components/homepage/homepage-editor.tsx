@@ -17,7 +17,13 @@ import { getAdminHomepage, updateAdminHomepage } from "@/lib/cms/admin-cms-clien
 import { listAdminMedia, uploadAdminMedia } from "@/lib/media/admin-media-client";
 import { getAdminGallery } from "@/lib/gallery/admin-gallery-client";
 
-type TextFieldName = Exclude<keyof UpdateHomepageContentRequest, "isPublished">;
+type TextFieldName = {
+  [Key in keyof UpdateHomepageContentRequest]: UpdateHomepageContentRequest[Key] extends
+    | string
+    | null
+    ? Key
+    : never;
+}[keyof UpdateHomepageContentRequest];
 type FieldErrors = Partial<Record<TextFieldName, string>>;
 
 const emptyContent: UpdateHomepageContentRequest = {
@@ -50,6 +56,9 @@ const emptyContent: UpdateHomepageContentRequest = {
   previousEventsDescription: "Moments that continue to shape The Domain.",
   galleryTitle: "Gallery highlights",
   galleryDescription: "Curated photography and film from The Domain.",
+  isFloatingVideoEnabled: false,
+  floatingVideoMediaAssetId: null,
+  floatingVideoPosterMediaAssetId: null,
 };
 
 export function HomepageEditor() {
@@ -372,6 +381,8 @@ function HomepageVisualBuilder({
     });
   }, []);
   const hero = media.find((item) => item.id === fields.heroMediaAssetId);
+  const floatingVideo = media.find((item) => item.id === fields.floatingVideoMediaAssetId);
+  const floatingPoster = media.find((item) => item.id === fields.floatingVideoPosterMediaAssetId);
   const widths = { desktop: "max-w-full", tablet: "max-w-2xl", mobile: "max-w-xs" };
   function move(key: string, direction: -1 | 1) {
     const next = [...fields.sectionOrder];
@@ -382,16 +393,24 @@ function HomepageVisualBuilder({
     if (item) next.splice(target, 0, item);
     onChange("sectionOrder", next);
   }
-  async function upload(file: File) {
+  async function upload(
+    file: File,
+    target: "heroMediaAssetId" | "floatingVideoMediaAssetId" | "floatingVideoPosterMediaAssetId",
+  ) {
     setUploading(true);
     try {
       const item = await uploadAdminMedia(file, {
         approvalStatus: MediaApprovalStatus.Approved,
-        category: "Homepage hero",
+        category:
+          target === "heroMediaAssetId"
+            ? "Homepage hero"
+            : target === "floatingVideoMediaAssetId"
+              ? "Homepage floating video"
+              : "Homepage floating video poster",
         altText: fields.heroTitle,
       });
       setMedia((current) => [item, ...current]);
-      onChange("heroMediaAssetId", item.id);
+      onChange(target, item.id);
     } finally {
       setUploading(false);
     }
@@ -440,11 +459,120 @@ function HomepageVisualBuilder({
                 disabled={uploading}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) void upload(file);
+                  if (file) void upload(file, "heroMediaAssetId");
                 }}
                 type="file"
               />
             </label>
+          </div>
+          <div className="space-y-4 border-t border-line pt-6">
+            <div>
+              <h3 className="font-display text-xl font-bold">Floating portrait video</h3>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
+                Optional draggable player shown above page content. It starts muted and can be
+                dismissed for the current page session.
+              </p>
+            </div>
+            <CmsCheckbox
+              checked={fields.isFloatingVideoEnabled}
+              description="The player appears only when an approved video is selected."
+              label="Enable floating player"
+              name="floating-video-enabled"
+              onChange={(checked) => onChange("isFloatingVideoEnabled", checked)}
+            />
+            <Select
+              aria-label="Floating video"
+              onChange={(event) =>
+                onChange("floatingVideoMediaAssetId", event.target.value || null)
+              }
+              value={fields.floatingVideoMediaAssetId ?? ""}
+            >
+              <option value="">No floating video</option>
+              {media
+                .filter(
+                  (item) =>
+                    item.mediaType === MediaType.Video &&
+                    !item.isArchived &&
+                    item.approvalStatus === MediaApprovalStatus.Approved &&
+                    item.url.startsWith("https://"),
+                )
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.caption || item.originalFileName}
+                  </option>
+                ))}
+            </Select>
+            <label className="block border border-dashed border-line p-3 text-xs">
+              Upload floating video
+              <input
+                accept="video/*"
+                className="mt-2 block"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void upload(file, "floatingVideoMediaAssetId");
+                }}
+                type="file"
+              />
+            </label>
+            <Select
+              aria-label="Floating video poster"
+              onChange={(event) =>
+                onChange("floatingVideoPosterMediaAssetId", event.target.value || null)
+              }
+              value={fields.floatingVideoPosterMediaAssetId ?? ""}
+            >
+              <option value="">Use the video thumbnail</option>
+              {media
+                .filter(
+                  (item) =>
+                    item.mediaType === MediaType.Image &&
+                    !item.isArchived &&
+                    item.approvalStatus === MediaApprovalStatus.Approved &&
+                    item.url.startsWith("https://"),
+                )
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.caption || item.originalFileName}
+                  </option>
+                ))}
+            </Select>
+            <label className="block border border-dashed border-line p-3 text-xs">
+              Upload portrait poster
+              <input
+                accept="image/*"
+                className="mt-2 block"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void upload(file, "floatingVideoPosterMediaAssetId");
+                }}
+                type="file"
+              />
+            </label>
+            {(floatingVideo || floatingPoster) && (
+              <div className="relative aspect-[9/16] max-w-44 overflow-hidden border border-line bg-canvas">
+                {floatingVideo ? (
+                  <video
+                    className="h-full w-full object-cover"
+                    controls
+                    muted
+                    playsInline
+                    poster={floatingPoster?.url ?? floatingVideo.thumbnailUrl ?? undefined}
+                    preload="metadata"
+                    src={floatingVideo.url}
+                  />
+                ) : floatingPoster ? (
+                  <Image
+                    alt={floatingPoster.altText ?? ""}
+                    className="object-cover"
+                    fill
+                    sizes="11rem"
+                    src={floatingPoster.url}
+                  />
+                ) : null}
+              </div>
+            )}
           </div>
           <div>
             <h3 className="font-display text-xl font-bold">Gallery highlight</h3>
@@ -814,6 +942,9 @@ function toRequest(content: AdminHomepageContent): UpdateHomepageContentRequest 
     previousEventsDescription: content.builder.previousEventsDescription,
     galleryTitle: content.builder.galleryTitle,
     galleryDescription: content.builder.galleryDescription,
+    isFloatingVideoEnabled: content.builder.isFloatingVideoEnabled,
+    floatingVideoMediaAssetId: content.builder.floatingVideoMediaAssetId,
+    floatingVideoPosterMediaAssetId: content.builder.floatingVideoPosterMediaAssetId,
   };
 }
 

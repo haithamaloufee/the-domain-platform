@@ -3,6 +3,7 @@
 @source "../../../../packages/ui/src";
 
 :root {
+  --site-header-height: 5rem;
   --td-font-primary: var(--font-site), "Noto Sans Arabic", "Segoe UI", Arial, sans-serif;
   --td-font-display: var(--td-font-primary);
   --td-font-body: var(--td-font-primary);
@@ -44,6 +45,9 @@ body {
   font-family: var(--td-font-body);
   text-rendering: optimizeLegibility;
   overflow-x: clip;
+}
+main#main-content {
+  padding-top: var(--site-header-height);
 }
 body::before {
   position: fixed;

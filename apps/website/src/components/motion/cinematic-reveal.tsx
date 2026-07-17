@@ -16,8 +16,13 @@ export function CinematicReveal({
   useEffect(() => {
     const element = ref.current;
     if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setVisible(false);
     const observer = new IntersectionObserver(
-      ([entry]) => setVisible(Boolean(entry?.isIntersecting)),
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setVisible(true);
+        observer.disconnect();
+      },
       { rootMargin: "-8% 0px -12%", threshold: 0.08 },
     );
     observer.observe(element);

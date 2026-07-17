@@ -466,6 +466,12 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(160)")
                         .HasDefaultValue("Upcoming experiences");
 
+                    b.Property<Guid?>("FloatingVideoMediaAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FloatingVideoPosterMediaAssetId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("GalleryCollectionId")
                         .HasColumnType("uuid");
 
@@ -504,6 +510,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsFloatingVideoEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
@@ -593,6 +604,10 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FloatingVideoMediaAssetId");
+
+                    b.HasIndex("FloatingVideoPosterMediaAssetId");
 
                     b.HasIndex("GalleryCollectionId");
 
@@ -688,6 +703,9 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int?>("SlotNumber")
+                        .HasColumnType("integer");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
@@ -705,9 +723,16 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SlotNumber")
+                        .IsUnique()
+                        .HasFilter("\"SlotNumber\" IS NOT NULL");
+
                     b.HasIndex("IsVisible", "IsVerified", "SortOrder");
 
-                    b.ToTable("homepage_statistics", (string)null);
+                    b.ToTable("homepage_statistics", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_homepage_statistics_slot", "\"SlotNumber\" IS NULL OR (\"SlotNumber\" >= 1 AND \"SlotNumber\" <= 4)");
+                        });
                 });
 
             modelBuilder.Entity("TheDomain.Domain.Identity.ApplicationUser", b =>
@@ -1110,6 +1135,16 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TheDomain.Domain.Homepage.HomepageContent", b =>
                 {
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("FloatingVideoMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheDomain.Domain.Media.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("FloatingVideoPosterMediaAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TheDomain.Domain.Media.MediaCollection", null)
                         .WithMany()
                         .HasForeignKey("GalleryCollectionId")

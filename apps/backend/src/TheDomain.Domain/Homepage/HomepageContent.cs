@@ -49,6 +49,9 @@ public sealed class HomepageContent
     public bool IsStatisticsPhraseEnabled { get; private set; } = true;
     public Guid? HeroMediaAssetId { get; private set; }
     public Guid? GalleryCollectionId { get; private set; }
+    public bool IsFloatingVideoEnabled { get; private set; }
+    public Guid? FloatingVideoMediaAssetId { get; private set; }
+    public Guid? FloatingVideoPosterMediaAssetId { get; private set; }
     public string SectionOrder { get; private set; } = "events,statistics,why,previous,gallery,services,partners,contact";
     public string DisabledSections { get; private set; } = string.Empty;
     public string EventsTitle { get; private set; } = "Upcoming experiences";
@@ -58,8 +61,28 @@ public sealed class HomepageContent
     public string GalleryTitle { get; private set; } = "Gallery highlights";
     public string GalleryDescription { get; private set; } = "Curated photography and film from The Domain.";
     public void UpdateStatisticsPresentation(string phrase, bool enabled, DateTimeOffset now) { var value = phrase?.Trim() ?? string.Empty; if (value.Length is < 1 or > 180) throw new ArgumentException("Statistics phrase must be between 1 and 180 characters.", nameof(phrase)); StatisticsPhrase = value; IsStatisticsPhraseEnabled = enabled; UpdatedAtUtc = now; }
-    public void UpdateBuilder(Guid? heroMediaAssetId, Guid? galleryCollectionId, string sectionOrder, string disabledSections, string eventsTitle, string eventsDescription, string previousTitle, string previousDescription, string galleryTitle, string galleryDescription, DateTimeOffset now)
-    { HeroMediaAssetId = heroMediaAssetId; GalleryCollectionId = galleryCollectionId; SectionOrder = sectionOrder; DisabledSections = disabledSections; EventsTitle = eventsTitle.Trim(); EventsDescription = eventsDescription.Trim(); PreviousEventsTitle = previousTitle.Trim(); PreviousEventsDescription = previousDescription.Trim(); GalleryTitle = galleryTitle.Trim(); GalleryDescription = galleryDescription.Trim(); UpdatedAtUtc = now; }
+    public void UpdateBuilder(Guid? heroMediaAssetId, Guid? galleryCollectionId,
+        bool isFloatingVideoEnabled, Guid? floatingVideoMediaAssetId,
+        Guid? floatingVideoPosterMediaAssetId, string sectionOrder, string disabledSections,
+        string eventsTitle, string eventsDescription, string previousTitle,
+        string previousDescription, string galleryTitle, string galleryDescription,
+        DateTimeOffset now)
+    {
+        HeroMediaAssetId = heroMediaAssetId;
+        GalleryCollectionId = galleryCollectionId;
+        IsFloatingVideoEnabled = isFloatingVideoEnabled;
+        FloatingVideoMediaAssetId = floatingVideoMediaAssetId;
+        FloatingVideoPosterMediaAssetId = floatingVideoPosterMediaAssetId;
+        SectionOrder = sectionOrder;
+        DisabledSections = disabledSections;
+        EventsTitle = eventsTitle.Trim();
+        EventsDescription = eventsDescription.Trim();
+        PreviousEventsTitle = previousTitle.Trim();
+        PreviousEventsDescription = previousDescription.Trim();
+        GalleryTitle = galleryTitle.Trim();
+        GalleryDescription = galleryDescription.Trim();
+        UpdatedAtUtc = now;
+    }
 
     public void Update(string heroEyebrow, string heroTitle, string? heroAccent,
         string heroDescription, string primaryCtaLabel, string primaryCtaHref,

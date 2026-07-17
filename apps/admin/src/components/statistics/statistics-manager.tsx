@@ -1,53 +1,34 @@
 "use client";
 
-import type { AdminStatisticItem, CreateStatisticRequest } from "@the-domain/types";
-import { Card, EmptyState, Input, Textarea, buttonClasses } from "@the-domain/ui";
+import type { AdminStatisticItem, UpdateStatisticRequest } from "@the-domain/types";
+import { Card, Input, buttonClasses } from "@the-domain/ui";
 import { useEffect, useState } from "react";
+import { CmsCheckbox, CmsFeedback, CmsField } from "@/components/cms/cms-controls";
 import {
-  CmsCheckbox,
-  CmsFeedback,
-  CmsField,
-  CmsStatusBadge,
-  ConfirmAction,
-} from "@/components/cms/cms-controls";
-import {
-  createAdminStatistic,
-  deleteAdminStatistic,
-  hideAdminStatistic,
-  listAdminStatistics,
-  showAdminStatistic,
-  updateAdminStatistic,
   getStatisticsPresentation,
+  listAdminStatistics,
   saveStatisticsPresentation,
+  updateAdminStatistic,
 } from "@/lib/cms/admin-cms-client";
 
-const emptyStatistic: CreateStatisticRequest = {
-  label: "",
-  value: "",
-  suffix: null,
-  description: null,
-  sortOrder: 0,
-  isVisible: false,
-  isVerified: false,
-};
+const numericValue = /^[+-]?\d+(?:\.\d+)?$/;
 
 export function StatisticsManager() {
   const [items, setItems] = useState<AdminStatisticItem[]>([]);
-  const [editing, setEditing] = useState<AdminStatisticItem | "create" | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; tone: "error" | "success" }>({
     message: "",
     tone: "success",
   });
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [phrase, setPhrase] = useState({ phrase: "Moments that move with us", isEnabled: true });
 
   useEffect(() => {
     let active = true;
     Promise.all([listAdminStatistics(), getStatisticsPresentation()])
-      .then(([values, presentation]) => {
+      .then(([statistics, presentation]) => {
         if (!active) return;
-        setItems(sortStatistics(values));
+        setItems(sortSlots(statistics));
         setPhrase(presentation);
         setState("ready");
       })
@@ -64,121 +45,114 @@ export function StatisticsManager() {
     };
   }, []);
 
-  function replace(updated: AdminStatisticItem) {
+  function change<K extends keyof AdminStatisticItem>(
+    id: string,
+    name: K,
+    value: AdminStatisticItem[K],
+  ) {
     setItems((current) =>
-      sortStatistics(current.map((item) => (item.id === updated.id ? updated : item))),
+      current.map((item) => (item.id === id ? { ...item, [name]: value } : item)),
+    );
+    setFeedback({ message: "", tone: "success" });
+  }
+
+  async function save(item: AdminStatisticItem) {
+    if (!item.label.trim()) {
+      setFeedback({ message: `Slot ${item.slotNumber}: label is required.`, tone: "error" });
+      return;
+    }
+    if (!numericValue.test(item.value.trim())) {
+      setFeedback({
+        message: `Slot ${item.slotNumber}: enter numbers only in Value; put +, K, or % in Suffix.`,
+        tone: "error",
+      });
+      return;
+    }
+
+    setBusyId(item.id);
+    try {
+      const saved = await updateAdminStatistic(item.id, toRequest(item));
+      setItems((current) =>
+        sortSlots(current.map((value) => (value.id === saved.id ? saved : value))),
+      );
+      setFeedback({ message: `Statistic slot ${item.slotNumber} saved.`, tone: "success" });
+    } catch (error) {
+      setFeedback({
+        message: error instanceof Error ? error.message : "Unable to save the statistic.",
+        tone: "error",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (state === "loading") {
+    return (
+      <div
+        aria-label="Loading statistics"
+        className="h-72 animate-pulse border border-line bg-surface"
+        role="status"
+      />
+    );
+  }
+  if (state === "error") {
+    return (
+      <Card className="p-6">
+        <CmsFeedback message={feedback.message} tone="error" />
+        <button
+          className={buttonClasses("secondary", "mt-5")}
+          onClick={() => location.reload()}
+          type="button"
+        >
+          Try again
+        </button>
+      </Card>
     );
   }
 
-  async function runAction(id: string, action: () => Promise<AdminStatisticItem>, message: string) {
-    setBusyId(id);
-    setFeedback({ message: "", tone: "success" });
-    try {
-      replace(await action());
-      setFeedback({ message, tone: "success" });
-    } catch (error) {
-      setFeedback({
-        message: error instanceof Error ? error.message : "Unable to update the statistic.",
-        tone: "error",
-      });
-    } finally {
-      setBusyId(null);
-    }
-  }
-  function move(id: string, direction: -1 | 1) {
-    setItems((current) => {
-      const index = current.findIndex((item) => item.id === id);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= current.length) return current;
-      const next = [...current];
-      const [item] = next.splice(index, 1);
-      if (item) next.splice(target, 0, item);
-      return next.map((value, order) => ({ ...value, sortOrder: order }));
-    });
-  }
-  async function saveOrder() {
-    setBusyId("order");
-    try {
-      const saved = await Promise.all(
-        items.map((item) =>
-          updateAdminStatistic(item.id, { ...toRequest(item), sortOrder: item.sortOrder }),
-        ),
-      );
-      setItems(sortStatistics(saved));
-      setFeedback({ message: "Statistic order saved.", tone: "success" });
-    } catch (error) {
-      setFeedback({
-        message: error instanceof Error ? error.message : "Unable to save order.",
-        tone: "error",
-      });
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  if (state === "loading") return <ManagerLoading label="statistics" />;
-  if (state === "error") return <LoadError feedback={feedback.message} />;
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border border-line bg-surface p-5">
         <p className="max-w-3xl text-sm leading-6 text-ink-muted">
-          Only records that are both <strong className="text-ink">visible</strong> and{" "}
-          <strong className="text-ink">verified</strong> appear publicly. Verification is an
-          editorial approval, not an analytics calculation.
+          The homepage always uses these four permanent slots in this fixed order. Edit the label,
+          numeric value, and suffix; slots cannot be added, hidden, deleted, or reordered.
         </p>
-        <button
-          className={buttonClasses("primary", "shrink-0")}
-          onClick={() => setEditing("create")}
-          type="button"
-        >
-          Create statistic
-        </button>
       </div>
 
       <CmsFeedback message={feedback.message} tone={feedback.tone} />
-      <button
-        className={buttonClasses("secondary")}
-        disabled={busyId === "order"}
-        onClick={() => void saveOrder()}
-        type="button"
-      >
-        Save visual order
-      </button>
+
       <Card className="p-6">
-        <h2 className="font-display text-2xl font-bold text-ink">Animated curved phrase</h2>
+        <h2 className="font-display text-2xl font-bold text-ink">Scroll-path phrase</h2>
         <p className="mt-2 text-sm text-ink-muted">
-          A decorative phrase shown with the public statistics. Motion respects the visitor&apos;s
-          reduced-motion preference.
+          This phrase follows the gold path behind the four statistics. Reduced-motion visitors see
+          the same phrase in a static position.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
           <Input
+            aria-label="Statistics path phrase"
             maxLength={180}
             onChange={(event) => setPhrase({ ...phrase, phrase: event.target.value })}
             value={phrase.phrase}
           />
           <CmsCheckbox
             checked={phrase.isEnabled}
-            description="Show the phrase publicly."
+            description="Show the path phrase publicly."
             label="Enabled"
             name="statistics-phrase-enabled"
             onChange={(value) => setPhrase({ ...phrase, isEnabled: value })}
           />
         </div>
-        <div className="mt-5 overflow-hidden border-y border-line py-4 text-center font-display text-xl font-bold italic tracking-[.12em] text-gold">
-          ~ {phrase.phrase} ~
-        </div>
         <button
           className={buttonClasses("secondary", "mt-4")}
           onClick={() =>
-            void saveStatisticsPresentation(phrase)
-              .then((value) => {
-                setPhrase(value);
-                setFeedback({ message: "Statistics phrase saved.", tone: "success" });
+            void saveStatisticsPresentation({ ...phrase, phrase: phrase.phrase.trim() })
+              .then((saved) => {
+                setPhrase(saved);
+                setFeedback({ message: "Statistics path phrase saved.", tone: "success" });
               })
               .catch((error: unknown) =>
                 setFeedback({
-                  message: error instanceof Error ? error.message : "Unable to save phrase.",
+                  message: error instanceof Error ? error.message : "Unable to save the phrase.",
                   tone: "error",
                 }),
               )
@@ -189,341 +163,82 @@ export function StatisticsManager() {
         </button>
       </Card>
 
-      {editing && (
-        <StatisticForm
-          item={editing === "create" ? null : editing}
-          onCancel={() => setEditing(null)}
-          onSaved={(saved, created) => {
-            setItems((current) =>
-              sortStatistics(
-                created
-                  ? [...current, saved]
-                  : current.map((item) => (item.id === saved.id ? saved : item)),
-              ),
-            );
-            setEditing(null);
-            setFeedback({
-              message: created ? "Statistic created." : "Statistic updated.",
-              tone: "success",
-            });
-          }}
-        />
-      )}
-
-      {items.length === 0 ? (
-        <EmptyState
-          title="No statistics yet"
-          description="Create a statistic when a factual value is ready for editorial review. Nothing is fabricated or published by default."
-        />
-      ) : (
-        <div className="border-t border-line">
-          {items.map((item) => (
-            <article
-              className="grid gap-5 border-b border-x border-line bg-surface p-5 lg:grid-cols-[5rem_minmax(12rem,0.7fr)_minmax(0,1fr)_auto] lg:items-center"
-              key={item.id}
-            >
+      <div className="grid gap-4 xl:grid-cols-2">
+        {items.map((item) => (
+          <Card className="p-5 sm:p-6" key={item.id}>
+            <div className="flex items-center justify-between border-b border-line pb-4">
               <div>
-                <span className="font-label text-[0.625rem] uppercase tracking-[0.14em] text-ink-muted">
-                  Order
-                </span>
-                <p className="mt-1 font-display text-2xl font-bold text-gold">{item.sortOrder}</p>
-              </div>
-              <div>
-                <h2 className="font-display text-xl font-bold text-ink">{item.label}</h2>
-                <p className="mt-2 text-2xl font-semibold text-ink">
-                  {item.value}
-                  {item.suffix}
+                <p className="font-label text-[0.6875rem] uppercase tracking-[0.14em] text-gold">
+                  Permanent slot {item.slotNumber}
                 </p>
+                <h2 className="mt-1 font-display text-xl font-bold text-ink">{item.label}</h2>
               </div>
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  <CmsStatusBadge
-                    active={item.isVisible}
-                    activeLabel="Visible"
-                    inactiveLabel="Hidden"
-                  />
-                  <CmsStatusBadge
-                    active={item.isVerified}
-                    activeLabel="Verified"
-                    inactiveLabel="Unverified"
-                  />
-                </div>
-                <p className="mt-3 text-sm leading-6 text-ink-muted">
-                  {item.description || "No supporting description."}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 lg:max-w-72 lg:justify-end">
-                <button
-                  aria-label={`Move ${item.label} up`}
-                  className={buttonClasses("ghost", "px-2")}
-                  onClick={() => move(item.id, -1)}
-                  type="button"
-                >
-                  Up
-                </button>
-                <button
-                  aria-label={`Move ${item.label} down`}
-                  className={buttonClasses("ghost", "px-2")}
-                  onClick={() => move(item.id, 1)}
-                  type="button"
-                >
-                  Down
-                </button>
-                <button
-                  className={buttonClasses("secondary", "min-h-10 px-3")}
-                  disabled={busyId === item.id}
-                  onClick={() => setEditing(item)}
-                  type="button"
-                >
-                  Edit
-                </button>
-                {item.isVisible ? (
-                  <ConfirmAction
-                    description="Hiding removes this statistic from the public homepage while preserving it for later editing."
-                    label="Hide"
-                    onConfirm={() =>
-                      runAction(item.id, () => hideAdminStatistic(item.id), "Statistic hidden.")
-                    }
-                    title={`Hide ${item.label}?`}
-                  />
-                ) : (
-                  <button
-                    className={buttonClasses("ghost", "min-h-10 px-3")}
-                    disabled={busyId === item.id}
-                    onClick={() =>
-                      void runAction(
-                        item.id,
-                        () => showAdminStatistic(item.id),
-                        "Statistic made visible.",
-                      )
-                    }
-                    type="button"
-                  >
-                    Show
-                  </button>
-                )}
-                <ConfirmAction
-                  description="This is a reversible soft delete. The statistic will be hidden, not removed from the database."
-                  label="Soft delete"
-                  onConfirm={() =>
-                    runAction(
-                      item.id,
-                      () => deleteAdminStatistic(item.id),
-                      "Statistic soft-deleted and hidden.",
-                    )
-                  }
-                  title={`Soft-delete ${item.label}?`}
+              <p className="font-display text-3xl font-bold text-ink">
+                {item.value}
+                {item.suffix}
+              </p>
+            </div>
+            <div className="mt-5 grid gap-5 sm:grid-cols-[1fr_.55fr_.45fr]">
+              <CmsField label="Label" name={`stat-label-${item.id}`} required>
+                <Input
+                  id={`stat-label-${item.id}`}
+                  maxLength={100}
+                  onChange={(event) => change(item.id, "label", event.target.value)}
+                  value={item.label}
                 />
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+              </CmsField>
+              <CmsField
+                hint="Numeric text only"
+                label="Value"
+                name={`stat-value-${item.id}`}
+                required
+              >
+                <Input
+                  id={`stat-value-${item.id}`}
+                  inputMode="decimal"
+                  maxLength={50}
+                  onChange={(event) => change(item.id, "value", event.target.value)}
+                  value={item.value}
+                />
+              </CmsField>
+              <CmsField hint="+, K, %" label="Suffix" name={`stat-suffix-${item.id}`}>
+                <Input
+                  id={`stat-suffix-${item.id}`}
+                  maxLength={20}
+                  onChange={(event) => change(item.id, "suffix", event.target.value || null)}
+                  value={item.suffix ?? ""}
+                />
+              </CmsField>
+            </div>
+            <div className="mt-5 flex justify-end border-t border-line pt-4">
+              <button
+                className={buttonClasses("primary")}
+                disabled={busyId === item.id}
+                onClick={() => void save(item)}
+                type="button"
+              >
+                {busyId === item.id ? "Saving…" : `Save slot ${item.slotNumber}`}
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
 
-function StatisticForm({
-  item,
-  onCancel,
-  onSaved,
-}: {
-  item: AdminStatisticItem | null;
-  onCancel: () => void;
-  onSaved: (saved: AdminStatisticItem, created: boolean) => void;
-}) {
-  const [fields, setFields] = useState<CreateStatisticRequest>(
-    item ? toRequest(item) : emptyStatistic,
-  );
-  const [errors, setErrors] = useState<Partial<Record<"label" | "value" | "sortOrder", string>>>(
-    {},
-  );
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  function update<K extends keyof CreateStatisticRequest>(
-    name: K,
-    value: CreateStatisticRequest[K],
-  ) {
-    setFields((current) => ({ ...current, [name]: value }));
-    setErrors((current) => ({ ...current, [name]: undefined }));
-  }
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextErrors = validateStatistic(fields);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return setError("Please correct the highlighted fields.");
-    setSaving(true);
-    setError("");
-    try {
-      const request = normalizeStatistic(fields);
-      const saved = item
-        ? await updateAdminStatistic(item.id, request)
-        : await createAdminStatistic(request);
-      onSaved(saved, !item);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save the statistic.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card className="p-6 sm:p-8">
-      <form className="space-y-6" noValidate onSubmit={(event) => void submit(event)}>
-        <div className="border-b border-line pb-5">
-          <h2 className="font-display text-2xl font-bold text-ink">
-            {item ? "Edit statistic" : "Create statistic"}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-ink-muted">
-            Values remain private unless both visibility and verification are enabled.
-          </p>
-        </div>
-        <CmsFeedback message={error} tone="error" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <CmsField error={errors.label} label="Label" name="stat-label" required>
-            <Input
-              id="stat-label"
-              maxLength={100}
-              onChange={(event) => update("label", event.target.value)}
-              value={fields.label}
-            />
-          </CmsField>
-          <CmsField error={errors.value} label="Value" name="stat-value" required>
-            <Input
-              id="stat-value"
-              maxLength={50}
-              onChange={(event) => update("value", event.target.value)}
-              value={fields.value}
-            />
-          </CmsField>
-          <CmsField label="Suffix" name="stat-suffix">
-            <Input
-              id="stat-suffix"
-              maxLength={20}
-              onChange={(event) => update("suffix", event.target.value)}
-              value={fields.suffix ?? ""}
-            />
-          </CmsField>
-          <CmsField
-            error={errors.sortOrder}
-            hint="Zero or a positive whole number."
-            label="Sort order"
-            name="stat-order"
-            required
-          >
-            <Input
-              id="stat-order"
-              min={0}
-              onChange={(event) => update("sortOrder", Number(event.target.value))}
-              type="number"
-              value={fields.sortOrder}
-            />
-          </CmsField>
-          <div className="md:col-span-2">
-            <CmsField label="Description" name="stat-description">
-              <Textarea
-                id="stat-description"
-                maxLength={500}
-                onChange={(event) => update("description", event.target.value)}
-                value={fields.description ?? ""}
-              />
-            </CmsField>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <CmsCheckbox
-            checked={fields.isVisible}
-            description="Visibility is required for public display."
-            label="Visible"
-            name="stat-visible"
-            onChange={(value) => update("isVisible", value)}
-          />
-          <CmsCheckbox
-            checked={fields.isVerified}
-            description="Confirm that this value is factually approved."
-            label="Verified"
-            name="stat-verified"
-            onChange={(value) => update("isVerified", value)}
-          />
-        </div>
-        <div className="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:justify-end">
-          <button
-            className={buttonClasses("ghost")}
-            disabled={saving}
-            onClick={onCancel}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button className={buttonClasses("primary")} disabled={saving} type="submit">
-            {saving ? "Saving…" : item ? "Save statistic" : "Create statistic"}
-          </button>
-        </div>
-      </form>
-    </Card>
-  );
-}
-
-function validateStatistic(fields: CreateStatisticRequest) {
-  const errors: Partial<Record<"label" | "value" | "sortOrder", string>> = {};
-  if (!fields.label.trim()) errors.label = "Label is required.";
-  if (!fields.value.trim()) errors.value = "Value is required.";
-  if (!Number.isInteger(fields.sortOrder) || fields.sortOrder < 0)
-    errors.sortOrder = "Enter a non-negative whole number.";
-  return errors;
-}
-
-function normalizeStatistic(fields: CreateStatisticRequest): CreateStatisticRequest {
+function toRequest(item: AdminStatisticItem): UpdateStatisticRequest {
   return {
-    ...fields,
-    label: fields.label.trim(),
-    value: fields.value.trim(),
-    suffix: fields.suffix?.trim() || null,
-    description: fields.description?.trim() || null,
+    label: item.label.trim(),
+    value: item.value.trim(),
+    suffix: item.suffix?.trim() || null,
+    description: null,
+    sortOrder: item.slotNumber - 1,
+    isVisible: true,
+    isVerified: true,
   };
 }
 
-function toRequest(item: AdminStatisticItem): CreateStatisticRequest {
-  return {
-    label: item.label,
-    value: item.value,
-    suffix: item.suffix,
-    description: item.description,
-    sortOrder: item.sortOrder,
-    isVisible: item.isVisible,
-    isVerified: item.isVerified,
-  };
-}
-
-function sortStatistics(items: AdminStatisticItem[]) {
-  return [...items].sort(
-    (left, right) => left.sortOrder - right.sortOrder || left.label.localeCompare(right.label),
-  );
-}
-
-function ManagerLoading({ label }: { label: string }) {
-  return (
-    <div
-      aria-label={`Loading ${label}`}
-      className="h-72 animate-pulse border border-line bg-surface"
-      role="status"
-    />
-  );
-}
-
-function LoadError({ feedback }: { feedback: string }) {
-  return (
-    <Card className="p-6 sm:p-8">
-      <CmsFeedback message={feedback} tone="error" />
-      <button
-        className={buttonClasses("secondary", "mt-6")}
-        onClick={() => location.reload()}
-        type="button"
-      >
-        Try again
-      </button>
-    </Card>
-  );
+function sortSlots(items: AdminStatisticItem[]) {
+  return [...items].sort((left, right) => left.slotNumber - right.slotNumber);
 }

@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import localFont from "next/font/local";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getWebsiteUrl } from "@/lib/seo";
 import { getPublicBranding } from "@/lib/public-api";
 import { fallbackBranding } from "@the-domain/utils";
+import { DynamicWeightController } from "@/components/motion/dynamic-weight-controller";
 import "./globals.css";
 
-const siteFont = Manrope({
-  subsets: ["latin"],
+const siteFont = localFont({
+  src: "./fonts/Manrope-Variable.ttf",
+  weight: "200 800",
   variable: "--font-site",
   display: "swap",
 });
@@ -20,7 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: branding.defaultSeoTitle, template: `%s | ${branding.siteName}` },
     description: branding.defaultSeoDescription,
     applicationName: branding.siteName,
-    icons: branding.favicon ? { icon: branding.favicon.url } : undefined,
+    icons: branding.favicon
+      ? { icon: branding.favicon.url }
+      : { icon: [{ url: "/brand/the-domain-icon.png", sizes: "91x101", type: "image/png" }] },
     category: "entertainment",
     openGraph: {
       type: "website",
@@ -45,6 +49,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html className={siteFont.variable} lang="en">
       <body>
+        <DynamicWeightController />
         <a
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-gold focus:px-4 focus:py-3 focus:text-canvas"
           href="#main-content"

@@ -29,6 +29,15 @@ public sealed class HomepageCmsRepository(TheDomainDbContext dbContext) : IHomep
             && (!excludingId.HasValue || item.Id != excludingId.Value), cancellationToken);
     public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+    public async Task<IReadOnlyDictionary<Guid, MediaAsset>> ListMediaAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0) return new Dictionary<Guid, MediaAsset>();
+        return await dbContext.MediaAssets.AsNoTracking()
+            .Where(item => ids.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+    }
     public Task<MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.MediaCollections.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 

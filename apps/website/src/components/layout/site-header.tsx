@@ -1,12 +1,12 @@
 "use client";
 
+import type { PublicBrandingSettings } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import { cn } from "@the-domain/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import type { PublicBrandingSettings } from "@the-domain/types";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { BrandLogo } from "./brand-logo";
 
 const links = [
   { href: "/events", label: "Events" },
@@ -18,52 +18,85 @@ const links = [
 
 export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
   const pathname = usePathname();
+  const rootRef = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    const update = () => setCompact(window.scrollY > 36);
+    const update = () => setCompact(window.scrollY > 28);
     update();
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = () =>
+      Array.from(
+        menuRef.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled])") ?? [],
+      );
+    focusable()[0]?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      const first = elements[0];
+      const last = elements.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const pointerdown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("keydown", keydown);
+    document.addEventListener("pointerdown", pointerdown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", keydown);
+      document.removeEventListener("pointerdown", pointerdown);
+    };
+  }, [menuOpen]);
+
+  const overlay = pathname === "/" && !compact && !menuOpen;
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-line bg-canvas/80 backdrop-blur-2xl transition-[background-color,border-color] duration-300",
-        compact && "border-line/80 bg-canvas/95",
+        "fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-300",
+        overlay
+          ? "border-transparent bg-gradient-to-b from-black/70 to-transparent"
+          : "border-line/80 bg-canvas/92 shadow-[0_1rem_4rem_rgb(0_0_0/.18)] backdrop-blur-xl",
       )}
+      ref={rootRef}
     >
       <Container
         className={cn(
-          "flex items-center justify-between gap-4 transition-[min-height] duration-300",
-          compact ? "min-h-16" : "min-h-[4.5rem]",
+          "flex items-center justify-between gap-5 transition-[min-height]",
+          compact || menuOpen ? "min-h-16" : "min-h-20",
         )}
       >
         <Link
           aria-label={`${branding.siteName} home`}
-          className="inline-flex min-h-11 items-center font-display text-lg font-extrabold tracking-[-0.03em] text-ink focus-visible:outline-2 focus-visible:outline-offset-4"
+          className="inline-flex min-h-11 items-center"
           href="/"
         >
-          {branding.primaryLogo ? (
-            <Image
-              alt={`${branding.siteName} logo`}
-              className="h-11 w-auto object-contain"
-              height={44}
-              width={180}
-              priority
-              src={branding.primaryLogo.url}
-            />
-          ) : (
-            <>
-              {branding.siteName}
-              <span className="text-gold">.</span>
-            </>
-          )}
+          <BrandLogo className="h-auto w-[clamp(10rem,17vw,14rem)]" priority />
         </Link>
         <nav aria-label="Primary navigation" className="hidden md:block">
-          <ul className="flex items-center gap-x-7 font-label text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <ul className="flex items-center gap-x-8 text-[0.72rem] uppercase tracking-[0.16em] text-ink/75">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
@@ -86,69 +119,68 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
           aria-controls="mobile-navigation"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          className="grid size-11 place-items-center border border-line text-ink transition hover:border-gold hover:text-gold md:hidden"
+          className="grid size-11 place-items-center border border-ink/25 text-ink transition-colors hover:border-gold hover:text-gold md:hidden"
           onClick={() => setMenuOpen((value) => !value)}
+          ref={toggleRef}
           type="button"
         >
           <span aria-hidden="true" className="relative block h-4 w-5">
             <span
               className={cn(
                 "absolute left-0 top-0 h-px w-5 bg-current transition-transform",
-                menuOpen && "translate-y-[0.45rem] rotate-45",
+                menuOpen && "translate-y-[.45rem] rotate-45",
               )}
             />
             <span
               className={cn(
-                "absolute left-0 top-[0.45rem] h-px w-5 bg-current transition-opacity",
+                "absolute left-0 top-[.45rem] h-px w-5 bg-current transition-opacity",
                 menuOpen && "opacity-0",
               )}
             />
             <span
               className={cn(
                 "absolute bottom-0 left-0 h-px w-5 bg-current transition-transform",
-                menuOpen && "-translate-y-[0.45rem] -rotate-45",
+                menuOpen && "-translate-y-[.45rem] -rotate-45",
               )}
             />
           </span>
         </button>
       </Container>
       <nav
-        aria-hidden={!menuOpen}
         aria-label="Mobile navigation"
         className={cn(
-          "absolute inset-x-0 top-full overflow-hidden border-b border-line bg-canvas/98 backdrop-blur-2xl transition-[max-height,opacity] duration-300 md:hidden",
-          menuOpen ? "max-h-[28rem] opacity-100" : "pointer-events-none max-h-0 opacity-0",
+          "fixed inset-x-0 top-16 z-50 h-[calc(100dvh-4rem)] overflow-y-auto bg-canvas/98 px-gutter py-7 backdrop-blur-2xl transition-[opacity,transform] md:hidden",
+          menuOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-4 opacity-0",
         )}
         id="mobile-navigation"
         inert={!menuOpen}
+        ref={menuRef}
       >
-        <Container className="py-5">
-          <ul className="divide-y divide-line border-y border-line">
-            {links.map((link, index) => (
-              <li key={link.href}>
-                <Link
-                  aria-current={isActive(pathname, link.href) ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-14 items-center justify-between font-display text-xl font-bold tracking-[-0.02em] transition-colors",
-                    isActive(pathname, link.href) ? "text-gold" : "text-ink hover:text-gold",
-                  )}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span>{link.label}</span>
-                  <span className="font-label text-[0.625rem] font-normal tracking-[0.14em] text-ink-muted">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Container>
+        <ul className="divide-y divide-line border-y border-line">
+          {links.map((link, index) => (
+            <li key={link.href}>
+              <Link
+                aria-current={isActive(pathname, link.href) ? "page" : undefined}
+                className={cn(
+                  "flex min-h-16 items-center justify-between text-2xl font-bold",
+                  isActive(pathname, link.href) ? "text-gold" : "text-ink",
+                )}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span>{link.label}</span>
+                <span className="text-[0.65rem] font-normal tracking-[0.16em] text-ink-muted">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
     </header>
   );
 }
 
-function isActive(pathname: string, href: string): boolean {
+function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }

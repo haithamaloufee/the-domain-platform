@@ -246,6 +246,13 @@ function parseHomepageBuilder(value: unknown) {
     heroMediaAssetId: nullableString(value.heroMediaAssetId),
     galleryCollectionId: nullableString(value.galleryCollectionId),
     heroMedia: value.heroMedia === null ? null : parseHomepageHero(value.heroMedia),
+    isFloatingVideoEnabled: booleanValue(value.isFloatingVideoEnabled),
+    floatingVideoMediaAssetId: nullableString(value.floatingVideoMediaAssetId),
+    floatingVideoPosterMediaAssetId: nullableString(value.floatingVideoPosterMediaAssetId),
+    floatingVideoMedia:
+      value.floatingVideoMedia === null ? null : parseHomepageHero(value.floatingVideoMedia),
+    floatingVideoPoster:
+      value.floatingVideoPoster === null ? null : parseHomepageHero(value.floatingVideoPoster),
     sectionOrder: keys(value.sectionOrder),
     disabledSections: keys(value.disabledSections, true),
     eventsTitle: requiredString(value.eventsTitle),

@@ -1,7 +1,23 @@
 namespace TheDomain.Application.Homepage.Contracts;
 
 public sealed record HomepageHeroMediaResponse(Guid Id, TheDomain.Domain.Media.MediaType MediaType, string Url, string? PosterUrl, string? AltText);
-public sealed record HomepageBuilderResponse(Guid? HeroMediaAssetId, Guid? GalleryCollectionId, HomepageHeroMediaResponse? HeroMedia, IReadOnlyList<string> SectionOrder, IReadOnlyList<string> DisabledSections, string EventsTitle, string EventsDescription, string PreviousEventsTitle, string PreviousEventsDescription, string GalleryTitle, string GalleryDescription);
+public sealed record HomepageBuilderResponse(
+    Guid? HeroMediaAssetId,
+    Guid? GalleryCollectionId,
+    HomepageHeroMediaResponse? HeroMedia,
+    bool IsFloatingVideoEnabled,
+    Guid? FloatingVideoMediaAssetId,
+    Guid? FloatingVideoPosterMediaAssetId,
+    HomepageHeroMediaResponse? FloatingVideoMedia,
+    HomepageHeroMediaResponse? FloatingVideoPoster,
+    IReadOnlyList<string> SectionOrder,
+    IReadOnlyList<string> DisabledSections,
+    string EventsTitle,
+    string EventsDescription,
+    string PreviousEventsTitle,
+    string PreviousEventsDescription,
+    string GalleryTitle,
+    string GalleryDescription);
 public sealed record PublicHomepageContentResponse(
     string HeroEyebrow,
     string HeroTitle,
@@ -71,6 +87,7 @@ public sealed record AdminHomepageContentResponse(
 
 public sealed record AdminStatisticResponse(
     Guid Id,
+    int SlotNumber,
     string Label,
     string Value,
     string? Suffix,

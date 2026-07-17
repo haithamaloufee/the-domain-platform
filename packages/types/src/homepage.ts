@@ -41,6 +41,11 @@ export interface HomepageBuilderSettings {
   heroMediaAssetId: string | null;
   galleryCollectionId: string | null;
   heroMedia: HomepageHeroMedia | null;
+  isFloatingVideoEnabled: boolean;
+  floatingVideoMediaAssetId: string | null;
+  floatingVideoPosterMediaAssetId: string | null;
+  floatingVideoMedia: HomepageHeroMedia | null;
+  floatingVideoPoster: HomepageHeroMedia | null;
   sectionOrder: HomepageSectionKey[];
   disabledSections: HomepageSectionKey[];
   eventsTitle: string;
@@ -90,6 +95,9 @@ export interface UpdateHomepageContentRequest extends Omit<PublicHomepageContent
   previousEventsDescription: string;
   galleryTitle: string;
   galleryDescription: string;
+  isFloatingVideoEnabled: boolean;
+  floatingVideoMediaAssetId: string | null;
+  floatingVideoPosterMediaAssetId: string | null;
 }
 
 export interface AdminHomepageContent extends PublicHomepageContent {
@@ -113,6 +121,7 @@ export type UpdateStatisticRequest = CreateStatisticRequest;
 
 export interface AdminStatisticItem extends CreateStatisticRequest {
   id: string;
+  slotNumber: number;
   createdAtUtc: string;
   updatedAtUtc: string;
 }

@@ -29,7 +29,10 @@ public sealed record UpdateHomepageContentRequest(
     string? PreviousEventsTitle = null,
     string? PreviousEventsDescription = null,
     string? GalleryTitle = null,
-    string? GalleryDescription = null);
+    string? GalleryDescription = null,
+    bool IsFloatingVideoEnabled = false,
+    Guid? FloatingVideoMediaAssetId = null,
+    Guid? FloatingVideoPosterMediaAssetId = null);
 
 public sealed record SaveStatisticRequest(
     string Label,

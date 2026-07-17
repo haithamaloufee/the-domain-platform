@@ -1,23 +1,24 @@
 using TheDomain.Application.Homepage;
 using TheDomain.Application.Homepage.Contracts;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Tests.Homepage;
 
 public sealed class HomepageCmsServiceTests
 {
     [Fact]
-    public async Task StatisticsAndPartnersReorderRequireCompleteUniqueIds()
+    public async Task StatisticSlotsCannotBeReorderedWhilePartnersStillCan()
     {
-        var firstStatistic = new StatisticItem(Guid.NewGuid(), "First", "1", null, null, 0, true, true, DateTimeOffset.UtcNow);
-        var secondStatistic = new StatisticItem(Guid.NewGuid(), "Second", "2", null, null, 1, true, true, DateTimeOffset.UtcNow);
+        var firstStatistic = new StatisticItem(Guid.NewGuid(), "First", "1", null, null, 0, true, true, DateTimeOffset.UtcNow, 1);
+        var secondStatistic = new StatisticItem(Guid.NewGuid(), "Second", "2", null, null, 1, true, true, DateTimeOffset.UtcNow, 2);
         var firstPartner = new Partner(Guid.NewGuid(), "First", "first", null, null, null, 0, true, false, DateTimeOffset.UtcNow);
         var secondPartner = new Partner(Guid.NewGuid(), "Second", "second", null, null, null, 1, true, false, DateTimeOffset.UtcNow);
         var service = new HomepageCmsService(new FakeRepository { Statistics = [firstStatistic, secondStatistic], Partners = [firstPartner, secondPartner] }, TimeProvider.System);
         Assert.False((await service.ReorderStatisticsAsync(new([firstStatistic.Id, firstStatistic.Id]), default)).IsSuccess);
-        Assert.True((await service.ReorderStatisticsAsync(new([secondStatistic.Id, firstStatistic.Id]), default)).IsSuccess);
+        Assert.False((await service.ReorderStatisticsAsync(new([secondStatistic.Id, firstStatistic.Id]), default)).IsSuccess);
         Assert.True((await service.ReorderPartnersAsync(new([secondPartner.Id, firstPartner.Id]), default)).IsSuccess);
-        Assert.Equal(0, secondStatistic.SortOrder); Assert.Equal(0, secondPartner.SortOrder);
+        Assert.Equal(1, secondStatistic.SortOrder); Assert.Equal(0, secondPartner.SortOrder);
     }
 
     [Fact]
@@ -29,22 +30,24 @@ public sealed class HomepageCmsServiceTests
         Assert.Equal("Experience in motion", (await service.GetStatisticsPresentationAsync(default)).Phrase);
     }
     [Fact]
-    public async Task PublicStatisticsIncludeOnlyVisibleVerifiedItems()
+    public async Task PublicStatisticsUseTheFourPermanentSlotsInSlotOrder()
     {
         var repository = new FakeRepository
         {
             Statistics =
             [
-                Statistic("public", visible: true, verified: true, sortOrder: 2),
-                Statistic("hidden", visible: false, verified: true, sortOrder: 0),
-                Statistic("unverified", visible: true, verified: false, sortOrder: 1)
+                Statistic("fourth", 4),
+                Statistic("first", 1),
+                Statistic("legacy", null),
+                Statistic("third", 3),
+                Statistic("second", 2)
             ]
         };
 
         var result = await CreateService(repository).GetPublicStatisticsAsync(CancellationToken.None);
 
-        Assert.Single(result);
-        Assert.Equal("public", result[0].Label);
+        Assert.Equal(4, result.Count);
+        Assert.Equal(["first", "second", "third", "fourth"], result.Select(item => item.Label));
     }
 
     [Fact]
@@ -63,6 +66,40 @@ public sealed class HomepageCmsServiceTests
         var result = await CreateService(repository).GetPublicPartnersAsync(CancellationToken.None);
 
         Assert.Equal(["first", "later"], result.Select(item => item.Slug));
+    }
+
+    [Fact]
+    public async Task PublicPartnerLogoReflectsCurrentMediaEligibility()
+    {
+        var logo = ApprovedImage();
+        var partner = new Partner(Guid.NewGuid(), "Northstar", "northstar", logo.Url, null, null,
+            0, true, true, DateTimeOffset.UtcNow, logo.Id);
+        var repository = new FakeRepository
+        {
+            Partners = [partner],
+            Media = new Dictionary<Guid, MediaAsset> { [logo.Id] = logo }
+        };
+        var service = CreateService(repository);
+
+        Assert.Equal(logo.Url, Assert.Single(await service.GetPublicPartnersAsync(default)).LogoUrl);
+
+        logo.Hide(DateTimeOffset.UtcNow);
+
+        Assert.Null(Assert.Single(await service.GetPublicPartnersAsync(default)).LogoUrl);
+    }
+
+    [Fact]
+    public async Task StatisticSlotsRejectCreationAndNonNumericValues()
+    {
+        var statistic = Statistic("First", 1);
+        var service = CreateService(new FakeRepository { Statistics = [statistic] });
+
+        var create = await service.CreateStatisticAsync(new("New", "5", "+", null, 0, true, true), default);
+        var update = await service.UpdateStatisticAsync(statistic.Id,
+            new("First", "10+", null, null, 0, true, true), default);
+
+        Assert.Equal(CmsFailureKind.Conflict, create.FailureKind);
+        Assert.Equal(CmsFailureKind.Validation, update.FailureKind);
     }
 
     [Fact]
@@ -143,11 +180,17 @@ public sealed class HomepageCmsServiceTests
 
     private static HomepageCmsService CreateService(FakeRepository repository) => new(repository, TimeProvider.System);
 
-    private static StatisticItem Statistic(string label, bool visible, bool verified, int sortOrder) =>
-        new(Guid.NewGuid(), label, "1", null, null, sortOrder, visible, verified, DateTimeOffset.UtcNow);
+    private static StatisticItem Statistic(string label, int? slotNumber) =>
+        new(Guid.NewGuid(), label, "1", null, null, slotNumber.HasValue ? slotNumber.Value - 1 : 99,
+            true, true, DateTimeOffset.UtcNow, slotNumber);
 
     private static Partner PartnerItem(string slug, bool visible, int sortOrder) =>
         new(Guid.NewGuid(), slug, slug, null, null, null, sortOrder, visible, false, DateTimeOffset.UtcNow);
+
+    private static MediaAsset ApprovedImage() => new(Guid.NewGuid(), "northstar.png",
+        "northstar.png", MediaType.Image, "https://res.cloudinary.com/demo/northstar.png", null,
+        800, 320, null, MediaOrientation.Landscape, "Partners", null, "Northstar logo",
+        MediaApprovalStatus.Approved, "demo/northstar", DateTimeOffset.UtcNow);
 
     private static HomepageContent CreateHomepage(bool isPublished)
     {
@@ -169,6 +212,8 @@ public sealed class HomepageCmsServiceTests
         public IReadOnlyList<StatisticItem> Statistics { get; init; } = [];
         public IReadOnlyList<Partner> Partners { get; init; } = [];
         public bool DuplicatePartnerSlug { get; init; }
+        public IReadOnlyDictionary<Guid, TheDomain.Domain.Media.MediaAsset> Media { get; init; } =
+            new Dictionary<Guid, TheDomain.Domain.Media.MediaAsset>();
         public int SaveCount { get; private set; }
 
         public Task<HomepageContent?> GetHomepageAsync(CancellationToken cancellationToken) => Task.FromResult(Homepage);
@@ -177,7 +222,12 @@ public sealed class HomepageCmsServiceTests
         public Task<IReadOnlyList<Partner>> ListPartnersAsync(CancellationToken cancellationToken) => Task.FromResult(Partners);
         public Task<Partner?> FindPartnerAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(Partners.SingleOrDefault(item => item.Id == id));
         public Task<bool> PartnerSlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) => Task.FromResult(DuplicatePartnerSlug);
-        public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaAsset?>(null);
+        public Task<TheDomain.Domain.Media.MediaAsset?> FindMediaAsync(Guid id, CancellationToken cancellationToken) =>
+            Task.FromResult(Media.GetValueOrDefault(id));
+        public Task<IReadOnlyDictionary<Guid, TheDomain.Domain.Media.MediaAsset>> ListMediaAsync(
+            IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, TheDomain.Domain.Media.MediaAsset>>(
+                Media.Where(item => ids.Contains(item.Key)).ToDictionary());
         public Task<TheDomain.Domain.Media.MediaCollection?> FindCollectionAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<TheDomain.Domain.Media.MediaCollection?>(null);
         public void AddHomepage(HomepageContent content) => Homepage = content;
         public void AddStatistic(StatisticItem statistic) { }

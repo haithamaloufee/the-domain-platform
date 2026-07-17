@@ -1,5 +1,6 @@
 import type { GalleryPublicCollection, PublicGalleryAlbum } from "@the-domain/types";
-import { Container, EmptyState, Section } from "@the-domain/ui";
+import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
+import Link from "next/link";
 import { AlbumCard } from "@/components/gallery/album-card";
 import { CollectionCard } from "@/components/gallery/collection-card";
 import { HomeSectionHeader } from "./home-section-header";
@@ -59,6 +60,13 @@ export function GalleryPreviewSection({
                   : "Gallery moments are being selected"
               }
             />
+          </div>
+        )}
+        {(collection || albums.length > 0) && (
+          <div className="mt-10 text-center">
+            <Link className={buttonClasses("secondary")} href="/gallery">
+              Open The Gallery
+            </Link>
           </div>
         )}
       </Container>

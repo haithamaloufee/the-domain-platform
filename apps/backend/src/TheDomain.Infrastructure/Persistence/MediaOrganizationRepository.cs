@@ -47,7 +47,20 @@ public sealed class MediaOrganizationRepository(TheDomainDbContext dbContext) : 
         if (branding?.PrimaryLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Primary logo")); if (branding?.AlternateLogoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Alternate logo")); if (branding?.FaviconMediaAssetId == mediaAssetId) brandingUsage.Add(new("Favicon")); if (branding?.SocialImageMediaAssetId == mediaAssetId) brandingUsage.Add(new("Default social image"));
         var partnerNames = await dbContext.Partners.AsNoTracking().Where(item => item.LogoMediaAssetId == mediaAssetId).Select(item => item.Name).ToListAsync(token);
         brandingUsage.AddRange(partnerNames.Select(name => new MediaBrandingUsageResponse($"Partner logo · {name}")));
-        if (await dbContext.HomepageContent.AsNoTracking().AnyAsync(item => item.HeroMediaAssetId == mediaAssetId, token)) brandingUsage.Add(new("Homepage hero"));
+        var homepage = await dbContext.HomepageContent.AsNoTracking()
+            .Where(item => item.HeroMediaAssetId == mediaAssetId
+                || item.FloatingVideoMediaAssetId == mediaAssetId
+                || item.FloatingVideoPosterMediaAssetId == mediaAssetId)
+            .Select(item => new
+            {
+                item.HeroMediaAssetId,
+                item.FloatingVideoMediaAssetId,
+                item.FloatingVideoPosterMediaAssetId
+            })
+            .SingleOrDefaultAsync(token);
+        if (homepage?.HeroMediaAssetId == mediaAssetId) brandingUsage.Add(new("Homepage hero"));
+        if (homepage?.FloatingVideoMediaAssetId == mediaAssetId) brandingUsage.Add(new("Homepage floating video"));
+        if (homepage?.FloatingVideoPosterMediaAssetId == mediaAssetId) brandingUsage.Add(new("Homepage floating video poster"));
         var about = await dbContext.AboutSettings.AsNoTracking().Where(item => item.HeroMediaAssetId == mediaAssetId || item.SocialImageMediaAssetId == mediaAssetId).Select(item => new { item.HeroMediaAssetId, item.SocialImageMediaAssetId }).SingleOrDefaultAsync(token);
         if (about?.HeroMediaAssetId == mediaAssetId) brandingUsage.Add(new("About hero"));
         if (about?.SocialImageMediaAssetId == mediaAssetId) brandingUsage.Add(new("About social image"));

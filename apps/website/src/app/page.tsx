@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
+import { FloatingVideoPlayer } from "@/components/home/floating-video-player";
 import { HomepageEventsSection } from "@/components/home/homepage-events-section";
 import { PartnersPreviewSection } from "@/components/home/partners-preview-section";
 import { PreviousEventsSection } from "@/components/home/previous-events-section";
@@ -26,8 +27,6 @@ import {
   getGalleryAlbums,
   getGalleryCollections,
   getPublicHomepage,
-  getPublicPartners,
-  getPublicStatistics,
   getPreviousEvents,
   getUpcomingEvents,
 } from "@/lib/public-api";
@@ -89,6 +88,12 @@ export default async function HomePage() {
     <>
       <JsonLd data={createHomepageStructuredData()} />
       <HomeHero content={data.content} featuredEvent={heroEvent} />
+      {builder?.isFloatingVideoEnabled && builder.floatingVideoMedia && (
+        <FloatingVideoPlayer
+          poster={builder.floatingVideoPoster?.url ?? builder.floatingVideoMedia.posterUrl}
+          src={builder.floatingVideoMedia.url}
+        />
+      )}
       {order
         .filter((key) => !disabled.has(key))
         .map((key) => (
@@ -138,17 +143,14 @@ interface HomepageData {
 }
 
 async function loadHomepageData(): Promise<HomepageData> {
-  const [featured, upcoming, previous, albums, collections, homepage, statistics, partners] =
-    await Promise.allSettled([
-      getFeaturedEvents(),
-      getUpcomingEvents(),
-      getPreviousEvents(),
-      getGalleryAlbums(),
-      getGalleryCollections(),
-      getPublicHomepage(),
-      getPublicStatistics(),
-      getPublicPartners(),
-    ]);
+  const [featured, upcoming, previous, albums, collections, homepage] = await Promise.allSettled([
+    getFeaturedEvents(),
+    getUpcomingEvents(),
+    getPreviousEvents(),
+    getGalleryAlbums(),
+    getGalleryCollections(),
+    getPublicHomepage(),
+  ]);
 
   const homepageValue = homepage.status === "fulfilled" ? homepage.value : null;
 
@@ -159,13 +161,12 @@ async function loadHomepageData(): Promise<HomepageData> {
     albums: settledValue(albums),
     collections: settledValue(collections),
     content: homepageValue?.content ?? null,
-    statistics:
-      statistics.status === "fulfilled" ? statistics.value : (homepageValue?.statistics ?? []),
+    statistics: homepageValue?.statistics ?? [],
     statisticsPresentation: homepageValue?.statisticsPresentation ?? {
       phrase: "Moments that move with us",
       isEnabled: true,
     },
-    partners: partners.status === "fulfilled" ? partners.value : (homepageValue?.partners ?? []),
+    partners: homepageValue?.partners ?? [],
     unavailable: {
       events: featured.status === "rejected" && upcoming.status === "rejected",
       previous: previous.status === "rejected",
