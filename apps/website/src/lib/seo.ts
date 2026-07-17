@@ -1,6 +1,6 @@
 import "server-only";
 
-import { MediaType, type PublicMediaItem } from "@the-domain/types";
+import { MediaType, type GalleryPublicMedia, type PublicMediaItem } from "@the-domain/types";
 import type { Metadata } from "next";
 
 export const siteName = "The Domain Entertainment";
@@ -82,4 +82,11 @@ export function getFirstPublicMediaSeoImage(
     if (image) return image;
   }
   return null;
+}
+
+export function getGalleryMediaSeoImage(
+  media: GalleryPublicMedia | null | undefined,
+): string | null {
+  if (!media) return null;
+  return media.mediaType === MediaType.Image ? media.url : media.posterUrl;
 }

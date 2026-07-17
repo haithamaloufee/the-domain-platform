@@ -7,9 +7,10 @@ export default function GalleryLoading() {
       <BrandedLoader compact />
       <Section className="pt-0">
         <Container>
-          <div className="grid gap-5 lg:grid-cols-2" role="status">
-            <div className="h-[32rem] animate-pulse border border-line bg-surface-raised" />
-            <div className="h-[32rem] animate-pulse border border-line bg-surface-raised" />
+          <div className="grid gap-5 lg:grid-cols-12" role="status">
+            <div className="h-[34rem] animate-pulse border border-line bg-surface-raised lg:col-span-12" />
+            <div className="h-[34rem] animate-pulse border border-line bg-surface-raised lg:col-span-5" />
+            <div className="h-[34rem] animate-pulse border border-line bg-surface-raised lg:col-span-7" />
             <span className="sr-only">Loading gallery albums</span>
           </div>
         </Container>

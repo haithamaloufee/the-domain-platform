@@ -66,8 +66,8 @@ export function AlbumCard({
           {album.photoCount} photos / {album.videoCount} videos
         </p>
         <div className="mt-6">
-          <Link className={buttonClasses("primary")} href={`/gallery/${album.eventSlug}`}>
-            View Album
+          <Link className={buttonClasses("primary")} href={`/events/${album.eventSlug}`}>
+            View Event
           </Link>
         </div>
       </div>

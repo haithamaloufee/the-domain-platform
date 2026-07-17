@@ -1,9 +1,9 @@
 "use client";
 
 import { MediaType, type PublicMediaItem } from "@the-domain/types";
-import { Dialog, EmptyState, buttonClasses } from "@the-domain/ui";
-import Image from "next/image";
-import { useState } from "react";
+import { EmptyState, buttonClasses } from "@the-domain/ui";
+import { useMemo, useState } from "react";
+import { MediaViewer, type MediaViewerItem } from "./media-viewer";
 import { PublicMediaThumbnail } from "./public-media-thumbnail";
 
 type MediaFilter = "all" | "photos" | "videos";
@@ -15,69 +15,91 @@ const filters: Array<{ label: string; value: MediaFilter }> = [
   { label: "Videos", value: "videos" },
 ];
 
-export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
+export function GalleryMediaGrid({
+  media,
+  showFilters = true,
+}: {
+  media: PublicMediaItem[];
+  showFilters?: boolean;
+}) {
   const [filter, setFilter] = useState<MediaFilter>("all");
   const [visibleCount, setVisibleCount] = useState(mediaBatchSize);
-  const visible = media.filter((item) => {
+  const orderedMedia = useMemo(
+    () => [...media].sort((left, right) => left.sortOrder - right.sortOrder),
+    [media],
+  );
+  const visible = orderedMedia.filter((item) => {
     if (filter === "photos") return item.mediaType === MediaType.Image;
     if (filter === "videos") return item.mediaType === MediaType.Video;
     return true;
   });
   const rendered = visible.slice(0, visibleCount);
+  const viewerItems = visible.map(toViewerItem);
+  const hasBothMediaTypes =
+    orderedMedia.some((item) => item.mediaType === MediaType.Image) &&
+    orderedMedia.some((item) => item.mediaType === MediaType.Video);
 
   return (
     <div>
-      <div aria-label="Filter gallery media" className="flex flex-wrap gap-2" role="group">
-        {filters.map((item) => (
-          <button
-            aria-pressed={filter === item.value}
-            className={buttonClasses(filter === item.value ? "primary" : "secondary", "min-w-24")}
-            key={item.value}
-            onClick={() => {
-              setFilter(item.value);
-              setVisibleCount(mediaBatchSize);
-            }}
-            type="button"
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      {showFilters && hasBothMediaTypes && (
+        <div aria-label="Filter gallery media" className="flex flex-wrap gap-2" role="group">
+          {filters.map((item) => (
+            <button
+              aria-pressed={filter === item.value}
+              className={buttonClasses(filter === item.value ? "primary" : "secondary", "min-w-24")}
+              key={item.value}
+              onClick={() => {
+                setFilter(item.value);
+                setVisibleCount(mediaBatchSize);
+              }}
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {visible.length === 0 ? (
-        <div className="mt-10">
+        <div className={showFilters ? "mt-10" : undefined}>
           <EmptyState
             description="Choose another filter to continue exploring this event."
             title={`No ${filter === "all" ? "media" : filter} in this album`}
           />
         </div>
       ) : (
-        <div className="mt-10 columns-2 gap-3 sm:columns-3 lg:columns-4 lg:gap-5">
-          {rendered.map((item, index) => (
-            <div className="group mb-3 break-inside-avoid lg:mb-5" key={item.id}>
-              <Dialog
-                description={item.caption ?? item.altText ?? undefined}
-                title={
-                  item.caption ||
-                  (item.mediaType === MediaType.Video ? "Event video" : "Event photo")
-                }
-                trigger={
+        <MediaViewer items={viewerItems}>
+          {({ openAt }) => (
+            <div
+              className={
+                showFilters && hasBothMediaTypes
+                  ? "mt-10 columns-1 gap-3 sm:columns-2 lg:columns-3 lg:gap-5"
+                  : "columns-1 gap-3 sm:columns-2 lg:columns-3 lg:gap-5"
+              }
+            >
+              {rendered.map((item, index) => (
+                <div
+                  className="group mb-3 break-inside-avoid lg:mb-5"
+                  key={`${item.id}-${item.usage}-${index}`}
+                >
                   <button
                     aria-label={`Open ${item.mediaType === MediaType.Video ? "video" : "photo"}${item.caption ? `: ${item.caption}` : ""}`}
-                    className="block w-full border border-transparent text-left transition hover:border-gold focus-visible:border-gold focus-visible:outline-2 focus-visible:outline-offset-4"
+                    className="relative block w-full border border-transparent text-left transition hover:border-gold focus-visible:border-gold focus-visible:outline-2 focus-visible:outline-offset-4"
+                    onClick={(event) => openAt(index, event.currentTarget)}
                     type="button"
                   >
-                    <PublicMediaThumbnail media={item} priority={index < 4} />
+                    <PublicMediaThumbnail media={item} />
+                    <span className="absolute right-3 top-3 border border-ink/30 bg-canvas/70 px-2 py-1 font-label text-[0.5625rem] uppercase tracking-[0.12em] text-ink opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      Open
+                    </span>
                   </button>
-                }
-                variant="media"
-              >
-                {({ close, open }) => <MediaDialogContent close={close} media={item} open={open} />}
-              </Dialog>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </MediaViewer>
       )}
+
       {visibleCount < visible.length && (
         <div className="mt-10 flex justify-center">
           <button
@@ -93,48 +115,13 @@ export function GalleryMediaGrid({ media }: { media: PublicMediaItem[] }) {
   );
 }
 
-function MediaDialogContent({
-  media,
-  close,
-  open,
-}: {
-  media: PublicMediaItem;
-  close: () => void;
-  open: boolean;
-}) {
-  return (
-    <div>
-      <div className="relative h-[min(68svh,52rem)] overflow-hidden bg-canvas">
-        {media.mediaType === MediaType.Video ? (
-          <video
-            autoPlay={open}
-            className="h-full w-full object-contain"
-            controls
-            playsInline
-            poster={media.videoPoster.posterUrl ?? media.thumbnailUrl ?? undefined}
-            preload="metadata"
-            src={media.url}
-          >
-            Your browser does not support video playback.
-          </video>
-        ) : (
-          <button
-            aria-label="Close enlarged image"
-            className="relative h-full w-full cursor-zoom-out"
-            onClick={close}
-            type="button"
-          >
-            <Image
-              alt={media.altText ?? ""}
-              className="object-contain"
-              fill
-              sizes="(max-width: 640px) 100vw, 64rem"
-              src={media.url}
-            />
-          </button>
-        )}
-      </div>
-      {media.caption && <p className="mt-4 text-sm leading-6 text-ink-muted">{media.caption}</p>}
-    </div>
-  );
+function toViewerItem(media: PublicMediaItem): MediaViewerItem {
+  return {
+    id: `${media.id}-${media.usage}`,
+    mediaType: media.mediaType,
+    sourceUrl: media.url,
+    posterUrl: media.videoPoster.posterUrl ?? media.thumbnailUrl,
+    altText: media.altText ?? "",
+    caption: media.caption,
+  };
 }

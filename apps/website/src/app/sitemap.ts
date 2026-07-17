@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import {
   getFeaturedEvents,
-  getGalleryAlbums,
+  getGalleryCollections,
   getPreviousEvents,
   getUpcomingEvents,
 } from "@/lib/public-api";
@@ -13,11 +13,11 @@ export const revalidate = 60;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = getWebsiteUrl();
-  const [upcoming, previous, featured, albums] = await Promise.allSettled([
+  const [upcoming, previous, featured, collections] = await Promise.allSettled([
     getUpcomingEvents(),
     getPreviousEvents(),
     getFeaturedEvents(),
-    getGalleryAlbums(),
+    getGalleryCollections(),
   ]);
 
   const eventSlugs = new Set(
@@ -25,8 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
       .map((event) => event.slug),
   );
-  const albumSlugs = new Set(
-    albums.status === "fulfilled" ? albums.value.map((album) => album.eventSlug) : [],
+  const collectionIds = new Set(
+    collections.status === "fulfilled" ? collections.value.map((collection) => collection.id) : [],
   );
 
   return [
@@ -40,8 +40,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
-    ...[...albumSlugs].map((slug) => ({
-      url: new URL(`/gallery/${encodeURIComponent(slug)}`, origin).toString(),
+    ...[...collectionIds].map((id) => ({
+      url: new URL(`/gallery/${encodeURIComponent(id)}`, origin).toString(),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),

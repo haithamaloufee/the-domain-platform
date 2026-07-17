@@ -9,8 +9,8 @@ import {
 
 export const displayStatusLabels: Record<EventDisplayStatusValue, string> = {
   [EventDisplayStatus.Upcoming]: "Upcoming",
-  [EventDisplayStatus.Live]: "Live now",
-  [EventDisplayStatus.Finished]: "Finished",
+  [EventDisplayStatus.Live]: "Happening now",
+  [EventDisplayStatus.Finished]: "Ended",
   [EventDisplayStatus.Cancelled]: "Cancelled",
 };
 

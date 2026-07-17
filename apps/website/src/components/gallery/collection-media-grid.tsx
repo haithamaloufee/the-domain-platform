@@ -1,134 +1,140 @@
 "use client";
+
 import {
   GalleryLayoutPreset,
+  MediaOrientation,
   MediaType,
   type GalleryPublicCollection,
   type GalleryPublicMedia,
 } from "@the-domain/types";
-import { Dialog } from "@the-domain/ui";
-import { galleryLayoutPresets, galleryMediaImageSource } from "@the-domain/utils";
+import { Badge } from "@the-domain/ui";
+import { cn, galleryMediaImageSource } from "@the-domain/utils";
 import Image from "next/image";
+import { MediaViewer, type MediaViewerItem } from "./media-viewer";
 
 export function CollectionMediaGrid({ collection }: { collection: GalleryPublicCollection }) {
-  const featured =
-    collection.media.find((item) => item.id === collection.featuredMediaId) ?? collection.media[0];
+  const ordered = [...collection.media].sort((left, right) => left.sortOrder - right.sortOrder);
+  const featured = ordered.find((item) => item.id === collection.featuredMediaId) ?? ordered[0];
   const featureFirst = collection.layoutPreset === GalleryLayoutPreset.FeatureFirst;
-  const media = featureFirst
-    ? collection.media.filter((item) => item.id !== featured?.id)
-    : collection.media;
+  const arranged = featureFirst
+    ? [featured, ...ordered.filter((item) => item.id !== featured?.id)].filter(
+        (item): item is GalleryPublicMedia => Boolean(item),
+      )
+    : ordered;
+  const viewerItems = arranged.map(toViewerItem);
+
   return (
-    <div className={`gap-3 lg:gap-5 ${galleryLayoutPresets[collection.layoutPreset].gridClass}`}>
-      {featureFirst && featured && (
-        <MediaTile className="col-span-2 mb-3 aspect-video lg:mb-5" media={featured} priority />
+    <MediaViewer items={viewerItems}>
+      {({ openAt }) => (
+        <div className={layoutClass(collection.layoutPreset)}>
+          {arranged.map((item, index) => (
+            <MediaTile
+              className={tileClass(collection.layoutPreset, item, index)}
+              index={index}
+              key={`${item.id}-${index}`}
+              media={item}
+              onOpen={openAt}
+            />
+          ))}
+        </div>
       )}
-      {media.map((item, index) => (
-        <MediaTile
-          className={
-            collection.layoutPreset === GalleryLayoutPreset.Editorial
-              ? "mb-3 break-inside-avoid lg:mb-5"
-              : "aspect-[4/5]"
-          }
-          key={item.id}
-          media={item}
-          priority={index < 4}
-        />
-      ))}
-    </div>
+    </MediaViewer>
   );
 }
 
 function MediaTile({
-  media,
-  priority,
   className,
+  index,
+  media,
+  onOpen,
 }: {
-  media: GalleryPublicMedia;
-  priority: boolean;
   className: string;
+  index: number;
+  media: GalleryPublicMedia;
+  onOpen: (index: number, trigger: HTMLElement) => void;
 }) {
   const source = galleryMediaImageSource(media);
   return (
-    <Dialog
-      description={media.caption ?? media.altText ?? undefined}
-      title={
-        media.caption ?? (media.mediaType === MediaType.Video ? "Gallery video" : "Gallery image")
-      }
-      trigger={
-        <button
-          aria-label={`Open ${media.mediaType === MediaType.Video ? "video" : "image"}${media.caption ? `: ${media.caption}` : ""}`}
-          className={`group relative block w-full overflow-hidden border border-transparent bg-surface-raised text-left transition hover:border-gold focus-visible:outline-2 focus-visible:outline-offset-4 ${className}`}
-          type="button"
-        >
-          {source ? (
-            <Image
-              alt={media.altText ?? ""}
-              className="object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:transition-none"
-              fill
-              priority={priority}
-              sizes="(max-width: 640px) 50vw, 25vw"
-              src={source}
-            />
-          ) : (
-            <span className="grid min-h-48 place-items-center p-5 text-center text-xs text-ink-muted">
-              Video poster unavailable
-            </span>
-          )}
-          {media.mediaType === MediaType.Video && (
-            <span className="absolute left-3 top-3 bg-canvas/80 px-2 py-1 text-xs uppercase text-ink">
-              Video
-            </span>
-          )}
-        </button>
-      }
-      variant="media"
+    <button
+      aria-label={`Open ${media.mediaType === MediaType.Video ? "video" : "image"}${media.caption ? `: ${media.caption}` : ""}`}
+      className={cn(
+        "group relative block w-full overflow-hidden border border-transparent bg-surface-raised text-left transition hover:border-gold focus-visible:border-gold focus-visible:outline-2 focus-visible:outline-offset-4",
+        className,
+      )}
+      onClick={(event) => onOpen(index, event.currentTarget)}
+      type="button"
     >
-      {({ close, open }) => <CollectionDialogContent close={close} media={media} open={open} />}
-    </Dialog>
+      {source ? (
+        <Image
+          alt={media.altText ?? ""}
+          className="object-cover transition duration-500 group-hover:scale-[1.02] motion-reduce:transition-none"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          src={source}
+        />
+      ) : (
+        <span className="architectural-grid grid h-full min-h-64 place-items-center p-5 text-center text-xs text-ink-muted">
+          Video poster unavailable
+        </span>
+      )}
+      <span className="absolute inset-0 bg-gradient-to-t from-canvas/70 via-transparent to-transparent opacity-70 transition-opacity group-hover:opacity-100" />
+      {media.mediaType === MediaType.Video && (
+        <Badge className="absolute left-3 top-3 border-ink/40 bg-canvas/75 text-ink backdrop-blur-sm">
+          Video
+        </Badge>
+      )}
+      <span className="absolute right-3 top-3 border border-ink/30 bg-canvas/70 px-2 py-1 font-label text-[0.5625rem] uppercase tracking-[0.12em] text-ink opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+        Open
+      </span>
+      {media.caption && (
+        <span className="absolute inset-x-0 bottom-0 line-clamp-2 px-4 pb-4 pt-12 text-sm leading-6 text-ink">
+          {media.caption}
+        </span>
+      )}
+    </button>
   );
 }
 
-function CollectionDialogContent({
-  media,
-  close,
-  open,
-}: {
-  media: GalleryPublicMedia;
-  close: () => void;
-  open: boolean;
-}) {
-  return (
-    <div>
-      {media.mediaType === MediaType.Video ? (
-        <video
-          autoPlay={open}
-          className="max-h-[68svh] w-full bg-canvas object-contain"
-          controls
-          playsInline
-          poster={media.posterUrl ?? undefined}
-          preload="metadata"
-          src={media.url}
-        >
-          Your browser does not support video playback.
-        </video>
-      ) : (
-        <div className="relative h-[min(68svh,52rem)] bg-canvas">
-          <button
-            aria-label="Close enlarged image"
-            className="relative h-full w-full cursor-zoom-out"
-            onClick={close}
-            type="button"
-          >
-            <Image
-              alt={media.altText ?? ""}
-              className="object-contain"
-              fill
-              sizes="100vw"
-              src={media.url}
-            />
-          </button>
-        </div>
-      )}
-      {media.caption && <p className="mt-4 text-sm leading-6 text-ink-muted">{media.caption}</p>}
-    </div>
-  );
+function layoutClass(preset: GalleryPublicCollection["layoutPreset"]): string {
+  switch (preset) {
+    case GalleryLayoutPreset.Editorial:
+      return "columns-1 gap-3 sm:columns-2 lg:columns-3 lg:gap-5";
+    case GalleryLayoutPreset.Balanced:
+      return "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5";
+    case GalleryLayoutPreset.FeatureFirst:
+      return "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5";
+    case GalleryLayoutPreset.Compact:
+      return "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4";
+  }
+}
+
+function tileClass(
+  preset: GalleryPublicCollection["layoutPreset"],
+  media: GalleryPublicMedia,
+  index: number,
+): string {
+  if (preset === GalleryLayoutPreset.FeatureFirst && index === 0) {
+    return "aspect-[4/3] sm:col-span-2 sm:aspect-video lg:col-span-3";
+  }
+
+  const aspect =
+    media.orientation === MediaOrientation.Landscape
+      ? "aspect-[16/10]"
+      : media.orientation === MediaOrientation.Square
+        ? "aspect-square"
+        : "aspect-[4/5]";
+  return preset === GalleryLayoutPreset.Editorial
+    ? `mb-3 break-inside-avoid lg:mb-5 ${aspect}`
+    : aspect;
+}
+
+function toViewerItem(media: GalleryPublicMedia): MediaViewerItem {
+  return {
+    id: media.id,
+    mediaType: media.mediaType,
+    sourceUrl: media.url,
+    posterUrl: media.posterUrl,
+    altText: media.altText ?? "",
+    caption: media.caption,
+  };
 }

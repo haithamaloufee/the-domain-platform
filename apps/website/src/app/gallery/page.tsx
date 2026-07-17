@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
 import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
+import type { Metadata } from "next";
 import { CollectionCard } from "@/components/gallery/collection-card";
+import { CinematicReveal } from "@/components/motion/cinematic-reveal";
 import { getGalleryCollections } from "@/lib/public-api";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -9,15 +10,18 @@ export const metadata: Metadata = createPageMetadata({
   description: "Explore curated photography and film from The Domain.",
   path: "/gallery",
 });
+
 export const revalidate = 60;
+
 export default async function GalleryPage() {
   let collections = null;
   try {
     collections = await getGalleryCollections();
   } catch {}
+
   return (
     <>
-      <Section className="architectural-grid border-b border-line pb-12 sm:pb-16">
+      <Section className="architectural-grid border-b border-line py-20 sm:py-28 lg:py-32">
         <Container>
           <SectionHeader
             description="Curated photography and film from the experiences that continue to define The Domain."
@@ -26,7 +30,8 @@ export default async function GalleryPage() {
           />
         </Container>
       </Section>
-      <Section className="cinematic-reveal">
+
+      <Section>
         <Container>
           {collections === null ? (
             <EmptyState
@@ -39,14 +44,27 @@ export default async function GalleryPage() {
               title="No Gallery collections yet"
             />
           ) : (
-            <div className="grid gap-5 lg:grid-cols-2">
-              {collections.map((collection, index) => (
-                <CollectionCard collection={collection} key={collection.id} priority={index < 2} />
-              ))}
-            </div>
+            <CinematicReveal>
+              <div className="grid gap-5 lg:grid-cols-12 lg:gap-y-8">
+                {collections.map((collection, index) => (
+                  <CollectionCard
+                    className={collectionCardClass(index)}
+                    collection={collection}
+                    key={collection.id}
+                    priority={index < 2}
+                    variant={index === 0 ? "wide" : index % 3 === 1 ? "tall" : "standard"}
+                  />
+                ))}
+              </div>
+            </CinematicReveal>
           )}
         </Container>
       </Section>
     </>
   );
+}
+
+function collectionCardClass(index: number): string {
+  if (index === 0) return "lg:col-span-12";
+  return index % 4 === 1 || index % 4 === 0 ? "lg:col-span-5" : "lg:col-span-7";
 }
