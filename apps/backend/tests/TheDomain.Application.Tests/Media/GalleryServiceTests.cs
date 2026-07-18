@@ -1,12 +1,24 @@
 using System.Reflection;
 using TheDomain.Application.Media;
 using TheDomain.Application.Media.Contracts;
+using TheDomain.Application.Caching;
 using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Tests.Media;
 
 public sealed class GalleryServiceTests
 {
+    [Fact]
+    public async Task GalleryMutationEvictsGalleryTag()
+    {
+        var repository = new FakeRepository();
+        var collection = repository.AddCollection("Published");
+        var cache = new RecordingInvalidator();
+
+        Assert.True((await new GalleryService(repository, new FakeDelivery(), TimeProvider.System, cache)
+            .PublishAsync(collection.Id, default)).IsSuccess);
+        Assert.Equal([PublicCacheTags.Gallery], Assert.Single(cache.Calls));
+    }
     [Fact]
     public async Task PublishAndUnpublishRemainIndependentFromArchive()
     {
@@ -68,6 +80,11 @@ public sealed class GalleryServiceTests
     }
 
     private static GalleryService Create(FakeRepository repository) => new(repository, new FakeDelivery(), TimeProvider.System);
+    private sealed class RecordingInvalidator : IPublicOutputCacheInvalidator
+    {
+        public List<string[]> Calls { get; } = [];
+        public Task EvictAsync(CancellationToken token, params string[] tags) { Calls.Add(tags); return Task.CompletedTask; }
+    }
     private sealed class FakeDelivery : IMediaDeliveryUrlResolver { public string? ResolveThumbnailUrl(MediaType mediaType, string mediaUrl, string? thumbnailUrl, string? storagePublicId) => mediaType == MediaType.Video ? "https://cdn.example/poster.jpg" : thumbnailUrl; public string? ResolveVideoFrameUrl(string mediaUrl, string? storagePublicId, decimal timestampSeconds) => null; }
     private sealed class FakeRepository : IGalleryRepository
     {
@@ -77,6 +94,7 @@ public sealed class GalleryServiceTests
         public Task<IReadOnlyList<MediaCollection>> ListCollectionsAsync(bool tracking, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollection>>(Collections);
         public Task<MediaCollection?> FindCollectionAsync(Guid id, bool tracking, CancellationToken token) => Task.FromResult(Collections.SingleOrDefault(item => item.Id == id));
         public Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(Guid collectionId, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => item.CollectionId == collectionId).OrderBy(item => item.SortOrder).ToArray());
+        public Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(IReadOnlyCollection<Guid> collectionIds, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => collectionIds.Contains(item.CollectionId)).OrderBy(item => item.CollectionId).ThenBy(item => item.SortOrder).ToArray());
         public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;
     }
 }

@@ -31,31 +31,11 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("HeroEyebrow")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("HeroHeading")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<Guid?>("HeroMediaAssetId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("HeroPresentation")
                         .HasColumnType("integer");
-
-                    b.Property<string>("HeroText")
-                        .IsRequired()
-                        .HasMaxLength(700)
-                        .HasColumnType("character varying(700)");
-
-                    b.Property<string>("IntroStatement")
-                        .IsRequired()
-                        .HasMaxLength(700)
-                        .HasColumnType("character varying(700)");
 
                     b.Property<bool>("IsHeroEnabled")
                         .HasColumnType("boolean");
@@ -75,70 +55,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsTeamEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PartnersHeading")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("PartnersText")
-                        .IsRequired()
-                        .HasMaxLength(700)
-                        .HasColumnType("character varying(700)");
-
-                    b.Property<string>("ReachOutCtaHref")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("ReachOutCtaLabel")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ReachOutHeading")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("ReachOutText")
-                        .IsRequired()
-                        .HasMaxLength(700)
-                        .HasColumnType("character varying(700)");
-
-                    b.Property<string>("SeoDescription")
-                        .HasMaxLength(180)
-                        .HasColumnType("character varying(180)");
-
-                    b.Property<string>("SeoTitle")
-                        .HasMaxLength(70)
-                        .HasColumnType("character varying(70)");
-
                     b.Property<Guid?>("SocialImageMediaAssetId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("StoryHeading")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("StoryHighlight")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("StoryText")
-                        .IsRequired()
-                        .HasMaxLength(2500)
-                        .HasColumnType("character varying(2500)");
-
-                    b.Property<string>("TeamHeading")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("TeamText")
-                        .IsRequired()
-                        .HasMaxLength(700)
-                        .HasColumnType("character varying(700)");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -214,22 +132,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("AlternateLogoMediaAssetId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("BrandDescription")
-                        .HasMaxLength(240)
-                        .HasColumnType("character varying(240)");
-
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DefaultSeoDescription")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
-
-                    b.Property<string>("DefaultSeoTitle")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
 
                     b.Property<string>("FacebookUrl")
                         .HasMaxLength(500)
@@ -260,11 +164,6 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<string>("PublicPhone")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
-
-                    b.Property<string>("SiteName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("SnapchatUrl")
                         .HasMaxLength(500)
@@ -422,49 +321,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ContactCtaHref")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("ContactCtaLabel")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ContactDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("ContactTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DisabledSections")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("EventsDescription")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("The next Domain experiences.");
-
-                    b.Property<string>("EventsTitle")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)")
-                        .HasDefaultValue("Upcoming experiences");
 
                     b.Property<Guid?>("FloatingVideoMediaAssetId")
                         .HasColumnType("uuid");
@@ -475,41 +333,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("GalleryCollectionId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("GalleryDescription")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("Curated photography and film from The Domain.");
-
-                    b.Property<string>("GalleryTitle")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)")
-                        .HasDefaultValue("Gallery highlights");
-
-                    b.Property<string>("HeroAccent")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("HeroDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("HeroEyebrow")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<Guid?>("HeroMediaAssetId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("HeroTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
 
                     b.Property<bool>("IsFloatingVideoEnabled")
                         .ValueGeneratedOnAdd()
@@ -524,84 +349,8 @@ namespace TheDomain.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<string>("PartnersDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("PartnersTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("PreviousEventsDescription")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("Moments that continue to shape The Domain.");
-
-                    b.Property<string>("PreviousEventsTitle")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)")
-                        .HasDefaultValue("Previous events");
-
-                    b.Property<string>("PrimaryCtaHref")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("PrimaryCtaLabel")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("SecondaryCtaHref")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("SecondaryCtaLabel")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("SectionOrder")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasDefaultValue("events,statistics,why,previous,gallery,services,partners,contact");
-
-                    b.Property<string>("ServicesDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("ServicesTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("StatisticsPhrase")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(180)
-                        .HasColumnType("character varying(180)")
-                        .HasDefaultValue("Moments that move with us");
-
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("WhyDescription")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("WhyTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 

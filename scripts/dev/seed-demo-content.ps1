@@ -107,22 +107,11 @@ Invoke-Api Put '/api/admin/branding' @{
 
 $originalHomepage = $manifest.originalHomepage
 $homepageBody = @{
-  heroEyebrow = 'The Domain · Jordan'; heroTitle = 'Where unforgettable moments begin'; heroAccent = $null
-  heroDescription = 'Live entertainment, bold ideas, and experiences designed to stay with you.'
-  primaryCtaLabel = 'Explore events'; primaryCtaHref = '/events'; secondaryCtaLabel = 'View the gallery'; secondaryCtaHref = '/gallery'
-  whyTitle = 'Built around memorable moments'; whyDescription = 'Every experience begins with a clear idea and grows through collaboration, production, and attention to atmosphere.'
-  servicesTitle = 'From first idea to final atmosphere'; servicesDescription = 'Creative direction, production, and entertainment brought together under one considered vision.'
-  partnersTitle = 'Created with trusted collaborators'; partnersDescription = 'A development showcase of the partners that help ideas move from concept to experience.'
-  contactTitle = 'Let us create what comes next'; contactDescription = 'Bring us the ambition. We will help shape the experience.'; contactCtaLabel = 'Start a conversation'; contactCtaHref = '/contact'
   isPublished = $true; heroMediaAssetId = $stageMediaId; galleryCollectionId = $null
-  sectionOrder = @('events','statistics','why','previous','gallery','services','partners','contact'); disabledSections = @()
-  eventsTitle = 'Experiences on the horizon'; eventsDescription = 'Discover the next live moments taking shape at The Domain.'
-  previousEventsTitle = 'The night ends. The story remains.'; previousEventsDescription = 'Return to the stages, rooms, and audiences that shaped earlier experiences.'
-  galleryTitle = 'Moments with their own afterlife'; galleryDescription = 'A curated view of live atmosphere and the craft behind every event.'
   isFloatingVideoEnabled = $false; floatingVideoMediaAssetId = $null; floatingVideoPosterMediaAssetId = $null
 }
 Invoke-Api Put '/api/admin/homepage' $homepageBody | Out-Null
-Invoke-Api Put '/api/admin/statistics/presentation' @{ phrase = 'We create moments that move with you'; isEnabled = $true } | Out-Null
+Invoke-Api Put '/api/admin/statistics/presentation' @{ isEnabled = $true } | Out-Null
 
 $statistics = @(
   @{label='Years creating experiences';value='10';suffix='+'}, @{label='Events produced';value='75';suffix='+'},

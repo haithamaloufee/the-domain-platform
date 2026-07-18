@@ -6,9 +6,11 @@ import { useLayoutEffect, useRef, useState } from "react";
 export function CinematicReveal({
   children,
   className,
+  homeSection,
 }: {
   children: React.ReactNode;
   className?: string;
+  homeSection?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -40,6 +42,7 @@ export function CinematicReveal({
   return (
     <div
       className={cn("cinematic-reveal", visible ? "is-visible" : "is-concealed", className)}
+      data-home-section={homeSection}
       ref={ref}
     >
       {children}

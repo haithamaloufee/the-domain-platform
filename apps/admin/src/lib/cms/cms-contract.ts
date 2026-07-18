@@ -6,7 +6,7 @@ import type {
   CreateStatisticRequest,
   UpdateHomepageContentRequest,
 } from "@the-domain/types";
-import { HomepageSectionKey } from "@the-domain/types";
+import { MediaType } from "@the-domain/types";
 
 type CmsRequest = UpdateHomepageContentRequest | CreateStatisticRequest | CreatePartnerRequest;
 export type CmsRequestShape = "homepage" | "statistic" | "partner";
@@ -70,24 +70,6 @@ export function parseCmsRequest(value: unknown, shape: CmsRequestShape): CmsRequ
 function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageContentRequest {
   const builder = isRecord(value.builder) ? parseBuilder(value.builder) : null;
   return {
-    heroEyebrow: boundedString(value.heroEyebrow, 100),
-    heroTitle: boundedString(value.heroTitle, 200),
-    heroAccent: nullableBoundedString(value.heroAccent, 200),
-    heroDescription: boundedString(value.heroDescription, 1_000),
-    primaryCtaLabel: boundedString(value.primaryCtaLabel, 100),
-    primaryCtaHref: boundedString(value.primaryCtaHref, 2_048),
-    secondaryCtaLabel: nullableBoundedString(value.secondaryCtaLabel, 100),
-    secondaryCtaHref: nullableBoundedString(value.secondaryCtaHref, 2_048),
-    whyTitle: boundedString(value.whyTitle, 200),
-    whyDescription: boundedString(value.whyDescription, 2_000),
-    servicesTitle: boundedString(value.servicesTitle, 200),
-    servicesDescription: boundedString(value.servicesDescription, 1_000),
-    partnersTitle: boundedString(value.partnersTitle, 200),
-    partnersDescription: boundedString(value.partnersDescription, 1_000),
-    contactTitle: boundedString(value.contactTitle, 200),
-    contactDescription: boundedString(value.contactDescription, 1_000),
-    contactCtaLabel: boundedString(value.contactCtaLabel, 100),
-    contactCtaHref: boundedString(value.contactCtaHref, 2_048),
     isPublished: booleanValue(value.isPublished),
     heroMediaAssetId: nullableBoundedString(
       value.heroMediaAssetId ?? builder?.heroMediaAssetId ?? null,
@@ -97,20 +79,6 @@ function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageCont
       value.galleryCollectionId ?? builder?.galleryCollectionId ?? null,
       64,
     ),
-    sectionOrder: sectionKeys(value.sectionOrder ?? builder?.sectionOrder),
-    disabledSections: sectionKeys(value.disabledSections ?? builder?.disabledSections, true),
-    eventsTitle: boundedString(value.eventsTitle ?? builder?.eventsTitle, 160),
-    eventsDescription: boundedString(value.eventsDescription ?? builder?.eventsDescription, 500),
-    previousEventsTitle: boundedString(
-      value.previousEventsTitle ?? builder?.previousEventsTitle,
-      160,
-    ),
-    previousEventsDescription: boundedString(
-      value.previousEventsDescription ?? builder?.previousEventsDescription,
-      500,
-    ),
-    galleryTitle: boundedString(value.galleryTitle ?? builder?.galleryTitle, 160),
-    galleryDescription: boundedString(value.galleryDescription ?? builder?.galleryDescription, 500),
     isFloatingVideoEnabled: booleanValue(
       value.isFloatingVideoEnabled ?? builder?.isFloatingVideoEnabled ?? false,
     ),
@@ -140,39 +108,18 @@ function parseBuilder(value: unknown) {
       value.floatingVideoMedia === null ? null : parseHeroMedia(value.floatingVideoMedia),
     floatingVideoPoster:
       value.floatingVideoPoster === null ? null : parseHeroMedia(value.floatingVideoPoster),
-    sectionOrder: sectionKeys(value.sectionOrder),
-    disabledSections: sectionKeys(value.disabledSections, true),
-    eventsTitle: boundedString(value.eventsTitle, 160),
-    eventsDescription: boundedString(value.eventsDescription, 500),
-    previousEventsTitle: boundedString(value.previousEventsTitle, 160),
-    previousEventsDescription: boundedString(value.previousEventsDescription, 500),
-    galleryTitle: boundedString(value.galleryTitle, 160),
-    galleryDescription: boundedString(value.galleryDescription, 500),
   };
 }
 function parseHeroMedia(value: unknown) {
   if (!isRecord(value)) throw new Error("Invalid hero media.");
   return {
     id: requiredString(value.id),
-    mediaType: nonNegativeInteger(value.mediaType),
+    mediaType: nonNegativeInteger(value.mediaType) as MediaType,
     url: boundedString(value.url, 2048),
     posterUrl: nullableBoundedString(value.posterUrl, 2048),
     altText: nullableBoundedString(value.altText, 500),
   };
 }
-function sectionKeys(value: unknown, allowSubset = false) {
-  if (!Array.isArray(value)) throw new Error("Invalid homepage section order.");
-  const allowed = Object.values(HomepageSectionKey);
-  const result = value.map((item) => {
-    if (typeof item !== "string" || !allowed.includes(item as never))
-      throw new Error("Invalid homepage section.");
-    return item as (typeof allowed)[number];
-  });
-  if (!allowSubset && (result.length !== allowed.length || new Set(result).size !== result.length))
-    throw new Error("Incomplete homepage section order.");
-  return result;
-}
-
 function parseStatisticFields(value: Record<string, unknown>): CreateStatisticRequest {
   return {
     label: boundedString(value.label, 100),

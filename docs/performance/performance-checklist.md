@@ -5,8 +5,8 @@
 - [x] Public gallery videos mount and play only after an explicit lightbox action; autoplay is disabled.
 - [ ] Frontend bundles and third-party scripts are budgeted.
 - [ ] API queries are bounded, paginated, and indexed.
-- [x] Public website reads use no-store in development and a documented 60-second production revalidation window.
-- [ ] Core Web Vitals and backend latency are measured before release.
+- [x] Website server getters use `React.cache` for SSR request-scope deduplication; ASP.NET Output Cache owns the documented 60-second shared response window.
+- [x] Sprint 5D records local Homepage route/API latency, LCP, CLS, query/request counts, idle activity, and error observations; production field monitoring remains a launch task.
 - [x] Frontend foundations use Server Components by default and isolate client-only behavior.
 - [x] Google fonts are self-hosted through `next/font` with swap behavior.
 - [x] Shared UI source is compiled through workspace packages without duplicating app bundles.
@@ -20,8 +20,8 @@
 - [x] Assignment updates use controlled sequential requests for the expected per-event media volume.
 - [x] Public event and gallery list contracts return one cover rather than full media collections.
 - [x] Public album pages reveal media in client-side batches of 24 and never render every video player up front.
-- [x] Homepage public requests run concurrently and degrade independently when one endpoint is unavailable.
-- [x] Homepage event and album collections are bounded before rendering and reuse cover projections only.
+- [x] Homepage operational data comes from one bounded consolidated read model; Branding remains independently failure-isolated.
+- [x] Homepage event and gallery previews are bounded to the exact rendered capacities and reuse cover projections only.
 - [x] Homepage hero uses an optimized approved image/thumbnail or a media-free fallback; it never eagerly loads video.
 - [x] Homepage editorial sections remain Server Components with no animation-library or client-state cost.
 - [x] Sprint 13 motion uses CSS and one intersection-observed numeric counter client island; no animation dependency was added.
@@ -37,6 +37,6 @@
 - [ ] Confirm list/grid videos never autoplay, gallery players mount only after intent, and posters/thumbnails are available for production videos.
 - [ ] Confirm non-priority images remain lazy, responsive sizes are correct, and hero media does not exceed the approved mobile budget.
 - [ ] Verify gallery batches remain bounded at 24 items and public API list caps remain effective with production-scale data.
-- [ ] Verify development uses no-store while production public reads and sitemap-backed collections use the documented 60-second revalidation behavior.
+- [ ] Verify Website fetches remain non-persistent while ASP.NET Output Cache and sitemap-backed reads use the documented 60-second response window in deployment.
 - [ ] Establish image/video upload guidance and validate Cloudinary delivery formats, responsive transformations, and poster/thumbnail generation before bulk ingestion.
 - [ ] Record frontend bundle budgets, API latency targets, cache-hit behavior, and monitoring alerts before launch.

@@ -3,21 +3,34 @@ using TheDomain.Application.Media;
 using TheDomain.Application.Media.Contracts;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
+using TheDomain.Application.Caching;
 
 namespace TheDomain.Application.Events;
 
 public sealed class EventService(
     IEventRepository repository,
     TimeProvider timeProvider,
-    IMediaDeliveryUrlResolver? mediaDeliveryUrlResolver = null) : IEventService
+    IMediaDeliveryUrlResolver? mediaDeliveryUrlResolver = null,
+    IPublicOutputCacheInvalidator? cache = null,
+    IPublicEventReadRepository? publicReads = null) : IEventService
 {
     private const int MaximumPublicItems = 50;
-    public async Task<IReadOnlyList<PublicEventListResponse>> GetUpcomingAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, false, cancellationToken);
-    public async Task<IReadOnlyList<PublicEventListResponse>> GetPreviousAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(state => state.DisplayStatus == EventDisplayStatus.Finished, false, cancellationToken);
-    public async Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) =>
-        await GetPublicListAsync(state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live, true, cancellationToken);
+    private const int HomepageCurrentLimit = 2;
+    private const int HomepagePreviousLimit = 2;
+    private const int HomepageAlbumLimit = 3;
+
+    public Task<IReadOnlyList<PublicEventListResponse>> GetUpcomingAsync(CancellationToken cancellationToken) =>
+        GetPublicListAsync(PublicEventQueryKind.Upcoming,
+            state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live,
+            false, cancellationToken);
+    public Task<IReadOnlyList<PublicEventListResponse>> GetPreviousAsync(CancellationToken cancellationToken) =>
+        GetPublicListAsync(PublicEventQueryKind.Previous,
+            state => state.DisplayStatus == EventDisplayStatus.Finished,
+            false, cancellationToken);
+    public Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) =>
+        GetPublicListAsync(PublicEventQueryKind.Featured,
+            state => state.DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live,
+            true, cancellationToken);
 
     public async Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
     {
@@ -34,6 +47,41 @@ public sealed class EventService(
         var events = await repository.ListAsync(cancellationToken);
         return events.Where(item => item.EvaluateLifecycle(now).IsPublicDetailVisible)
             .Select(MapAlbumList).OfType<GalleryAlbumListResponse>().Take(MaximumPublicItems).ToArray();
+    }
+    public async Task<HomepageEventPreviewResponse> GetHomepagePreviewAsync(CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        if (publicReads is not null)
+        {
+            var preview = await publicReads.GetHomepagePreviewAsync(now, HomepageCurrentLimit,
+                HomepagePreviousLimit, HomepageAlbumLimit, cancellationToken);
+            return new(
+                preview.CurrentEvents.Select(item => MapPublicList(item, now)).ToArray(),
+                preview.PreviousEvents.Select(item => MapPublicList(item, now)).ToArray(),
+                preview.GalleryAlbums.Select(MapAlbumList).ToArray());
+        }
+
+        var visible = (await repository.ListAsync(cancellationToken))
+            .Where(item => item.EvaluateLifecycle(now).IsPublicCollectionVisible)
+            .ToArray();
+        var currentCandidates = visible
+            .Where(item => item.EvaluateLifecycle(now).DisplayStatus is EventDisplayStatus.Upcoming or EventDisplayStatus.Live)
+            .OrderBy(item => item.StartAtUtc)
+            .ToArray();
+        var current = currentCandidates.Where(item => item.IsFeatured)
+            .Concat(currentCandidates)
+            .DistinctBy(item => item.Id)
+            .Take(2)
+            .Select(item => MapPublicList(item, now))
+            .ToArray();
+        var previous = visible
+            .Where(item => item.EvaluateLifecycle(now).DisplayStatus == EventDisplayStatus.Finished)
+            .OrderBy(item => item.StartAtUtc)
+            .Take(2)
+            .Select(item => MapPublicList(item, now))
+            .ToArray();
+        var albums = visible.Select(MapAlbumList).OfType<GalleryAlbumListResponse>().Take(3).ToArray();
+        return new(current, previous, albums);
     }
     public async Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken)
     {
@@ -60,7 +108,7 @@ public sealed class EventService(
             : request.Slug.Trim();
         if (await repository.SlugExistsAsync(slug, null, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var item = CreateEvent(id, slug, request, bookingStatus, now);
-        repository.Add(item); await repository.SaveChangesAsync(cancellationToken);
+        repository.Add(item); await repository.SaveChangesAsync(cancellationToken); await InvalidateEvents(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
     public async Task<EventOperationResult<AdminEventResponse>> UpdateAsync(Guid id, SaveEventRequest request, CancellationToken cancellationToken)
@@ -72,7 +120,7 @@ public sealed class EventService(
         var errors = Validate(request, slug, allowMissingSlug: false, out var bookingStatus); if (errors.Count > 0) return new(null, errors);
         if (await repository.SlugExistsAsync(slug, id, cancellationToken)) return EventOperationResult.Conflict<AdminEventResponse>("Slug is already in use.");
         var now = timeProvider.GetUtcNow();
-        Apply(item, slug, request, bookingStatus, now); await repository.SaveChangesAsync(cancellationToken);
+        Apply(item, slug, request, bookingStatus, now); await repository.SaveChangesAsync(cancellationToken); await InvalidateEvents(cancellationToken);
         return EventOperationResult.Success(MapAdmin(item, now));
     }
     public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) =>
@@ -82,9 +130,21 @@ public sealed class EventService(
     public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(id, EventPublicationStatus.Cancelled, cancellationToken);
 
-    private async Task<IReadOnlyList<PublicEventListResponse>> GetPublicListAsync(Func<EventLifecycleState, bool> stateFilter, bool featuredOnly, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<PublicEventListResponse>> GetPublicListAsync(
+        PublicEventQueryKind queryKind,
+        Func<EventLifecycleState, bool> stateFilter,
+        bool featuredOnly,
+        CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow(); var events = await repository.ListAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        if (publicReads is not null)
+        {
+            var projected = await publicReads.ListPublicAsync(queryKind, now, MaximumPublicItems,
+                cancellationToken);
+            return projected.Select(item => MapPublicList(item, now)).ToArray();
+        }
+
+        var events = await repository.ListAsync(cancellationToken);
         return events.Where(item => item.EvaluateLifecycle(now).IsPublicCollectionVisible)
             .Where(item => !featuredOnly || item.IsFeatured)
             .Where(item => stateFilter(item.EvaluateLifecycle(now)))
@@ -105,7 +165,7 @@ public sealed class EventService(
         }
         else if (target == EventPublicationStatus.Archived) item.Archive(now);
         else item.Cancel(now);
-        await repository.SaveChangesAsync(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
+        await repository.SaveChangesAsync(cancellationToken); await InvalidateEvents(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));
     }
     private static List<string> Validate(SaveEventRequest request, string? slug, bool allowMissingSlug, out BookingAvailability bookingStatus)
     {
@@ -196,6 +256,16 @@ public sealed class EventService(
             item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, state.DisplayStatus,
             state.BookingAvailability, state.SafeBookingUrl, SelectCoverMedia(item));
     }
+    private PublicEventListResponse MapPublicList(PublicEventSummaryReadModel item, DateTimeOffset now)
+    {
+        var state = EventLifecyclePolicy.Evaluate(item.PublicationStatus, item.StartAtUtc,
+            item.EndAtUtc, item.BookingStatus, item.BookingOpensAtUtc, item.BookingClosesAtUtc,
+            item.ExternalBookingUrl, now);
+        return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.EventType,
+            item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName,
+            state.DisplayStatus, state.BookingAvailability, state.SafeBookingUrl,
+            item.CoverMedia is null ? null : MapMedia(item.CoverMedia));
+    }
     private PublicEventDetailsResponse MapPublicDetails(EntertainmentEvent item, DateTimeOffset now)
     {
         var state = item.EvaluateLifecycle(now);
@@ -230,6 +300,10 @@ public sealed class EventService(
             media.Length, media.Count(value => value.MediaType == MediaType.Image), media.Count(value => value.MediaType == MediaType.Video),
             media.FirstOrDefault(value => value.IsFeatured) ?? media[0]);
     }
+    private GalleryAlbumListResponse MapAlbumList(GalleryAlbumReadModel item) => new(
+        item.EventId, item.EventSlug, item.Title, item.EventStartAtUtc, item.TimeZoneId,
+        item.City, item.VenueName, item.MediaCount, item.PhotoCount, item.VideoCount,
+        MapMedia(item.CoverMedia));
     private GalleryAlbumDetailsResponse MapAlbumDetails(EntertainmentEvent item) => new(item.Id, item.Slug, item.Title, item.StartAtUtc, item.TimeZoneId, item.City, item.VenueName, GalleryMedia(item));
     private PublicMediaResponse[] GalleryMedia(EntertainmentEvent item) => MapMedia(item).Where(media => media.Usage == EventMediaUsage.Gallery).ToArray();
     private PublicMediaResponse MapMedia(EventMedia link) => new(link.MediaAsset.Id, link.MediaAsset.MediaType,
@@ -237,9 +311,19 @@ public sealed class EventService(
         link.MediaAsset.Width, link.MediaAsset.Height, link.MediaAsset.DurationSeconds, link.MediaAsset.Orientation,
         link.Usage, link.SortOrder, link.IsFeatured,
         new(link.FocalPointX, link.FocalPointY, link.Zoom), MapVideoPoster(link));
+    private PublicMediaResponse MapMedia(PublicEventMediaReadModel media) => new(
+        media.Id, media.MediaType, media.Url, ResolveThumbnailUrl(media), media.Caption,
+        media.AltText, media.Width, media.Height, media.DurationSeconds, media.Orientation,
+        media.Usage, media.SortOrder, media.IsFeatured,
+        new(media.FocalPointX, media.FocalPointY, media.Zoom),
+        new(media.VideoPosterMode, media.VideoPosterTimestampSeconds,
+            media.CustomPosterMediaAssetId, ResolveVideoPoster(media)));
     private static bool HasSafePublicUrl(MediaAsset item) => Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) &&
         uri.Scheme == Uri.UriSchemeHttps;
     private string? ResolveThumbnailUrl(MediaAsset item) => mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url, item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
+    private string? ResolveThumbnailUrl(PublicEventMediaReadModel item) =>
+        mediaDeliveryUrlResolver?.ResolveThumbnailUrl(item.MediaType, item.Url,
+            item.ThumbnailUrl, item.CloudinaryPublicId) ?? item.ThumbnailUrl;
     private VideoPosterPresentationResponse MapVideoPoster(EventMedia link) => new(link.VideoPosterMode,
         link.VideoPosterTimestampSeconds, link.CustomPosterMediaAssetId, link.VideoPosterMode switch
         {
@@ -249,6 +333,14 @@ public sealed class EventService(
             VideoPosterMode.CustomImage when link.CustomPosterMediaAsset is { ApprovalStatus: MediaApprovalStatus.Approved } poster && HasSafePublicUrl(poster) => poster.Url,
             _ => ResolveThumbnailUrl(link.MediaAsset)
         });
+    private string? ResolveVideoPoster(PublicEventMediaReadModel item) => item.VideoPosterMode switch
+    {
+        VideoPosterMode.Timestamp when item.VideoPosterTimestampSeconds is { } timestamp =>
+            mediaDeliveryUrlResolver?.ResolveVideoFrameUrl(item.Url, item.CloudinaryPublicId, timestamp)
+                ?? ResolveThumbnailUrl(item),
+        VideoPosterMode.CustomImage when item.CustomPosterUrl is not null => item.CustomPosterUrl,
+        _ => ResolveThumbnailUrl(item)
+    };
     private static AdminEventResponse MapAdmin(EntertainmentEvent item, DateTimeOffset now)
     {
         var state = item.EvaluateLifecycle(now);
@@ -259,4 +351,6 @@ public sealed class EventService(
             item.PublicationStatus, state.DisplayStatus, state.BookingAvailability, item.IsFeatured,
             item.ShowOnHomepage, item.CreatedAtUtc, item.UpdatedAtUtc);
     }
+    private async Task InvalidateEvents(CancellationToken token)
+    { if (cache is not null) await cache.EvictAsync(token, PublicCacheTags.Events, PublicCacheTags.Gallery); }
 }

@@ -24,8 +24,8 @@ export function HomepageEventsSection({
         />
         {events.length > 0 ? (
           <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5">
-            {events.map((event, index) => (
-              <HomepageEventPreview event={event} key={event.id} priority={index === 0} />
+            {events.map((event) => (
+              <HomepageEventPreview event={event} key={event.id} />
             ))}
           </div>
         ) : (

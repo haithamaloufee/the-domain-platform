@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getLoginErrorMessage, loginErrorMessages } from "../src/lib/auth/login-errors.ts";
 import { validateLoginCredentials } from "../src/lib/auth/login-validation.ts";
+import { resolveLoginBranding } from "../src/lib/branding/login-branding.ts";
 import {
   forgetRememberedEmail,
   readRememberedEmail,
@@ -30,6 +31,23 @@ test("authentication responses map to safe, distinct messages", () => {
   assert.equal(getLoginErrorMessage(429), loginErrorMessages.rateLimited);
   assert.equal(getLoginErrorMessage(503), loginErrorMessages.serviceUnavailable);
   assert.equal(getLoginErrorMessage(500), loginErrorMessages.unexpected);
+});
+
+test("login branding uses the code-owned site name and ignores stale API copy", () => {
+  assert.deepEqual(resolveLoginBranding({ primaryLogo: null }), {
+    siteName: "The Domain Entertainment",
+    logoUrl: null,
+  });
+  assert.deepEqual(
+    resolveLoginBranding({
+      siteName: "Stale CMS name",
+      primaryLogo: { url: "https://cdn.example.com/domain-logo.png" },
+    }),
+    {
+      siteName: "The Domain Entertainment",
+      logoUrl: "https://cdn.example.com/domain-logo.png",
+    },
+  );
 });
 
 test("remember email stores only a normalized email under one scoped key", () => {

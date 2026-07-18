@@ -46,29 +46,9 @@ public sealed class EntertainmentEvent
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public IReadOnlyCollection<EventMedia> Media => _media;
 
-    public EventLifecycleState EvaluateLifecycle(DateTimeOffset now)
-    {
-        var displayStatus = PublicationStatus switch
-        {
-            EventPublicationStatus.Cancelled => EventDisplayStatus.Cancelled,
-            _ when now < StartAtUtc => EventDisplayStatus.Upcoming,
-            _ when now < EndAtUtc => EventDisplayStatus.Live,
-            _ => EventDisplayStatus.Finished
-        };
-        var bookingAvailability = EffectiveBookingAvailability(now, displayStatus);
-        var safeBookingUrl = bookingAvailability == BookingAvailability.Open && HasSafeBookingUrl()
-            ? ExternalBookingUrl
-            : null;
-        var actionable = bookingAvailability == BookingAvailability.Open && safeBookingUrl is not null;
-        return new(
-            PublicationStatus,
-            displayStatus,
-            bookingAvailability,
-            PublicationStatus == EventPublicationStatus.Published,
-            PublicationStatus is EventPublicationStatus.Published or EventPublicationStatus.Cancelled,
-            actionable,
-            actionable ? safeBookingUrl : null);
-    }
+    public EventLifecycleState EvaluateLifecycle(DateTimeOffset now) => EventLifecyclePolicy.Evaluate(
+        PublicationStatus, StartAtUtc, EndAtUtc, BookingStatus, BookingOpensAtUtc,
+        BookingClosesAtUtc, ExternalBookingUrl, now);
 
     public EventDisplayStatus GetDisplayStatus(DateTimeOffset now) => EvaluateLifecycle(now).DisplayStatus;
     public BookingAvailability GetBookingAvailability(DateTimeOffset now) => EvaluateLifecycle(now).BookingAvailability;
@@ -114,23 +94,5 @@ public sealed class EntertainmentEvent
     }
 
     public static bool IsManualBookingStatus(BookingAvailability status) =>
-        status is BookingAvailability.Hidden or BookingAvailability.Open or
-            BookingAvailability.Closed or BookingAvailability.SoldOut;
-
-    private BookingAvailability EffectiveBookingAvailability(DateTimeOffset now, EventDisplayStatus displayStatus)
-    {
-        if (PublicationStatus == EventPublicationStatus.Cancelled) return BookingAvailability.Closed;
-        if (PublicationStatus != EventPublicationStatus.Published) return BookingAvailability.Hidden;
-        if (displayStatus == EventDisplayStatus.Finished) return BookingAvailability.Closed;
-        if (!IsManualBookingStatus(BookingStatus)) return BookingAvailability.Hidden;
-        if (BookingStatus != BookingAvailability.Open) return BookingStatus;
-        if (!HasSafeBookingUrl()) return BookingAvailability.Hidden;
-        if (BookingOpensAtUtc is { } opens && now < opens) return BookingAvailability.NotOpenYet;
-        if (BookingClosesAtUtc is { } closes && now >= closes) return BookingAvailability.Closed;
-        return BookingAvailability.Open;
-    }
-
-    private bool HasSafeBookingUrl() =>
-        Uri.TryCreate(ExternalBookingUrl, UriKind.Absolute, out var uri) &&
-        uri.Scheme == Uri.UriSchemeHttps;
+        EventLifecyclePolicy.IsManualBookingStatus(status);
 }

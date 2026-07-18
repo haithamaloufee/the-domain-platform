@@ -8,6 +8,7 @@
     "start": "next start --port 3000",
     "lint": "eslint .",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/homepage-ux.test.mjs",
+    "test:request-dedup": "node tests/request-dedup.integration.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -6,10 +6,6 @@ export interface BrandingMedia {
   height: number | null;
 }
 export interface BrandingSettings {
-  siteName: string;
-  brandDescription: string | null;
-  defaultSeoTitle: string;
-  defaultSeoDescription: string;
   primaryLogoMediaAssetId: string | null;
   alternateLogoMediaAssetId: string | null;
   faviconMediaAssetId: string | null;
@@ -32,10 +28,6 @@ export type PublicBrandingSettings = Omit<
   | "socialImageMediaAssetId"
 >;
 export interface UpdateBrandingSettingsRequest {
-  siteName: string;
-  brandDescription: string | null;
-  defaultSeoTitle: string;
-  defaultSeoDescription: string;
   primaryLogoMediaAssetId: string | null;
   alternateLogoMediaAssetId: string | null;
   faviconMediaAssetId: string | null;

@@ -1,4 +1,5 @@
 export { cn } from "./classes";
+export { THE_DOMAIN_SITE_NAME } from "./site-identity";
 export {
   applyEventCoverAlignmentPreset,
   clampEventCoverPresentation,

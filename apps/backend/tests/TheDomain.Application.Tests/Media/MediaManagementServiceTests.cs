@@ -1,5 +1,6 @@
 using TheDomain.Application.Media;
 using TheDomain.Application.Media.Contracts;
+using TheDomain.Application.Caching;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
 
@@ -7,6 +8,21 @@ namespace TheDomain.Application.Tests.Media;
 
 public sealed class MediaManagementServiceTests
 {
+    [Fact]
+    public async Task PublicCacheTagsCoverMetadataAndEventAssignmentMutations()
+    {
+        var repository = new FakeRepository { Media = CreateMedia(MediaApprovalStatus.Approved), Event = CreateEvent() };
+        var cache = new RecordingInvalidator();
+        var service = CreateService(repository, cache);
+
+        await service.UpdateMetadataAsync(repository.Media.Id, new("category", "caption", "alt"), default);
+        Assert.Equal([PublicCacheTags.Media], cache.Calls[0]);
+
+        await service.AssignAsync(repository.Event.Id,
+            new(repository.Media.Id, EventMediaUsage.Gallery, 0, false), default);
+        Assert.Equal([PublicCacheTags.Events, PublicCacheTags.Gallery, PublicCacheTags.Media], cache.Calls[1]);
+    }
+
     [Fact]
     public async Task MediaListCapsPageSize()
     {
@@ -499,7 +515,12 @@ public sealed class MediaManagementServiceTests
         Assert.Equal("https://cdn.example.com/legacy-poster.jpg", album.Media[0].ThumbnailUrl);
     }
 
-    private static MediaManagementService CreateService(FakeRepository repository) => new(repository, new FakeStorage(), new MediaUploadPolicy(10, 20, new Dictionary<string, string[]> { ["image/jpeg"] = [".jpg"] }), TimeProvider.System);
+    private static MediaManagementService CreateService(FakeRepository repository, IPublicOutputCacheInvalidator? cache = null) => new(repository, new FakeStorage(), new MediaUploadPolicy(10, 20, new Dictionary<string, string[]> { ["image/jpeg"] = [".jpg"] }), TimeProvider.System, null, cache);
+    private sealed class RecordingInvalidator : IPublicOutputCacheInvalidator
+    {
+        public List<string[]> Calls { get; } = [];
+        public Task EvictAsync(CancellationToken token, params string[] tags) { Calls.Add(tags); return Task.CompletedTask; }
+    }
     private static MediaAsset CreateMedia(MediaApprovalStatus status, MediaType type = MediaType.Image, string? url = null)
     {
         var extension = type == MediaType.Image ? "jpg" : "mp4";

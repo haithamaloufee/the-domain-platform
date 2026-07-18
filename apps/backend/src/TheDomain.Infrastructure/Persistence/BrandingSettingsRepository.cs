@@ -7,6 +7,8 @@ public sealed class BrandingSettingsRepository(TheDomainDbContext db) : IBrandin
 {
     public Task<BrandingSettings?> GetAsync(bool tracking, CancellationToken token) { var query = db.BrandingSettings.AsQueryable(); if (!tracking) query = query.AsNoTracking(); return query.SingleOrDefaultAsync(item => item.Id == BrandingSettings.SingletonId, token); }
     public Task<MediaAsset?> FindMediaAsync(Guid id, CancellationToken token) => db.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, token);
+    public async Task<IReadOnlyDictionary<Guid, MediaAsset>> ListMediaAsync(IReadOnlyCollection<Guid> ids, CancellationToken token) =>
+        await db.MediaAssets.AsNoTracking().Where(item => ids.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
     public void Add(BrandingSettings settings) => db.BrandingSettings.Add(settings);
     public Task SaveChangesAsync(CancellationToken token) => db.SaveChangesAsync(token);
 }

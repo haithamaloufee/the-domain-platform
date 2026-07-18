@@ -82,7 +82,9 @@ public static class DependencyInjection
             postgreSqlOptions => postgreSqlOptions.CommandTimeout(databaseOptions.CommandTimeoutSeconds)));
         services.AddScoped<IIdentityRepository, IdentityRepository>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<EventRepository>();
+        services.AddScoped<IEventRepository>(provider => provider.GetRequiredService<EventRepository>());
+        services.AddScoped<IPublicEventReadRepository>(provider => provider.GetRequiredService<EventRepository>());
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IMediaOrganizationRepository, MediaOrganizationRepository>();

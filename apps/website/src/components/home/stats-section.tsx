@@ -1,9 +1,10 @@
 "use client";
 
-import type { PublicStatisticItem, StatisticsPresentation } from "@the-domain/types";
+import type { HomepageStatistic } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import { useEffect, useRef } from "react";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import {
   countUpDurationMs,
@@ -16,19 +17,18 @@ import { ScrollSnakeText } from "./scroll-snake-text";
 
 export function StatsSection({
   statistics,
-  presentation,
+  motionEnabled,
 }: {
-  statistics: PublicStatisticItem[];
-  presentation: StatisticsPresentation;
+  statistics: HomepageStatistic[];
+  motionEnabled: boolean;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const numberRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const hasCountedRef = useRef(false);
-  const fallback = homepageContent.statistics.map((item) => ({
-    label: item.label,
+  const fallback = homepageContent.statistics.map((item, index) => ({
+    slotNumber: (index + 1) as 1 | 2 | 3 | 4,
     value: item.value,
     suffix: item.suffix,
-    description: null,
   }));
   const items = Array.from({ length: 4 }, (_, index) => statistics[index] ?? fallback[index]!);
   const valueSignature = items.map((item) => item.value).join("|");
@@ -115,16 +115,18 @@ export function StatsSection({
           The Domain statistics
         </h2>
         <div className="relative mt-8 min-h-[22rem] sm:min-h-[28rem] lg:min-h-[30rem]">
-          {presentation.isEnabled && <ScrollSnakeText phrase={presentation.phrase} />}
+          {motionEnabled && <ScrollSnakeText phrase={homeContent.statistics.phrase} />}
           <dl className="relative z-10 grid grid-cols-4 items-start gap-x-[clamp(.25rem,1.5vw,2rem)] pt-14 sm:pt-20 lg:pt-24">
             {items.map((item, index) => (
               <div
                 className="statistic-composition-item flex min-w-0 flex-col items-center justify-start text-center"
                 data-reveal="statistic"
-                key={`${index}-${item.label}`}
+                key={item.slotNumber}
               >
                 <dt className="order-2 mt-2 max-w-[14rem] break-words text-[clamp(.625rem,2.2vw,1rem)] font-semibold leading-[1.25] text-ink [overflow-wrap:anywhere] sm:mt-3">
-                  <DynamicText kind="label">{item.label}</DynamicText>
+                  <DynamicText kind="label">
+                    {homeContent.statistics.labels[item.slotNumber - 1] ?? ""}
+                  </DynamicText>
                 </dt>
                 <dd
                   aria-label={statisticFinalLabel(item.value, item.suffix)}

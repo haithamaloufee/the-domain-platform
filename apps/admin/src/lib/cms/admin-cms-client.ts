@@ -52,9 +52,8 @@ function parsePresentation(value: unknown): StatisticsPresentation {
   if (typeof value !== "object" || value === null)
     throw new Error("Invalid statistics presentation.");
   const item = value as Record<string, unknown>;
-  if (typeof item.phrase !== "string" || typeof item.isEnabled !== "boolean")
-    throw new Error("Invalid statistics presentation.");
-  return { phrase: item.phrase, isEnabled: item.isEnabled };
+  if (typeof item.isEnabled !== "boolean") throw new Error("Invalid statistics presentation.");
+  return { isEnabled: item.isEnabled };
 }
 
 export function createAdminStatistic(input: CreateStatisticRequest): Promise<AdminStatisticItem> {

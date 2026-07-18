@@ -3,9 +3,11 @@ import Image from "next/image";
 export function BrandLogo({
   className,
   priority = false,
+  src = "/brand/the-domain-logo.png",
 }: {
   className?: string;
   priority?: boolean;
+  src?: string;
 }) {
   return (
     <Image
@@ -13,7 +15,8 @@ export function BrandLogo({
       className={className}
       height={131}
       priority={priority}
-      src="/brand/the-domain-logo.png"
+      src={src}
+      unoptimized={src.startsWith("https://")}
       width={600}
     />
   );

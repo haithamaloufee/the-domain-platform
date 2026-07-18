@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TheDomain.Api.Tests.Infrastructure;
@@ -11,6 +12,18 @@ namespace TheDomain.Api.Tests.Endpoints;
 
 public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) : IClassFixture<ApiWebApplicationFactory>
 {
+    [Fact]
+    public async Task PublicHomepageDoesNotExposeSectionComposition()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/api/public/homepage");
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStreamAsync());
+
+        response.EnsureSuccessStatusCode();
+        Assert.False(json.RootElement.GetProperty("presentation").TryGetProperty("sectionOrder", out _));
+        Assert.False(json.RootElement.GetProperty("presentation").TryGetProperty("disabledSections", out _));
+    }
+
     [Fact]
     public async Task PublicStatisticsReturnsTheFourPermanentSlots()
     {
@@ -47,6 +60,18 @@ public sealed class HomepageCmsEndpointTests(ApiWebApplicationFactory factory) :
 
         var item = Assert.Single(response!);
         Assert.Equal("public", item.Slug);
+    }
+
+    [Theory]
+    [InlineData("/api/public/statistics")]
+    [InlineData("/api/public/partners")]
+    public async Task CompatibilitySummaryEndpointsAdvertiseDeprecation(string path)
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync(path);
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("true", response.Headers.GetValues("Deprecation").Single());
     }
 
     [Theory]

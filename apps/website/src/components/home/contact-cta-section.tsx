@@ -1,19 +1,17 @@
-import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
-export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageContent | null }) {
-  const content = cmsContent
-    ? {
-        eyebrow: homepageContent.contact.eyebrow,
-        title: cmsContent.contactTitle,
-        description: cmsContent.contactDescription,
-        label: cmsContent.contactCtaLabel,
-        href: cmsContent.contactCtaHref,
-      }
-    : { ...homepageContent.contact, label: "Contact The Domain", href: "/contact" };
+export function ContactCtaSection() {
+  const content = {
+    eyebrow: homepageContent.contact.eyebrow,
+    title: homeContent.contact.title,
+    description: homeContent.contact.description,
+    label: homeContent.contact.cta.label,
+    href: homeContent.contact.cta.href,
+  };
   return (
     <Section className="architectural-grid relative isolate overflow-hidden border-t border-line bg-surface">
       <div

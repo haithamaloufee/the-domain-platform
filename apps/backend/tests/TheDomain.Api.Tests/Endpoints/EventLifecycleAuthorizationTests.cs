@@ -143,6 +143,10 @@ public sealed class EventLifecycleAuthorizationTests
             CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<PublicEventListResponse>>([]);
 
+        public Task<HomepageEventPreviewResponse> GetHomepagePreviewAsync(
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HomepageEventPreviewResponse([], [], []));
+
         public Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken) =>

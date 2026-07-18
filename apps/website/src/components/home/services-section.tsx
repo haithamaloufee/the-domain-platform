@@ -1,18 +1,15 @@
-import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { HomeSectionHeader } from "./home-section-header";
 
-export function ServicesSection({ content }: { content: PublicHomepageContent | null }) {
+export function ServicesSection() {
   return (
     <Section className="border-y border-line bg-surface/45">
       <Container>
-        <HomeSectionHeader
-          eyebrow="Capabilities"
-          title={content?.servicesTitle ?? "From first idea to final atmosphere."}
-        />
+        <HomeSectionHeader eyebrow="Capabilities" title={homeContent.services.title} />
         <ol className="mt-10 border-t border-line">
           {homepageContent.services.map((service, index) => (
             <li

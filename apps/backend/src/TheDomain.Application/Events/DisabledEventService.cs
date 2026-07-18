@@ -12,6 +12,8 @@ public sealed class DisabledEventService : IEventService
     public Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken) => Task.FromResult(NoPublicEvents);
     public Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<PublicEventDetailsResponse?>(null);
     public Task<IReadOnlyList<GalleryAlbumListResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken) => Task.FromResult(NoAlbums);
+    public Task<HomepageEventPreviewResponse> GetHomepagePreviewAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(new HomepageEventPreviewResponse(NoPublicEvents, NoPublicEvents, NoAlbums));
     public Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken) => Task.FromResult<GalleryAlbumDetailsResponse?>(null);
     public Task<IReadOnlyList<AdminEventResponse>> GetAdminEventsAsync(CancellationToken cancellationToken) => Task.FromResult(NoAdminEvents);
     public Task<AdminEventResponse?> GetAdminByIdAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<AdminEventResponse?>(null);

@@ -1,4 +1,8 @@
-import { MediaType, type GalleryPublicCollection } from "@the-domain/types";
+import {
+  MediaType,
+  type GalleryPublicCollection,
+  type HomepageCollectionPreview,
+} from "@the-domain/types";
 import { Badge, MediaFrame } from "@the-domain/ui";
 import { cn, galleryMediaImageSource } from "@the-domain/utils";
 import Image from "next/image";
@@ -12,15 +16,27 @@ export function CollectionCard({
   variant = "standard",
 }: {
   className?: string;
-  collection: GalleryPublicCollection;
+  collection: GalleryPublicCollection | HomepageCollectionPreview;
   priority: boolean;
   variant?: "standard" | "tall" | "wide";
 }) {
-  const featured =
-    collection.media.find((item) => item.id === collection.featuredMediaId) ?? collection.media[0];
-  const source = featured ? galleryMediaImageSource(featured) : null;
-  const photos = collection.media.filter((item) => item.mediaType === MediaType.Image).length;
-  const videos = collection.media.length - photos;
+  const summary = "coverMedia" in collection;
+  const featured = summary
+    ? collection.coverMedia
+    : (collection.media.find((item) => item.id === collection.featuredMediaId) ??
+      collection.media[0]);
+  const source = featured
+    ? summary
+      ? featured.mediaType === MediaType.Video
+        ? featured.posterUrl
+        : featured.url
+      : galleryMediaImageSource(featured)
+    : null;
+  const photos = summary
+    ? collection.photoCount
+    : collection.media.filter((item) => item.mediaType === MediaType.Image).length;
+  const videos = summary ? collection.videoCount : collection.media.length - photos;
+  const highlightCount = summary ? collection.highlightCount : collection.media.length;
   const heightClass =
     variant === "tall"
       ? "min-h-[34rem] sm:min-h-[42rem]"
@@ -83,7 +99,7 @@ export function CollectionCard({
             </p>
           )}
           <p className="mt-4 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
-            {collection.media.length} {collection.media.length === 1 ? "highlight" : "highlights"}
+            {highlightCount} {highlightCount === 1 ? "highlight" : "highlights"}
             {photos > 0 ? ` / ${photos} ${photos === 1 ? "photo" : "photos"}` : ""}
             {videos > 0 ? ` / ${videos} ${videos === 1 ? "video" : "videos"}` : ""}
           </p>

@@ -10,6 +10,8 @@ using System.Security.Claims;
 using System.Text;
 using TheDomain.Api.Authorization;
 using TheDomain.Infrastructure.Authentication;
+using TheDomain.Api.Caching;
+using TheDomain.Application.Caching;
 
 namespace TheDomain.Api.Extensions;
 
@@ -48,6 +50,8 @@ public static class ServiceCollectionExtensions
         services.AddHealthChecks();
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddOutputCache();
+        services.AddSingleton<IPublicOutputCacheInvalidator, PublicOutputCacheInvalidator>();
 
         services.AddOptions<ApiOptions>()
             .Bind(configuration.GetRequiredSection(ApiOptions.SectionName))

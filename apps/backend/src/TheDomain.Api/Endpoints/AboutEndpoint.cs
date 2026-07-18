@@ -1,6 +1,7 @@
 using TheDomain.Api.Authorization;
 using TheDomain.Application.About;
 using TheDomain.Application.Homepage;
+using TheDomain.Application.Caching;
 
 namespace TheDomain.Api.Endpoints;
 
@@ -8,7 +9,7 @@ public static class AboutEndpoint
 {
     public static IEndpointRouteBuilder MapAboutEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/api/public/about", (IAboutService service, CancellationToken token) => service.GetPublicAboutAsync(token)).AllowAnonymous().WithTags("Public About");
+        endpoints.MapGet("/api/public/about", (IAboutService service, CancellationToken token) => service.GetPublicAboutAsync(token)).AllowAnonymous().WithTags("Public About").CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(1)).Tag(PublicCacheTags.About, PublicCacheTags.Partners, PublicCacheTags.Media));
         var about = endpoints.MapGroup("/api/admin/about").RequireAuthorization(AuthorizationPolicies.AdminDashboardAccess).WithTags("Admin About");
         about.MapGet("/", (IAboutService service, CancellationToken token) => service.GetAdminSettingsAsync(token));
         about.MapPut("/", async (SaveAboutSettingsRequest request, IAboutService service, CancellationToken token) => Result(await service.SaveSettingsAsync(request, token)));

@@ -1,5 +1,6 @@
 using TheDomain.Application.Events;
 using TheDomain.Application.Events.Contracts;
+using TheDomain.Application.Caching;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
 
@@ -8,6 +9,16 @@ namespace TheDomain.Application.Tests.Events;
 public sealed class EventServiceTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 1, 12, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public async Task SuccessfulEventMutationEvictsEventAndGalleryTags()
+    {
+        var cache = new RecordingInvalidator();
+        var result = await Service(new FakeRepository(), cache).CreateAsync(Request(), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([PublicCacheTags.Events, PublicCacheTags.Gallery], Assert.Single(cache.Calls));
+    }
 
     [Theory]
     [InlineData(-1)]
@@ -265,8 +276,14 @@ public sealed class EventServiceTests
         Assert.Equal(0, repository.SaveCount);
     }
 
-    private static EventService Service(FakeRepository repository) =>
-        new(repository, new FixedTimeProvider(Now));
+    private static EventService Service(FakeRepository repository, IPublicOutputCacheInvalidator? cache = null) =>
+        new(repository, new FixedTimeProvider(Now), null, cache);
+
+    private sealed class RecordingInvalidator : IPublicOutputCacheInvalidator
+    {
+        public List<string[]> Calls { get; } = [];
+        public Task EvictAsync(CancellationToken token, params string[] tags) { Calls.Add(tags); return Task.CompletedTask; }
+    }
 
     private static SaveEventRequest Request(
         string? slug = "sample-event",

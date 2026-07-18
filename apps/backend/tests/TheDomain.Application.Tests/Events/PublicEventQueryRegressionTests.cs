@@ -1,4 +1,5 @@
 using TheDomain.Application.Events;
+using TheDomain.Application.Events.Contracts;
 using TheDomain.Domain.Events;
 using TheDomain.Domain.Media;
 
@@ -112,6 +113,34 @@ public sealed class PublicEventQueryRegressionTests
         Assert.Equal(cover.Id, details.CoverMedia?.Id);
     }
 
+    [Fact]
+    public async Task ProjectedPublicListKeepsLifecycleBookingAndCoverContract()
+    {
+        var coverId = Guid.NewGuid();
+        var row = new PublicEventSummaryReadModel(Guid.NewGuid(), "projected", "Title", "Short",
+            "Concert", Now.AddHours(1), Now.AddHours(2), "Asia/Amman", "Amman", "Venue",
+            EventPublicationStatus.Published, BookingAvailability.Open, null, null,
+            "https://tickets.example.com", true,
+            new PublicEventMediaReadModel(coverId, MediaType.Image,
+                "https://cdn.example.com/cover.jpg", null, "cover", null, "Cover", 1200, 1500,
+                null, MediaOrientation.Portrait, EventMediaUsage.Cover, 0, true, 0.5, 0.5, 1,
+                VideoPosterMode.Automatic, null, null, null));
+        var reads = new FakePublicReadRepository(row);
+        var service = new EventService(new FakeRepository(), new FixedTimeProvider(Now),
+            publicReads: reads);
+
+        var result = await service.GetFeaturedAsync(CancellationToken.None);
+
+        var item = Assert.Single(result);
+        Assert.Equal(PublicEventQueryKind.Featured, reads.LastQueryKind);
+        Assert.Equal(50, reads.LastLimit);
+        Assert.Equal(EventDisplayStatus.Upcoming, item.DisplayStatus);
+        Assert.Equal(BookingAvailability.Open, item.BookingAvailability);
+        Assert.Equal("https://tickets.example.com", item.ExternalBookingUrl);
+        Assert.Equal(coverId, item.CoverMedia?.Id);
+        Assert.Equal(EventMediaUsage.Cover, item.CoverMedia?.Usage);
+    }
+
     private static EventService Service(params EntertainmentEvent[] events) =>
         new(new FakeRepository(events), new FixedTimeProvider(Now));
 
@@ -169,5 +198,31 @@ public sealed class PublicEventQueryRegressionTests
             Task.FromResult(_events.Any(item => item.Slug == slug && item.Id != excludingId));
         public void Add(EntertainmentEvent eventEntity) => _events.Add(eventEntity);
         public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakePublicReadRepository(PublicEventSummaryReadModel row)
+        : IPublicEventReadRepository
+    {
+        public PublicEventQueryKind? LastQueryKind { get; private set; }
+        public int LastLimit { get; private set; }
+
+        public Task<IReadOnlyList<PublicEventSummaryReadModel>> ListPublicAsync(
+            PublicEventQueryKind queryKind,
+            DateTimeOffset now,
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            LastQueryKind = queryKind;
+            LastLimit = limit;
+            return Task.FromResult<IReadOnlyList<PublicEventSummaryReadModel>>([row]);
+        }
+
+        public Task<HomepageEventPreviewReadModel> GetHomepagePreviewAsync(
+            DateTimeOffset now,
+            int currentLimit,
+            int previousLimit,
+            int albumLimit,
+            CancellationToken cancellationToken) => Task.FromResult(
+                new HomepageEventPreviewReadModel([row], [], []));
     }
 }

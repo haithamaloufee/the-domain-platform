@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { getPublicAbout, getPublicBranding } from "@/lib/public-api";
-import { createPageMetadata, defaultDescription } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { aboutContent } from "@/content/about";
 
 export const revalidate = 60;
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = about.status === "fulfilled" ? about.value.settings : null;
   const brand = branding.status === "fulfilled" ? branding.value : null;
   return createPageMetadata({
-    title: settings?.seoTitle ?? brand?.defaultSeoTitle ?? "About",
-    description: settings?.seoDescription ?? brand?.defaultSeoDescription ?? defaultDescription,
+    title: aboutContent.seo.title,
+    description: aboutContent.seo.description,
     image: settings?.socialImageUrl ?? brand?.socialImage?.url ?? null,
     path: "/about",
   });
@@ -38,13 +39,13 @@ export default async function AboutPage() {
           <Container className="flex min-h-[inherit] items-end py-20">
             <div className="max-w-5xl">
               <p className="font-label text-xs uppercase tracking-[.16em] text-gold">
-                <DynamicText kind="label">{settings.heroEyebrow}</DynamicText>
+                <DynamicText kind="label">{aboutContent.hero.eyebrow}</DynamicText>
               </p>
               <h1 className="mt-5 break-words font-display text-[clamp(3.5rem,11vw,8rem)] font-bold leading-[.9] tracking-[-.06em]">
-                <DynamicText kind="heading">{settings.heroHeading}</DynamicText>
+                <DynamicText kind="heading">{aboutContent.hero.heading}</DynamicText>
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-ink-muted">
-                <DynamicText>{settings.heroText}</DynamicText>
+                <DynamicText>{aboutContent.hero.text}</DynamicText>
               </p>
             </div>
           </Container>
@@ -56,7 +57,7 @@ export default async function AboutPage() {
             className="max-w-6xl break-words font-display text-4xl font-bold leading-tight tracking-[-.04em] sm:text-7xl"
             data-site-heading
           >
-            <DynamicText kind="heading">{settings.introStatement}</DynamicText>
+            <DynamicText kind="heading">{aboutContent.introStatement}</DynamicText>
           </p>
         </Container>
       </Section>
@@ -64,18 +65,18 @@ export default async function AboutPage() {
         <Section className="border-y border-line bg-surface/25">
           <Container className="grid gap-10 lg:grid-cols-12">
             <h2 className="break-words font-display text-4xl font-bold lg:col-span-5 sm:text-6xl">
-              <DynamicText kind="heading">{settings.storyHeading}</DynamicText>
+              <DynamicText kind="heading">{aboutContent.story.heading}</DynamicText>
             </h2>
             <div className="lg:col-span-6 lg:col-start-7">
               <div className="whitespace-pre-line text-base leading-8 text-ink-muted">
-                <DynamicText>{settings.storyText}</DynamicText>
+                <DynamicText>{aboutContent.story.text}</DynamicText>
               </div>
-              {settings.storyHighlight && (
+              {aboutContent.story.highlight && (
                 <blockquote
                   className="mt-8 border-l border-gold pl-5 font-display text-2xl font-bold"
                   data-site-heading
                 >
-                  <DynamicText kind="heading">{settings.storyHighlight}</DynamicText>
+                  <DynamicText kind="heading">{aboutContent.story.highlight}</DynamicText>
                 </blockquote>
               )}
             </div>
@@ -86,10 +87,10 @@ export default async function AboutPage() {
         <Section>
           <Container>
             <h2 className="max-w-4xl break-words font-display text-4xl font-bold sm:text-6xl">
-              <DynamicText kind="heading">{settings.teamHeading}</DynamicText>
+              <DynamicText kind="heading">{aboutContent.team.heading}</DynamicText>
             </h2>
             <p className="mt-5 max-w-2xl leading-7 text-ink-muted">
-              <DynamicText>{settings.teamText}</DynamicText>
+              <DynamicText>{aboutContent.team.text}</DynamicText>
             </p>
             {data.team.length ? (
               <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,10 +144,10 @@ export default async function AboutPage() {
         <Section className="border-y border-line">
           <Container>
             <h2 className="max-w-4xl break-words font-display text-4xl font-bold sm:text-6xl">
-              <DynamicText kind="heading">{settings.partnersHeading}</DynamicText>
+              <DynamicText kind="heading">{aboutContent.partners.heading}</DynamicText>
             </h2>
             <p className="mt-4 max-w-2xl text-ink-muted">
-              <DynamicText>{settings.partnersText}</DynamicText>
+              <DynamicText>{aboutContent.partners.text}</DynamicText>
             </p>
             {data.partners.length > 0 && (
               <ul className="mt-8 grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-4">
@@ -177,17 +178,17 @@ export default async function AboutPage() {
           <Container className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <h2 className="max-w-5xl break-words font-display text-5xl font-bold sm:text-7xl">
-                <DynamicText kind="heading">{settings.reachOutHeading}</DynamicText>
+                <DynamicText kind="heading">{aboutContent.reachOut.heading}</DynamicText>
               </h2>
               <p className="mt-5 max-w-2xl text-lg text-ink-muted">
-                <DynamicText>{settings.reachOutText}</DynamicText>
+                <DynamicText>{aboutContent.reachOut.text}</DynamicText>
               </p>
             </div>
             <Link
               className={buttonClasses("primary", "w-full sm:w-auto")}
-              href={settings.reachOutCtaHref}
+              href={aboutContent.reachOut.cta.href}
             >
-              <DynamicText kind="action">{settings.reachOutCtaLabel}</DynamicText>
+              <DynamicText kind="action">{aboutContent.reachOut.cta.label}</DynamicText>
             </Link>
           </Container>
         </Section>
@@ -230,31 +231,12 @@ function HeroMedia({ media }: { media: PublicAboutResponse["settings"]["heroMedi
 const fallback: PublicAboutResponse = {
   settings: {
     isHeroEnabled: true,
-    heroEyebrow: "The company",
-    heroHeading: "About The Domain",
-    heroText: "Entertainment composed with intention.",
     heroMedia: null,
     heroPresentation: AboutHeroPresentation.EditorialSplit,
-    introStatement:
-      "We shape experiences where atmosphere, production, people, and place move as one.",
     isStoryEnabled: true,
-    storyHeading: "A considered approach to entertainment.",
-    storyText:
-      "The Domain brings creative direction and operational detail into one clear experience.",
-    storyHighlight: null,
     isTeamEnabled: true,
-    teamHeading: "The people behind the experience.",
-    teamText: "A focused team connecting vision with execution.",
     isPartnersEnabled: false,
-    partnersHeading: "Built with trusted partners.",
-    partnersText: "Relationships that strengthen every production.",
     isReachOutEnabled: true,
-    reachOutHeading: "Let’s create what comes next.",
-    reachOutText: "Talk to The Domain about your next experience.",
-    reachOutCtaLabel: "Reach out",
-    reachOutCtaHref: "/contact",
-    seoTitle: null,
-    seoDescription: null,
     socialImageUrl: null,
   },
   team: [],

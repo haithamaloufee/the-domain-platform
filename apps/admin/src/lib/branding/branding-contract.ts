@@ -2,10 +2,6 @@ import type { BrandingMedia, BrandingSettings } from "@the-domain/types";
 export function parseBrandingSettings(value: unknown): BrandingSettings {
   if (!record(value)) throw new Error("The server returned invalid Branding Settings.");
   return {
-    siteName: required(value.siteName),
-    brandDescription: nullable(value.brandDescription),
-    defaultSeoTitle: required(value.defaultSeoTitle),
-    defaultSeoDescription: required(value.defaultSeoDescription),
     primaryLogoMediaAssetId: nullable(value.primaryLogoMediaAssetId),
     alternateLogoMediaAssetId: nullable(value.alternateLogoMediaAssetId),
     faviconMediaAssetId: nullable(value.faviconMediaAssetId),

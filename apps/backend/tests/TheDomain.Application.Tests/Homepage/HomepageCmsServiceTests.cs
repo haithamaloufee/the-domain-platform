@@ -1,5 +1,6 @@
 using TheDomain.Application.Homepage;
 using TheDomain.Application.Homepage.Contracts;
+using TheDomain.Application.Caching;
 using TheDomain.Domain.Homepage;
 using TheDomain.Domain.Media;
 
@@ -7,6 +8,18 @@ namespace TheDomain.Application.Tests.Homepage;
 
 public sealed class HomepageCmsServiceTests
 {
+    [Fact]
+    public async Task HomepageAndStatisticsMutationsEvictTheirDependencyTags()
+    {
+        var repository = new FakeRepository();
+        var cache = new RecordingInvalidator();
+        var service = new HomepageCmsService(repository, TimeProvider.System, null, null, null, cache);
+
+        Assert.True((await service.UpdateHomepageAsync(HomepageRequest(), default)).IsSuccess);
+        Assert.Equal([PublicCacheTags.Homepage], cache.Calls[0]);
+        Assert.True((await service.SaveStatisticsPresentationAsync(new(false), default)).IsSuccess);
+        Assert.Equal([PublicCacheTags.Statistics, PublicCacheTags.Homepage], cache.Calls[1]);
+    }
     [Fact]
     public async Task StatisticSlotsCannotBeReorderedWhilePartnersStillCan()
     {
@@ -22,12 +35,11 @@ public sealed class HomepageCmsServiceTests
     }
 
     [Fact]
-    public async Task StatisticsPhrasePersistsAndValidatesLength()
+    public async Task StatisticsMotionSettingPersists()
     {
         var repository = new FakeRepository { Homepage = CreateHomepage(false) }; var service = new HomepageCmsService(repository, TimeProvider.System);
-        Assert.False((await service.SaveStatisticsPresentationAsync(new("", true), default)).IsSuccess);
-        Assert.True((await service.SaveStatisticsPresentationAsync(new("Experience in motion", true), default)).IsSuccess);
-        Assert.Equal("Experience in motion", (await service.GetStatisticsPresentationAsync(default)).Phrase);
+        Assert.True((await service.SaveStatisticsPresentationAsync(new(false), default)).IsSuccess);
+        Assert.False((await service.GetStatisticsPresentationAsync(default)).IsEnabled);
     }
     [Fact]
     public async Task PublicStatisticsUseTheFourPermanentSlotsInSlotOrder()
@@ -103,55 +115,14 @@ public sealed class HomepageCmsServiceTests
     }
 
     [Fact]
-    public async Task HomepageUpdateRejectsUnsafeCtaHref()
-    {
-        var repository = new FakeRepository();
-        var request = HomepageRequest(primaryCtaHref: "javascript:alert(1)");
-
-        var result = await CreateService(repository).UpdateHomepageAsync(request, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(CmsFailureKind.Validation, result.FailureKind);
-        Assert.Contains(result.Errors, error => error.Contains("Primary CTA href", StringComparison.Ordinal));
-        Assert.Equal(0, repository.SaveCount);
-    }
-
-    [Fact]
-    public async Task HomepageBuilderRejectsIncompleteSectionOrder()
-    {
-        var repository = new FakeRepository();
-        var request = HomepageRequest("/events") with { SectionOrder = ["events", "gallery"] };
-
-        var result = await CreateService(repository).UpdateHomepageAsync(request, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Contains(result.Errors, error => error.Contains("every predefined homepage section", StringComparison.Ordinal));
-        Assert.Equal(0, repository.SaveCount);
-    }
-
-    [Fact]
     public async Task HomepageBuilderPersistsContextualPresentationInSingleSave()
     {
-        string[] order = ["contact", "partners", "services", "gallery", "previous", "why", "statistics", "events"];
         var repository = new FakeRepository();
-        var request = HomepageRequest("/events") with
-        {
-            SectionOrder = order,
-            DisabledSections = ["why"],
-            EventsTitle = "Tonight at The Domain",
-            EventsDescription = "A curated programme.",
-            PreviousEventsTitle = "From the archive",
-            PreviousEventsDescription = "Stories worth revisiting.",
-            GalleryTitle = "Selected frames",
-            GalleryDescription = "A visual edit."
-        };
+        var request = HomepageRequest() with { IsFloatingVideoEnabled = false };
 
         var result = await CreateService(repository).UpdateHomepageAsync(request, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(order, result.Value!.Builder.SectionOrder);
-        Assert.Equal(["why"], result.Value.Builder.DisabledSections);
-        Assert.Equal("Tonight at The Domain", result.Value.Builder.EventsTitle);
         Assert.Equal(1, repository.SaveCount);
     }
 
@@ -175,7 +146,8 @@ public sealed class HomepageCmsServiceTests
 
         var result = await CreateService(repository).GetPublicHomepageAsync(CancellationToken.None);
 
-        Assert.Null(result.Content);
+        Assert.Null(result.Presentation.HeroMedia);
+        Assert.True(result.Presentation.StatisticsMotionEnabled);
     }
 
     private static HomepageCmsService CreateService(FakeRepository repository) => new(repository, TimeProvider.System);
@@ -195,16 +167,16 @@ public sealed class HomepageCmsServiceTests
     private static HomepageContent CreateHomepage(bool isPublished)
     {
         var now = DateTimeOffset.UtcNow;
-        return new HomepageContent(HomepageContent.SingletonId, "Eyebrow", "Title", null,
-            "Description", "Explore", "/events", null, null, "Why", "Why description",
-            "Services", "Services description", "Partners", "Partners description",
-            "Contact", "Contact description", "Contact", "/contact", isPublished, now);
+        return new HomepageContent(HomepageContent.SingletonId, isPublished, now);
     }
 
-    private static UpdateHomepageContentRequest HomepageRequest(string primaryCtaHref) => new(
-        "Eyebrow", "Title", null, "Description", "Explore", primaryCtaHref, null, null,
-        "Why", "Why description", "Services", "Services description", "Partners",
-        "Partners description", "Contact", "Contact description", "Contact", "/contact", false);
+    private static UpdateHomepageContentRequest HomepageRequest() => new(false);
+
+    private sealed class RecordingInvalidator : IPublicOutputCacheInvalidator
+    {
+        public List<string[]> Calls { get; } = [];
+        public Task EvictAsync(CancellationToken token, params string[] tags) { Calls.Add(tags); return Task.CompletedTask; }
+    }
 
     private sealed class FakeRepository : IHomepageCmsRepository
     {

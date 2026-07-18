@@ -1,40 +1,23 @@
-import { MediaType, type PublicEventListItem, type PublicHomepageContent } from "@the-domain/types";
+import { MediaType, type HomepagePresentation, type PublicEventListItem } from "@the-domain/types";
 import { Container, buttonClasses } from "@the-domain/ui";
 import { eventCoverRenderData } from "@the-domain/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { EventCoverImage } from "@/components/events/event-cover-image";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
-import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { HeroBackgroundVideo } from "./hero-background-video";
 
 export function HomeHero({
-  content,
+  presentation,
   featuredEvent,
 }: {
-  content: PublicHomepageContent | null;
+  presentation: HomepagePresentation | null;
   featuredEvent: PublicEventListItem | null;
 }) {
   const source = eventCoverRenderData(featuredEvent?.coverMedia ?? null);
-  const configuredMedia = content?.builder.heroMedia ?? null;
-  const hero = content
-    ? {
-        eyebrow: content.heroEyebrow,
-        headline: content.heroTitle,
-        accent: content.heroAccent,
-        description: content.heroDescription,
-        primaryLabel: content.primaryCtaLabel,
-        primaryHref: content.primaryCtaHref,
-        secondaryLabel: content.secondaryCtaLabel,
-        secondaryHref: content.secondaryCtaHref,
-      }
-    : {
-        ...homepageContent.hero,
-        primaryLabel: "Explore Events",
-        primaryHref: "/events",
-        secondaryLabel: "View Gallery",
-        secondaryHref: "/gallery",
-      };
+  const configuredMedia = presentation?.heroMedia ?? null;
+  const hero = homeContent.hero;
 
   return (
     <section className="relative isolate -mt-[var(--site-header-height)] flex min-h-[max(42rem,100svh)] items-end overflow-hidden">
@@ -77,7 +60,7 @@ export function HomeHero({
           </p>
           <div className="mt-6 overflow-hidden" data-hero-part="headline-mask">
             <h1 className="max-w-[13ch] break-words text-[clamp(3.35rem,8vw,7.75rem)] font-extrabold leading-[.88] tracking-[-.06em] text-ink">
-              <DynamicText kind="heading">{hero.headline}</DynamicText>
+              <DynamicText kind="heading">{hero.title}</DynamicText>
               {hero.accent && (
                 <span className="block text-gold">
                   <DynamicText kind="heading">{hero.accent}</DynamicText>
@@ -92,14 +75,15 @@ export function HomeHero({
             <DynamicText>{hero.description}</DynamicText>
           </p>
           <div className="mt-8 flex flex-wrap gap-3" data-hero-part="actions">
-            <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryHref}>
-              <DynamicText kind="action">{hero.primaryLabel}</DynamicText>
+            <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryCta.href}>
+              <DynamicText kind="action">{hero.primaryCta.label}</DynamicText>
             </Link>
-            {hero.secondaryLabel && hero.secondaryHref && (
-              <Link className={buttonClasses("secondary", "sm:min-w-44")} href={hero.secondaryHref}>
-                <DynamicText kind="action">{hero.secondaryLabel}</DynamicText>
-              </Link>
-            )}
+            <Link
+              className={buttonClasses("secondary", "sm:min-w-44")}
+              href={hero.secondaryCta.href}
+            >
+              <DynamicText kind="action">{hero.secondaryCta.label}</DynamicText>
+            </Link>
           </div>
         </div>
       </Container>

@@ -1,19 +1,10 @@
-import type {
-  PublicEventListItem,
-  GalleryPublicCollection,
-  HomepageSectionKey,
-  PublicGalleryAlbum,
-  PublicHomepageContent,
-  PublicPartner,
-  PublicStatisticItem,
-  StatisticsPresentation,
-} from "@the-domain/types";
+import { HomepageSectionKey, type PublicHomepageResponse } from "@the-domain/types";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
+import { FloatingVideoPlayer } from "@/components/home/floating-video-player";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
-import { FloatingVideoPlayer } from "@/components/home/floating-video-player";
 import { HomepageEventsSection } from "@/components/home/homepage-events-section";
 import { PartnersPreviewSection } from "@/components/home/partners-preview-section";
 import { PreviousEventsSection } from "@/components/home/previous-events-section";
@@ -22,14 +13,8 @@ import { StatsSection } from "@/components/home/stats-section";
 import { WhyDomainSection } from "@/components/home/why-domain-section";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
 import { JsonLd } from "@/components/seo/json-ld";
-import {
-  getFeaturedEvents,
-  getGalleryAlbums,
-  getGalleryCollections,
-  getPublicHomepage,
-  getPreviousEvents,
-  getUpcomingEvents,
-} from "@/lib/public-api";
+import { HOMEPAGE_SECTION_ORDER, homeContent } from "@/content/home";
+import { getPublicHomepage } from "@/lib/public-api";
 import { createPageMetadata, defaultDescription, getWebsiteUrl, siteName } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -38,67 +23,68 @@ export const metadata: Metadata = createPageMetadata({
   path: "/",
 });
 
-export const revalidate = 60;
-
 export default async function HomePage() {
-  const data = await loadHomepageData();
-  const heroEvent = data.featured[0] ?? data.upcoming[0] ?? null;
-  const programme = uniqueEvents([...data.featured, ...data.upcoming]).slice(0, 2);
-  const builder = data.content?.builder;
-  const galleryCollection =
-    data.collections.find((collection) => collection.id === builder?.galleryCollectionId) ?? null;
+  let data: PublicHomepageResponse | null = null;
+  try {
+    data = await getPublicHomepage();
+  } catch {
+    // The static Hero and section shells remain available when operational data is unavailable.
+  }
+  const presentation = data?.presentation ?? null;
+  const gallery = data?.galleryPreview;
   const sections: Record<HomepageSectionKey, ReactNode> = {
     events: (
       <HomepageEventsSection
-        description={builder?.eventsDescription}
-        events={programme}
-        title={builder?.eventsTitle}
-        unavailable={data.unavailable.events}
+        events={data?.currentEvents ?? []}
+        title={homeContent.events.title}
+        unavailable={!data}
       />
     ),
     statistics: (
-      <StatsSection statistics={data.statistics} presentation={data.statisticsPresentation} />
+      <StatsSection
+        motionEnabled={presentation?.statisticsMotionEnabled ?? true}
+        statistics={data?.statistics ?? []}
+      />
     ),
-    why: <WhyDomainSection cmsContent={data.content} />,
+    why: <WhyDomainSection />,
     previous: (
       <PreviousEventsSection
-        description={builder?.previousEventsDescription}
-        events={data.previous.slice(0, 2)}
-        title={builder?.previousEventsTitle}
-        unavailable={data.unavailable.previous}
+        events={data?.previousEvents ?? []}
+        title={homeContent.previousEvents.title}
+        unavailable={!data}
       />
     ),
     gallery: (
       <GalleryPreviewSection
-        albums={data.albums.slice(0, 3)}
-        collection={galleryCollection}
-        description={builder?.galleryDescription}
-        title={builder?.galleryTitle}
-        unavailable={data.unavailable.gallery}
+        albums={gallery?.kind === "albums" ? gallery.albums : []}
+        collection={gallery?.kind === "collection" ? gallery : null}
+        title={homeContent.gallery.title}
+        unavailable={!data}
       />
     ),
-    services: <ServicesSection content={data.content} />,
-    partners: <PartnersPreviewSection cmsContent={data.content} partners={data.partners} />,
-    contact: <ContactCtaSection cmsContent={data.content} />,
+    services: <ServicesSection />,
+    partners: <PartnersPreviewSection partners={data?.partners ?? []} />,
+    contact: <ContactCtaSection />,
   };
-  const order = builder?.sectionOrder ?? (Object.keys(sections) as HomepageSectionKey[]);
-  const disabled = new Set(builder?.disabledSections ?? []);
+  const heroEvent = data?.currentEvents[0] ?? null;
 
   return (
     <>
       <JsonLd data={createHomepageStructuredData()} />
-      <HomeHero content={data.content} featuredEvent={heroEvent} />
-      {builder?.isFloatingVideoEnabled && builder.floatingVideoMedia && (
+      <HomeHero featuredEvent={heroEvent} presentation={presentation} />
+      {presentation?.floatingVideo && (
         <FloatingVideoPlayer
-          poster={builder.floatingVideoPoster?.url ?? builder.floatingVideoMedia.posterUrl}
-          src={builder.floatingVideoMedia.url}
+          poster={
+            presentation.floatingVideo.poster?.url ?? presentation.floatingVideo.video.posterUrl
+          }
+          src={presentation.floatingVideo.video.url}
         />
       )}
-      {order
-        .filter((key) => !disabled.has(key))
-        .map((key) => (
-          <CinematicReveal key={key}>{sections[key]}</CinematicReveal>
-        ))}
+      {HOMEPAGE_SECTION_ORDER.map((key) => (
+        <CinematicReveal homeSection={key} key={key}>
+          {sections[key]}
+        </CinematicReveal>
+      ))}
     </>
   );
 }
@@ -123,62 +109,4 @@ function createHomepageStructuredData(): Record<string, unknown> {
       },
     ],
   };
-}
-
-interface HomepageData {
-  featured: PublicEventListItem[];
-  upcoming: PublicEventListItem[];
-  previous: PublicEventListItem[];
-  albums: PublicGalleryAlbum[];
-  collections: GalleryPublicCollection[];
-  content: PublicHomepageContent | null;
-  statistics: PublicStatisticItem[];
-  statisticsPresentation: StatisticsPresentation;
-  partners: PublicPartner[];
-  unavailable: {
-    events: boolean;
-    previous: boolean;
-    gallery: boolean;
-  };
-}
-
-async function loadHomepageData(): Promise<HomepageData> {
-  const [featured, upcoming, previous, albums, collections, homepage] = await Promise.allSettled([
-    getFeaturedEvents(),
-    getUpcomingEvents(),
-    getPreviousEvents(),
-    getGalleryAlbums(),
-    getGalleryCollections(),
-    getPublicHomepage(),
-  ]);
-
-  const homepageValue = homepage.status === "fulfilled" ? homepage.value : null;
-
-  return {
-    featured: settledValue(featured),
-    upcoming: settledValue(upcoming),
-    previous: settledValue(previous),
-    albums: settledValue(albums),
-    collections: settledValue(collections),
-    content: homepageValue?.content ?? null,
-    statistics: homepageValue?.statistics ?? [],
-    statisticsPresentation: homepageValue?.statisticsPresentation ?? {
-      phrase: "Moments that move with us",
-      isEnabled: true,
-    },
-    partners: homepageValue?.partners ?? [],
-    unavailable: {
-      events: featured.status === "rejected" && upcoming.status === "rejected",
-      previous: previous.status === "rejected",
-      gallery: albums.status === "rejected" && collections.status === "rejected",
-    },
-  };
-}
-
-function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
-  return result.status === "fulfilled" ? result.value : [];
-}
-
-function uniqueEvents(events: PublicEventListItem[]): PublicEventListItem[] {
-  return [...new Map(events.map((event) => [event.id, event])).values()];
 }

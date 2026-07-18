@@ -9,6 +9,7 @@ public interface IEventService
     Task<IReadOnlyList<PublicEventListResponse>> GetFeaturedAsync(CancellationToken cancellationToken);
     Task<PublicEventDetailsResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken);
     Task<IReadOnlyList<GalleryAlbumListResponse>> GetGalleryAlbumsAsync(CancellationToken cancellationToken);
+    Task<HomepageEventPreviewResponse> GetHomepagePreviewAsync(CancellationToken cancellationToken);
     Task<GalleryAlbumDetailsResponse?> GetGalleryAlbumAsync(string slug, CancellationToken cancellationToken);
     Task<IReadOnlyList<AdminEventResponse>> GetAdminEventsAsync(CancellationToken cancellationToken);
     Task<AdminEventResponse?> GetAdminByIdAsync(Guid id, CancellationToken cancellationToken);

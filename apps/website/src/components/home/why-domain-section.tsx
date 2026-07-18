@@ -1,16 +1,14 @@
-import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section } from "@the-domain/ui";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
-export function WhyDomainSection({ cmsContent }: { cmsContent: PublicHomepageContent | null }) {
-  const content = cmsContent
-    ? {
-        eyebrow: homepageContent.whyDomain.eyebrow,
-        title: cmsContent.whyTitle,
-        paragraphs: [cmsContent.whyDescription],
-      }
-    : homepageContent.whyDomain;
+export function WhyDomainSection() {
+  const content = {
+    eyebrow: homepageContent.whyDomain.eyebrow,
+    title: homeContent.why.title,
+    paragraphs: [homeContent.why.description],
+  };
   return (
     <Section>
       <Container className="grid gap-12 lg:grid-cols-12 lg:gap-8">

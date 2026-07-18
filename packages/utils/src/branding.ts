@@ -4,10 +4,6 @@ import type {
   UpdateBrandingSettingsRequest,
 } from "@the-domain/types";
 export const fallbackBranding: PublicBrandingSettings = {
-  siteName: "The Domain Entertainment",
-  brandDescription: "Premium entertainment experiences and events in Jordan.",
-  defaultSeoTitle: "The Domain Entertainment",
-  defaultSeoDescription: "Premium entertainment experiences and events in Jordan.",
   primaryLogo: null,
   alternateLogo: null,
   favicon: null,
@@ -20,10 +16,6 @@ export const fallbackBranding: PublicBrandingSettings = {
 };
 export function brandingRequest(value: BrandingSettings): UpdateBrandingSettingsRequest {
   return {
-    siteName: value.siteName.trim(),
-    brandDescription: value.brandDescription?.trim() || null,
-    defaultSeoTitle: value.defaultSeoTitle.trim(),
-    defaultSeoDescription: value.defaultSeoDescription.trim(),
     primaryLogoMediaAssetId: value.primaryLogoMediaAssetId,
     alternateLogoMediaAssetId: value.alternateLogoMediaAssetId,
     faviconMediaAssetId: value.faviconMediaAssetId,

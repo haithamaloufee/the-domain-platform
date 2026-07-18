@@ -36,6 +36,8 @@ Application defines media storage, query, management, repository, and validation
 
 ## Homepage CMS
 
-Domain owns `HomepageContent`, `StatisticItem`, and `Partner` without EF references. Homepage content uses a fixed application-owned identifier plus a database check constraint, allowing PUT to act as a singleton upsert. The builder stores independent approved-media references for the Hero and optional floating video/poster. Application owns validation, public/admin DTO projection, four fixed statistic slots, partner ordering and slug conflicts, and current-media eligibility checks. Infrastructure owns EF configurations and batched media resolution; API endpoints remain transport-only.
+Domain owns `HomepageContent`, `StatisticItem`, and `Partner` without EF references. The Homepage singleton stores publication, approved Hero/gallery/floating-media references, and the statistics-motion toggle. Section composition and static copy are not persistence concerns. Application owns the consolidated public projection, exact 2/2 event capacities, four statistic slots, collection cover/count projection, visible partners, and media eligibility.
 
 Public projections never include draft state, verification flags, ordering controls, identifiers, or audit timestamps. Admin CMS routes use `AdminDashboardAccess`. When persistence is disabled, anonymous CMS endpoints return null/empty projections and protected mutations return a controlled conflict rather than resolving a DbContext.
+
+Anonymous public endpoints use ASP.NET Core 8 Output Cache tags. `PublicOutputCacheInvalidator` wraps `IOutputCacheStore.EvictByTagAsync`; successful Homepage, Branding, About, Events, Gallery, Partners, Statistics, media lifecycle, event-media, and collection mutations evict dependency tags after persistence.

@@ -21,7 +21,7 @@ export function StatisticsManager() {
     message: "",
     tone: "success",
   });
-  const [phrase, setPhrase] = useState({ phrase: "Moments that move with us", isEnabled: true });
+  const [presentation, setPresentation] = useState({ isEnabled: true });
 
   useEffect(() => {
     let active = true;
@@ -29,7 +29,7 @@ export function StatisticsManager() {
       .then(([statistics, presentation]) => {
         if (!active) return;
         setItems(sortSlots(statistics));
-        setPhrase(presentation);
+        setPresentation(presentation);
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -122,44 +122,39 @@ export function StatisticsManager() {
       <CmsFeedback message={feedback.message} tone={feedback.tone} />
 
       <Card className="p-6">
-        <h2 className="font-display text-2xl font-bold text-ink">Scroll-path phrase</h2>
+        <h2 className="font-display text-2xl font-bold text-ink">Statistics motion</h2>
         <p className="mt-2 text-sm text-ink-muted">
-          This phrase follows the gold path behind the four statistics. Reduced-motion visitors see
-          the same phrase in a static position.
+          The public phrase and slot labels are code-owned. This switch controls whether the
+          scroll-path phrase is presented; reduced-motion preferences are still respected.
         </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
-          <Input
-            aria-label="Statistics path phrase"
-            maxLength={180}
-            onChange={(event) => setPhrase({ ...phrase, phrase: event.target.value })}
-            value={phrase.phrase}
-          />
+        <div className="mt-5">
           <CmsCheckbox
-            checked={phrase.isEnabled}
+            checked={presentation.isEnabled}
             description="Show the path phrase publicly."
             label="Enabled"
             name="statistics-phrase-enabled"
-            onChange={(value) => setPhrase({ ...phrase, isEnabled: value })}
+            onChange={(value) => setPresentation({ isEnabled: value })}
           />
         </div>
         <button
           className={buttonClasses("secondary", "mt-4")}
           onClick={() =>
-            void saveStatisticsPresentation({ ...phrase, phrase: phrase.phrase.trim() })
+            void saveStatisticsPresentation(presentation)
               .then((saved) => {
-                setPhrase(saved);
-                setFeedback({ message: "Statistics path phrase saved.", tone: "success" });
+                setPresentation(saved);
+                setFeedback({ message: "Statistics motion setting saved.", tone: "success" });
               })
               .catch((error: unknown) =>
                 setFeedback({
-                  message: error instanceof Error ? error.message : "Unable to save the phrase.",
+                  message:
+                    error instanceof Error ? error.message : "Unable to save the motion setting.",
                   tone: "error",
                 }),
               )
           }
           type="button"
         >
-          Save phrase
+          Save motion setting
         </button>
       </Card>
 

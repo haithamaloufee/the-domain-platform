@@ -29,3 +29,7 @@ public sealed record GalleryAlbumListResponse(Guid EventId, string EventSlug, st
 public sealed record GalleryAlbumDetailsResponse(Guid EventId, string EventSlug, string Title,
     DateTimeOffset EventStartAtUtc, string TimeZoneId, string City, string VenueName,
     IReadOnlyList<PublicMediaResponse> Media);
+public sealed record HomepageEventPreviewResponse(
+    IReadOnlyList<PublicEventListResponse> CurrentEvents,
+    IReadOnlyList<PublicEventListResponse> PreviousEvents,
+    IReadOnlyList<GalleryAlbumListResponse> GalleryAlbums);

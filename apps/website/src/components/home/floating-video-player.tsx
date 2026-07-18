@@ -27,6 +27,7 @@ export function FloatingVideoPlayer({ src, poster }: { src: string; poster?: str
   const [muted, setMuted] = useState(true);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [deferredSource, setDeferredSource] = useState<string | null>(null);
 
   const applyPosition = useCallback((point: Point) => {
     const root = rootRef.current;
@@ -80,20 +81,33 @@ export function FloatingVideoPlayer({ src, poster }: { src: string; poster?: str
   }, [applyPosition, placeAtInitialPosition]);
 
   useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection;
+    if (reduced || connection?.saveData) return;
+    const id = window.setTimeout(() => setDeferredSource(src), 900);
+    return () => window.clearTimeout(id);
+  }, [src]);
+
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !deferredSource) return;
     video.muted = true;
     video
       .play()
       .then(() => setPlaying(true))
       .catch(() => setAutoplayBlocked(true));
-  }, []);
+  }, [deferredSource]);
 
   if (closed) return null;
 
   async function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
+    if (!deferredSource) {
+      setDeferredSource(src);
+      return;
+    }
     if (!video.paused) {
       video.pause();
       return;
@@ -109,6 +123,11 @@ export function FloatingVideoPlayer({ src, poster }: { src: string; poster?: str
   async function toggleMute() {
     const video = videoRef.current;
     if (!video) return;
+    if (!deferredSource) {
+      setDeferredSource(src);
+      setMuted(false);
+      return;
+    }
     video.muted = !video.muted;
     setMuted(video.muted);
     if (video.paused) {
@@ -204,9 +223,9 @@ export function FloatingVideoPlayer({ src, poster }: { src: string; poster?: str
           onVolumeChange={(event) => setMuted(event.currentTarget.muted)}
           playsInline
           poster={poster ?? undefined}
-          preload="metadata"
+          preload={deferredSource ? "metadata" : "none"}
           ref={videoRef}
-          src={src}
+          src={deferredSource ?? undefined}
         />
         {autoplayBlocked && (
           <button

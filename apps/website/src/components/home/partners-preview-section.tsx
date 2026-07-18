@@ -1,19 +1,14 @@
-import type { PublicHomepageContent, PublicPartner } from "@the-domain/types";
+import type { PublicPartner } from "@the-domain/types";
 import { Container, Section } from "@the-domain/ui";
 import Image from "next/image";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
-export function PartnersPreviewSection({
-  cmsContent,
-  partners,
-}: {
-  cmsContent: PublicHomepageContent | null;
-  partners: PublicPartner[];
-}) {
+export function PartnersPreviewSection({ partners }: { partners: PublicPartner[] }) {
   const content = {
     eyebrow: homepageContent.partners.eyebrow,
-    title: cmsContent?.partnersTitle ?? homepageContent.partners.title,
+    title: homeContent.partners.title,
   };
   return (
     <Section className="overflow-hidden bg-canvas">

@@ -103,6 +103,6 @@ Admin media APIs provide single-file upload, bounded pagination, metadata editin
 
 ## Homepage CMS
 
-The homepage CMS stores one application-identified content record, verified statistics, and partner/sponsor metadata. `GET /api/public/homepage` returns published content plus visible verified statistics and visible partners. Standalone reads are available at `/api/public/statistics` and `/api/public/partners`. Before content is published, the aggregate response contains `content: null`; empty statistic and partner arrays are valid.
+The Homepage singleton stores publication and dynamic media/presentation only. `GET /api/public/homepage` is the bounded consolidated read model for presentation, statistic values, event previews, Gallery preview, and visible partners. Static wording, fixed CTAs, section order, and section visibility are Website-owned. `/api/public/statistics` and `/api/public/partners` remain deprecated compatibility reads and are not Homepage dependencies.
 
-Protected `/api/admin/homepage`, `/api/admin/statistics`, and `/api/admin/partners` routes prepare the Sprint 12B admin workflow. They require `AdminDashboardAccess`, validate explicit DTOs, enforce unique partner slugs, and implement statistic/partner deletion as soft hide. The `AddHomepageCms` migration creates the three tables and indexes without seeding content, metrics, partners, logos, or media.
+Protected `/api/admin/homepage`, `/api/admin/statistics`, and `/api/admin/partners` routes require `AdminDashboardAccess`, validate explicit DTOs, enforce unique partner slugs, and implement statistic/partner deletion as soft hide. Homepage admin payloads cannot change static copy or public composition.

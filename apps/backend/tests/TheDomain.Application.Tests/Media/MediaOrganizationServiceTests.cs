@@ -1,11 +1,26 @@
 using TheDomain.Application.Media;
 using TheDomain.Application.Media.Contracts;
+using TheDomain.Application.Caching;
 using TheDomain.Domain.Media;
 
 namespace TheDomain.Application.Tests.Media;
 
 public sealed class MediaOrganizationServiceTests
 {
+    [Fact]
+    public async Task PublicCacheTagsCoverCollectionAndMediaArchiveMutations()
+    {
+        var repository = new FakeRepository();
+        var cache = new RecordingInvalidator();
+        var service = CreateService(repository, cache: cache);
+
+        await service.CreateCollectionAsync(new("Highlights"), default);
+        Assert.Equal([PublicCacheTags.Gallery, PublicCacheTags.Media], cache.Calls[0]);
+
+        await service.ArchiveMediaAsync(repository.Media.Id, default);
+        Assert.Equal([PublicCacheTags.Media], cache.Calls[1]);
+    }
+
     [Fact]
     public async Task SameMediaCanBeAddedToMultipleCollections()
     {
@@ -52,8 +67,15 @@ public sealed class MediaOrganizationServiceTests
         Assert.NotNull(repository.MediaRecord);
     }
 
-    private static MediaOrganizationService CreateService(FakeRepository repository, FakeStorage? storage = null) =>
-        new(repository, storage ?? new FakeStorage(), TimeProvider.System);
+    private static MediaOrganizationService CreateService(FakeRepository repository, FakeStorage? storage = null,
+        IPublicOutputCacheInvalidator? cache = null) =>
+        new(repository, storage ?? new FakeStorage(), TimeProvider.System, null, cache);
+
+    private sealed class RecordingInvalidator : IPublicOutputCacheInvalidator
+    {
+        public List<string[]> Calls { get; } = [];
+        public Task EvictAsync(CancellationToken token, params string[] tags) { Calls.Add(tags); return Task.CompletedTask; }
+    }
 
     private sealed class FakeStorage : IMediaStorageService
     {

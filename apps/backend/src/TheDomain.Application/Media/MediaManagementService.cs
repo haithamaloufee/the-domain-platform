@@ -1,4 +1,5 @@
 using TheDomain.Application.Events;
+using TheDomain.Application.Caching;
 using TheDomain.Application.Media.Contracts;
 using TheDomain.Domain.Media;
 
@@ -9,7 +10,8 @@ public sealed class MediaManagementService(
     IMediaStorageService storage,
     MediaUploadPolicy uploadPolicy,
     TimeProvider timeProvider,
-    IMediaDeliveryUrlResolver? mediaDeliveryUrlResolver = null) : IMediaManagementService, IMediaQueryService
+    IMediaDeliveryUrlResolver? mediaDeliveryUrlResolver = null,
+    IPublicOutputCacheInvalidator? cache = null) : IMediaManagementService, IMediaQueryService
 {
     public async Task<EventOperationResult<AdminMediaResponse>> UploadAsync(UploadMediaCommand command, CancellationToken token)
     {
@@ -54,6 +56,7 @@ public sealed class MediaManagementService(
                 InsertAt(assignments.Where(item => !removedIds.Contains(item.Id)).ToArray(), assignment, command.SortOrder);
             }
             await repository.SaveChangesAsync(token);
+            await InvalidateMedia(command.EventId.HasValue, token);
             return EventOperationResult.Success(Map(media));
         }
         catch
@@ -96,6 +99,7 @@ public sealed class MediaManagementService(
         }
 
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(media));
     }
 
@@ -131,6 +135,7 @@ public sealed class MediaManagementService(
         repository.AddEventMedia(item);
         InsertAt(assignments.Where(candidate => !removedIds.Contains(candidate.Id)).ToArray(), item, request.SortOrder);
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(item));
     }
 
@@ -152,6 +157,7 @@ public sealed class MediaManagementService(
             request.Usage == EventMediaUsage.Cover || request.IsFeatured);
         MoveTo(assignments, item, request.SortOrder);
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(item));
     }
 
@@ -174,6 +180,7 @@ public sealed class MediaManagementService(
         DemoteCovers(assignments, selected.Id);
         selected.Update(EventMediaUsage.Cover, selected.SortOrder, true);
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(selected));
     }
 
@@ -208,6 +215,7 @@ public sealed class MediaManagementService(
 
         target.UpdatePresentation(request.FocalPointX, request.FocalPointY, request.Zoom);
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(target));
     }
 
@@ -232,6 +240,7 @@ public sealed class MediaManagementService(
             item.Update(item.Usage, index, item.IsFeatured);
         }
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success<IReadOnlyList<EventMediaResponse>>(
             ids.Select(id => Map(byId[id])).ToArray());
     }
@@ -267,6 +276,7 @@ public sealed class MediaManagementService(
 
         target.UpdateVideoPoster(request.Mode, request.TimestampSeconds, customPoster);
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return EventOperationResult.Success(Map(target));
     }
 
@@ -279,10 +289,16 @@ public sealed class MediaManagementService(
         repository.RemoveEventMedia(item);
         NormalizeOrder(assignments.Where(candidate => candidate.Id != item.Id));
         await repository.SaveChangesAsync(token);
+        await InvalidateMedia(true, token);
         return true;
     }
     private async Task<EventOperationResult<AdminMediaResponse>> ChangeMedia(Guid id, Action<MediaAsset> change, CancellationToken token)
-    { var item = await repository.FindMediaAsync(id, token); if (item is null) return EventOperationResult.Failure<AdminMediaResponse>("Media asset was not found."); change(item); await repository.SaveChangesAsync(token); return EventOperationResult.Success(Map(item)); }
+    { var item = await repository.FindMediaAsync(id, token); if (item is null) return EventOperationResult.Failure<AdminMediaResponse>("Media asset was not found."); change(item); await repository.SaveChangesAsync(token); await InvalidateMedia(false, token); return EventOperationResult.Success(Map(item)); }
+    private Task InvalidateMedia(bool eventMedia, CancellationToken token) => cache is null
+        ? Task.CompletedTask
+        : cache.EvictAsync(token, eventMedia
+            ? [PublicCacheTags.Events, PublicCacheTags.Gallery, PublicCacheTags.Media]
+            : [PublicCacheTags.Media]);
     private static MediaOrientation GetOrientation(int? width, int? height) => width is null || height is null ? MediaOrientation.Unknown : width == height ? MediaOrientation.Square : width > height ? MediaOrientation.Landscape : MediaOrientation.Portrait;
     private AdminMediaResponse Map(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName, item.MediaType, item.Url, ResolveThumbnailUrl(item), item.Width, item.Height, item.DurationSeconds, item.Orientation, item.Category, item.Caption, item.AltText, item.ApprovalStatus, item.IsArchived, item.ArchivedAtUtc, item.CreatedAtUtc, item.UpdatedAtUtc);
     private AdminMediaListItemResponse MapList(MediaAsset item) => new(item.Id, item.FileName, item.OriginalFileName,

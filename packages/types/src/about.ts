@@ -19,29 +19,12 @@ export interface AboutMedia {
 export interface SaveAboutSettingsRequest {
   isPublished: boolean;
   isHeroEnabled: boolean;
-  heroEyebrow: string;
-  heroHeading: string;
-  heroText: string;
   heroMediaAssetId: string | null;
   heroPresentation: AboutHeroPresentation;
-  introStatement: string;
   isStoryEnabled: boolean;
-  storyHeading: string;
-  storyText: string;
-  storyHighlight: string | null;
   isTeamEnabled: boolean;
-  teamHeading: string;
-  teamText: string;
   isPartnersEnabled: boolean;
-  partnersHeading: string;
-  partnersText: string;
   isReachOutEnabled: boolean;
-  reachOutHeading: string;
-  reachOutText: string;
-  reachOutCtaLabel: string;
-  reachOutCtaHref: string;
-  seoTitle: string | null;
-  seoDescription: string | null;
   socialImageMediaAssetId: string | null;
 }
 export interface AdminAboutSettings extends SaveAboutSettingsRequest {

@@ -1,13 +1,13 @@
 "use client";
 
-import type { PublicBrandingSettings } from "@the-domain/types";
 import { Container } from "@the-domain/ui";
 import { cn } from "@the-domain/utils";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode, MouseEvent } from "react";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
-import { BrandLogo } from "./brand-logo";
+import { getLogoNavigationAction, runLogoNavigationAction } from "@/lib/homepage-ux";
 
 const links = [
   { href: "/events", label: "Events" },
@@ -17,8 +17,9 @@ const links = [
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
+export function SiteHeader({ logo }: { logo: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const rootRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLElement>(null);
@@ -91,11 +92,27 @@ export function SiteHeader({ branding }: { branding: PublicBrandingSettings }) {
         )}
       >
         <Link
-          aria-label={`${branding.siteName} home`}
+          aria-label="Go to The Domain homepage"
           className="inline-flex min-h-11 items-center"
+          data-home-logo
           href="/"
+          onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+            const action = getLogoNavigationAction(pathname, event);
+            const intercepted = runLogoNavigationAction(action, {
+              closeMenu: () => setMenuOpen(false),
+              refresh: () => router.refresh(),
+              scrollToTop: () =>
+                window.scrollTo({
+                  top: 0,
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                    ? "auto"
+                    : "smooth",
+                }),
+            });
+            if (intercepted) event.preventDefault();
+          }}
         >
-          <BrandLogo className="h-auto w-[clamp(10.5rem,17vw,15.5rem)]" priority />
+          {logo}
         </Link>
         <nav aria-label="Primary navigation" className="hidden md:block">
           <ul className="flex items-center gap-x-[clamp(1.8rem,3vw,4rem)] text-[clamp(1.05rem,1.12vw,1.35rem)] tracking-[-.015em]">

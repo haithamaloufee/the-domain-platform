@@ -5,14 +5,12 @@ import {
   MediaOrientation,
   MediaType,
   VideoPosterMode,
-  HomepageSectionKey,
   type GalleryPublicCollection,
   type GalleryPublicMedia,
   type PublicEventDetails,
   type PublicEventListItem,
   type PublicGalleryAlbum,
   type PublicGalleryAlbumDetails,
-  type PublicHomepageContent,
   type PublicHomepageResponse,
   type PublicMediaItem,
   type PublicPartner,
@@ -45,29 +43,12 @@ export function parsePublicAbout(value: unknown): PublicAboutResponse {
   return {
     settings: {
       isHeroEnabled: booleanValue(settings.isHeroEnabled),
-      heroEyebrow: requiredString(settings.heroEyebrow),
-      heroHeading: requiredString(settings.heroHeading),
-      heroText: requiredString(settings.heroText),
       heroMedia: aboutMedia(settings.heroMedia),
       heroPresentation: enumValue(settings.heroPresentation, AboutHeroPresentation),
-      introStatement: requiredString(settings.introStatement),
       isStoryEnabled: booleanValue(settings.isStoryEnabled),
-      storyHeading: requiredString(settings.storyHeading),
-      storyText: requiredString(settings.storyText),
-      storyHighlight: nullableString(settings.storyHighlight),
       isTeamEnabled: booleanValue(settings.isTeamEnabled),
-      teamHeading: requiredString(settings.teamHeading),
-      teamText: requiredString(settings.teamText),
       isPartnersEnabled: booleanValue(settings.isPartnersEnabled),
-      partnersHeading: requiredString(settings.partnersHeading),
-      partnersText: requiredString(settings.partnersText),
       isReachOutEnabled: booleanValue(settings.isReachOutEnabled),
-      reachOutHeading: requiredString(settings.reachOutHeading),
-      reachOutText: requiredString(settings.reachOutText),
-      reachOutCtaLabel: requiredString(settings.reachOutCtaLabel),
-      reachOutCtaHref: safeHref(settings.reachOutCtaHref),
-      seoTitle: nullableString(settings.seoTitle),
-      seoDescription: nullableString(settings.seoDescription),
       socialImageUrl: nullableHttpsUrl(settings.socialImageUrl),
     },
     team: value.team.map((input) => {
@@ -94,10 +75,6 @@ import {
 export function parsePublicBranding(value: unknown): PublicBrandingSettings {
   if (!isRecord(value)) throw new Error("The server returned invalid branding settings.");
   return {
-    siteName: requiredString(value.siteName),
-    brandDescription: nullableString(value.brandDescription),
-    defaultSeoTitle: requiredString(value.defaultSeoTitle),
-    defaultSeoDescription: requiredString(value.defaultSeoDescription),
     primaryLogo: brandingMedia(value.primaryLogo),
     alternateLogo: brandingMedia(value.alternateLogo),
     favicon: brandingMedia(value.favicon),
@@ -163,17 +140,60 @@ function galleryMediaList(value: unknown): GalleryPublicMedia[] {
 }
 
 export function parsePublicHomepage(value: unknown): PublicHomepageResponse {
-  if (!isRecord(value)) throw new Error("The server returned invalid homepage content.");
+  if (!isRecord(value) || !isRecord(value.presentation) || !Array.isArray(value.statistics))
+    throw new Error("The server returned invalid homepage content.");
+  const presentation = value.presentation;
   return {
-    content: value.content === null ? null : parsePublicHomepageContent(value.content),
-    statistics: parsePublicStatistics(value.statistics),
+    presentation: {
+      heroMedia:
+        presentation.heroMedia === null ? null : parseHomepageMedia(presentation.heroMedia),
+      floatingVideo: parseFloatingVideo(presentation.floatingVideo),
+      statisticsMotionEnabled: booleanValue(presentation.statisticsMotionEnabled),
+    },
+    statistics: value.statistics.map((item) => {
+      if (!isRecord(item)) throw new Error("Invalid homepage statistic.");
+      const slotNumber = integer(item.slotNumber);
+      if (![1, 2, 3, 4].includes(slotNumber)) throw new Error("Invalid statistic slot.");
+      return {
+        slotNumber: slotNumber as 1 | 2 | 3 | 4,
+        value: requiredString(item.value),
+        suffix: nullableString(item.suffix),
+      };
+    }),
+    currentEvents: parsePublicEvents(value.currentEvents),
+    previousEvents: parsePublicEvents(value.previousEvents),
+    galleryPreview: parseHomepageGalleryPreview(value.galleryPreview),
     partners: parsePublicPartners(value.partners),
-    statisticsPresentation: parseStatisticsPresentation(value.statisticsPresentation),
   };
 }
-function parseStatisticsPresentation(value: unknown) {
-  if (!isRecord(value)) return { phrase: "Moments that move with us", isEnabled: true };
-  return { phrase: requiredString(value.phrase), isEnabled: booleanValue(value.isEnabled) };
+
+function parseFloatingVideo(value: unknown) {
+  if (value === null) return null;
+  if (!isRecord(value)) throw new Error("Invalid homepage floating video.");
+  return {
+    video: parseHomepageMedia(value.video),
+    poster: value.poster === null ? null : parseHomepageMedia(value.poster),
+  };
+}
+
+function parseHomepageGalleryPreview(value: unknown): PublicHomepageResponse["galleryPreview"] {
+  if (value === null) return null;
+  if (!isRecord(value) || (value.kind !== "collection" && value.kind !== "albums"))
+    throw new Error("Invalid homepage gallery preview.");
+  if (value.kind === "albums") return { kind: "albums", albums: parseGalleryAlbums(value.albums) };
+  if (!isRecord(value.collection)) throw new Error("Invalid homepage collection preview.");
+  const collection = value.collection;
+  return {
+    kind: "collection",
+    id: requiredString(collection.id),
+    title: requiredString(collection.title),
+    description: nullableString(collection.description),
+    layoutPreset: safeGalleryLayoutPreset(collection.layoutPreset),
+    highlightCount: integer(collection.highlightCount),
+    photoCount: integer(collection.photoCount),
+    videoCount: integer(collection.videoCount),
+    coverMedia: collection.coverMedia === null ? null : parseHomepageMedia(collection.coverMedia),
+  };
 }
 
 export function parsePublicStatistics(value: unknown): PublicStatisticItem[] {
@@ -204,66 +224,7 @@ export function parsePublicPartners(value: unknown): PublicPartner[] {
   });
 }
 
-function parsePublicHomepageContent(value: unknown): PublicHomepageContent {
-  if (!isRecord(value)) throw new Error("The server returned invalid homepage copy.");
-  return {
-    heroEyebrow: stringValue(value.heroEyebrow),
-    heroTitle: requiredString(value.heroTitle),
-    heroAccent: nullableString(value.heroAccent),
-    heroDescription: requiredString(value.heroDescription),
-    primaryCtaLabel: requiredString(value.primaryCtaLabel),
-    primaryCtaHref: safeHref(value.primaryCtaHref),
-    secondaryCtaLabel: nullableString(value.secondaryCtaLabel),
-    secondaryCtaHref: nullableHref(value.secondaryCtaHref),
-    whyTitle: requiredString(value.whyTitle),
-    whyDescription: requiredString(value.whyDescription),
-    servicesTitle: requiredString(value.servicesTitle),
-    servicesDescription: requiredString(value.servicesDescription),
-    partnersTitle: requiredString(value.partnersTitle),
-    partnersDescription: requiredString(value.partnersDescription),
-    contactTitle: requiredString(value.contactTitle),
-    contactDescription: requiredString(value.contactDescription),
-    contactCtaLabel: requiredString(value.contactCtaLabel),
-    contactCtaHref: safeHref(value.contactCtaHref),
-    builder: parseHomepageBuilder(value.builder),
-  };
-}
-function parseHomepageBuilder(value: unknown) {
-  if (!isRecord(value)) throw new Error("Invalid homepage builder settings.");
-  const allowed = Object.values(HomepageSectionKey);
-  const keys = (input: unknown, subset = false) => {
-    if (!Array.isArray(input)) throw new Error("Invalid homepage sections.");
-    const result = input.map((item) => {
-      if (typeof item !== "string" || !allowed.includes(item as never))
-        throw new Error("Invalid homepage section.");
-      return item as (typeof allowed)[number];
-    });
-    if (!subset && result.length !== allowed.length)
-      throw new Error("Incomplete homepage sections.");
-    return result;
-  };
-  return {
-    heroMediaAssetId: nullableString(value.heroMediaAssetId),
-    galleryCollectionId: nullableString(value.galleryCollectionId),
-    heroMedia: value.heroMedia === null ? null : parseHomepageHero(value.heroMedia),
-    isFloatingVideoEnabled: booleanValue(value.isFloatingVideoEnabled),
-    floatingVideoMediaAssetId: nullableString(value.floatingVideoMediaAssetId),
-    floatingVideoPosterMediaAssetId: nullableString(value.floatingVideoPosterMediaAssetId),
-    floatingVideoMedia:
-      value.floatingVideoMedia === null ? null : parseHomepageHero(value.floatingVideoMedia),
-    floatingVideoPoster:
-      value.floatingVideoPoster === null ? null : parseHomepageHero(value.floatingVideoPoster),
-    sectionOrder: keys(value.sectionOrder),
-    disabledSections: keys(value.disabledSections, true),
-    eventsTitle: requiredString(value.eventsTitle),
-    eventsDescription: requiredString(value.eventsDescription),
-    previousEventsTitle: requiredString(value.previousEventsTitle),
-    previousEventsDescription: requiredString(value.previousEventsDescription),
-    galleryTitle: requiredString(value.galleryTitle),
-    galleryDescription: requiredString(value.galleryDescription),
-  };
-}
-function parseHomepageHero(value: unknown) {
+function parseHomepageMedia(value: unknown) {
   if (!isRecord(value)) throw new Error("Invalid homepage hero media.");
   return {
     id: requiredString(value.id),
@@ -465,16 +426,6 @@ function httpsUrl(value: unknown): string {
 
 function nullableHttpsUrl(value: unknown): string | null {
   return value === null ? null : httpsUrl(value);
-}
-
-function safeHref(value: unknown): string {
-  const result = requiredString(value);
-  if (result.startsWith("/") && !result.startsWith("//")) return result;
-  return absoluteUrl(result);
-}
-
-function nullableHref(value: unknown): string | null {
-  return value === null ? null : safeHref(value);
 }
 
 function enumValue<T extends Record<string, number>>(value: unknown, values: T): T[keyof T] {

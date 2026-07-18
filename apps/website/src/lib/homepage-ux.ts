@@ -20,6 +20,29 @@ export interface NavigationIntent {
   target: string | null;
 }
 
+export type LogoNavigationAction = "ignore" | "navigate" | "refresh";
+
+export function getLogoNavigationAction(
+  pathname: string,
+  intent: Pick<NavigationIntent, "altKey" | "button" | "ctrlKey" | "metaKey" | "shiftKey">,
+): LogoNavigationAction {
+  if (intent.button !== 0 || intent.altKey || intent.ctrlKey || intent.metaKey || intent.shiftKey)
+    return "ignore";
+  return pathname === "/" ? "refresh" : "navigate";
+}
+
+export function runLogoNavigationAction(
+  action: LogoNavigationAction,
+  effects: { closeMenu: () => void; refresh: () => void; scrollToTop: () => void },
+) {
+  if (action === "ignore") return false;
+  effects.closeMenu();
+  if (action === "navigate") return false;
+  effects.scrollToTop();
+  effects.refresh();
+  return true;
+}
+
 export function clampUnit(value: number) {
   return Math.min(1, Math.max(0, value));
 }

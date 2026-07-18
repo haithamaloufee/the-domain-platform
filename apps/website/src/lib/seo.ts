@@ -1,9 +1,10 @@
 import "server-only";
 
 import { MediaType, type GalleryPublicMedia, type PublicMediaItem } from "@the-domain/types";
+import { THE_DOMAIN_SITE_NAME } from "@the-domain/utils/site-identity";
 import type { Metadata } from "next";
 
-export const siteName = "The Domain Entertainment";
+export const siteName = THE_DOMAIN_SITE_NAME;
 export const defaultDescription = "Premium entertainment experiences and events in Jordan.";
 
 const localWebsiteUrl = new URL("http://localhost:3000");

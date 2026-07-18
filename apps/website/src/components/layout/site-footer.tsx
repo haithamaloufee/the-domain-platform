@@ -3,6 +3,7 @@ import { Container } from "@the-domain/ui";
 import Link from "next/link";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 import { BrandLogo } from "./brand-logo";
+import { siteContent } from "@/content/site";
 
 const groups = [
   {
@@ -28,17 +29,18 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
       <Container className="grid gap-10 py-12 sm:py-14 lg:grid-cols-12 lg:gap-8">
         <div className="lg:col-span-7">
           <Link
-            aria-label={`${branding.siteName} home`}
+            aria-label={`${siteContent.name} home`}
             className="inline-flex min-h-11 items-center"
             href="/"
           >
-            <BrandLogo className="h-auto w-[clamp(12rem,22vw,18rem)]" />
+            <BrandLogo
+              className="h-auto w-[clamp(12rem,22vw,18rem)]"
+              src={branding.primaryLogo?.url}
+            />
           </Link>
-          {branding.brandDescription && (
-            <p className="mt-4 max-w-md text-sm leading-7 text-ink-muted">
-              <DynamicText>{branding.brandDescription}</DynamicText>
-            </p>
-          )}
+          <p className="mt-4 max-w-md text-sm leading-7 text-ink-muted">
+            <DynamicText>{siteContent.brandDescription}</DynamicText>
+          </p>
         </div>
         <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-8 lg:col-span-5">
           {groups.map((group) => (
@@ -65,7 +67,7 @@ export function SiteFooter({ branding }: { branding: PublicBrandingSettings }) {
       <Container className="border-t border-line py-5">
         <div className="flex flex-col gap-3 text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {branding.siteName}. All rights reserved.
+            © {new Date().getFullYear()} {siteContent.name}. All rights reserved.
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             {branding.publicEmail && (

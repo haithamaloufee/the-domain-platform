@@ -4,16 +4,14 @@ public sealed class BrandingSettings
 {
     public static readonly Guid SingletonId = Guid.Parse("00000000-0000-0000-0000-000000000004");
     private BrandingSettings() { }
-    public BrandingSettings(Guid id, string siteName, string defaultSeoTitle, string defaultSeoDescription, DateTimeOffset now)
+    public BrandingSettings(Guid id, DateTimeOffset now)
     {
         if (id != SingletonId) throw new ArgumentException("Branding settings must use the singleton identifier.", nameof(id));
-        Id = id; Apply(siteName, null, defaultSeoTitle, defaultSeoDescription, null, null, null, null, null, null, null, null, null, null, null, null, null, null, now); CreatedAtUtc = now;
+        Id = id;
+        CreatedAtUtc = UpdatedAtUtc = now;
     }
+
     public Guid Id { get; private set; }
-    public string SiteName { get; private set; } = string.Empty;
-    public string? BrandDescription { get; private set; }
-    public string DefaultSeoTitle { get; private set; } = string.Empty;
-    public string DefaultSeoDescription { get; private set; } = string.Empty;
     public Guid? PrimaryLogoMediaAssetId { get; private set; }
     public Guid? AlternateLogoMediaAssetId { get; private set; }
     public Guid? FaviconMediaAssetId { get; private set; }
@@ -31,14 +29,34 @@ public sealed class BrandingSettings
     public string? SnapchatUrl { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
-    public void Apply(string siteName, string? description, string seoTitle, string seoDescription, Guid? primaryLogo, Guid? alternateLogo, Guid? favicon, Guid? socialImage, string? email, string? phone, string? whatsApp, string? address, string? instagram, string? facebook, string? youtube, string? tikTok, string? linkedIn, string? x, DateTimeOffset now, string? snapchat = null)
+
+    public void Apply(Guid? primaryLogo, Guid? alternateLogo, Guid? favicon, Guid? socialImage,
+        string? email, string? phone, string? whatsApp, string? address, string? instagram,
+        string? facebook, string? youtube, string? tikTok, string? linkedIn, string? x,
+        DateTimeOffset now, string? snapchat = null)
     {
-        SiteName = Required(siteName, 100, nameof(siteName)); BrandDescription = Optional(description, 240, nameof(description));
-        DefaultSeoTitle = Required(seoTitle, 120, nameof(seoTitle)); DefaultSeoDescription = Required(seoDescription, 320, nameof(seoDescription));
-        PrimaryLogoMediaAssetId = primaryLogo; AlternateLogoMediaAssetId = alternateLogo; FaviconMediaAssetId = favicon; SocialImageMediaAssetId = socialImage;
-        PublicEmail = Optional(email, 254, nameof(email)); PublicPhone = Optional(phone, 40, nameof(phone)); WhatsApp = Optional(whatsApp, 120, nameof(whatsApp)); PublicAddress = Optional(address, 240, nameof(address));
-        InstagramUrl = Optional(instagram, 500, nameof(instagram)); FacebookUrl = Optional(facebook, 500, nameof(facebook)); YouTubeUrl = Optional(youtube, 500, nameof(youtube)); TikTokUrl = Optional(tikTok, 500, nameof(tikTok)); LinkedInUrl = Optional(linkedIn, 500, nameof(linkedIn)); XUrl = Optional(x, 500, nameof(x)); SnapchatUrl = Optional(snapchat, 500, nameof(snapchat)); UpdatedAtUtc = now;
+        PrimaryLogoMediaAssetId = primaryLogo;
+        AlternateLogoMediaAssetId = alternateLogo;
+        FaviconMediaAssetId = favicon;
+        SocialImageMediaAssetId = socialImage;
+        PublicEmail = Optional(email, 254, nameof(email));
+        PublicPhone = Optional(phone, 40, nameof(phone));
+        WhatsApp = Optional(whatsApp, 120, nameof(whatsApp));
+        PublicAddress = Optional(address, 240, nameof(address));
+        InstagramUrl = Optional(instagram, 500, nameof(instagram));
+        FacebookUrl = Optional(facebook, 500, nameof(facebook));
+        YouTubeUrl = Optional(youtube, 500, nameof(youtube));
+        TikTokUrl = Optional(tikTok, 500, nameof(tikTok));
+        LinkedInUrl = Optional(linkedIn, 500, nameof(linkedIn));
+        XUrl = Optional(x, 500, nameof(x));
+        SnapchatUrl = Optional(snapchat, 500, nameof(snapchat));
+        UpdatedAtUtc = now;
     }
-    private static string Required(string value, int max, string name) { var result = value?.Trim() ?? string.Empty; if (result.Length is < 1 || result.Length > max) throw new ArgumentException($"{name} must be between 1 and {max} characters.", name); return result; }
-    private static string? Optional(string? value, int max, string name) { var result = string.IsNullOrWhiteSpace(value) ? null : value.Trim(); if (result?.Length > max) throw new ArgumentException($"{name} must not exceed {max} characters.", name); return result; }
+
+    private static string? Optional(string? value, int max, string name)
+    {
+        var result = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        if (result?.Length > max) throw new ArgumentException($"{name} must not exceed {max} characters.", name);
+        return result;
+    }
 }

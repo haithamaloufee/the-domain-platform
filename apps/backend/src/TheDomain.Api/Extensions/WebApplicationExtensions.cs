@@ -18,6 +18,7 @@ public static class WebApplicationExtensions
 
         app.UseSerilogRequestLogging();
         app.UseCors(CorsOptions.PolicyName);
+        app.UseOutputCache();
         app.UseAuthentication();
         app.UseAuthorization();
 

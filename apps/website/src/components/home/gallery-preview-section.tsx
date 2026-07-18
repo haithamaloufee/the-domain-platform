@@ -1,4 +1,4 @@
-import type { GalleryPublicCollection, PublicGalleryAlbum } from "@the-domain/types";
+import type { HomepageCollectionPreview, PublicGalleryAlbum } from "@the-domain/types";
 import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { AlbumCard } from "@/components/gallery/album-card";
@@ -14,7 +14,7 @@ export function GalleryPreviewSection({
 }: {
   albums: PublicGalleryAlbum[];
   unavailable: boolean;
-  collection?: GalleryPublicCollection | null;
+  collection?: HomepageCollectionPreview | null;
   title?: string;
   description?: string;
 }) {

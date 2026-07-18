@@ -4,8 +4,10 @@ import {
   countUpDurationMs,
   easeOutCubic,
   formatStatisticValue,
+  getLogoNavigationAction,
   parseStatisticTarget,
   shouldStartNavigationTransition,
+  runLogoNavigationAction,
   snakeMotionEpsilon,
   snakeVelocityFromScrollDelta,
   statisticFinalLabel,
@@ -39,6 +41,35 @@ test("statistics keep exact targets and suffixes across the count easing", () =>
       { finalLabel: "50+", value: "50" },
     ],
   );
+});
+
+test("Homepage logo refreshes once on the same route and preserves modified clicks", () => {
+  const plain = { altKey: false, button: 0, ctrlKey: false, metaKey: false, shiftKey: false };
+  assert.equal(getLogoNavigationAction("/", plain), "refresh");
+  assert.equal(getLogoNavigationAction("/events", plain), "navigate");
+  assert.equal(getLogoNavigationAction("/", { ...plain, ctrlKey: true }), "ignore");
+  assert.equal(getLogoNavigationAction("/", { ...plain, metaKey: true }), "ignore");
+  assert.equal(getLogoNavigationAction("/", { ...plain, button: 1 }), "ignore");
+
+  const calls = { close: 0, refresh: 0, scroll: 0 };
+  const effects = {
+    closeMenu: () => {
+      calls.close += 1;
+    },
+    refresh: () => {
+      calls.refresh += 1;
+    },
+    scrollToTop: () => {
+      calls.scroll += 1;
+    },
+  };
+  assert.equal(runLogoNavigationAction("refresh", effects), true);
+  assert.deepEqual(calls, { close: 1, refresh: 1, scroll: 1 });
+
+  assert.equal(runLogoNavigationAction("navigate", effects), false);
+  assert.deepEqual(calls, { close: 2, refresh: 1, scroll: 1 });
+  assert.equal(runLogoNavigationAction("ignore", effects), false);
+  assert.deepEqual(calls, { close: 2, refresh: 1, scroll: 1 });
 });
 
 test("snake velocity clamps, reverses with scroll direction, wraps, and reaches idle", () => {

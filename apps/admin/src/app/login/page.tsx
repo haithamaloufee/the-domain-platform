@@ -5,6 +5,7 @@ import { readAuthTokens } from "@/lib/auth/auth-cookies";
 import { loginErrorMessages } from "@/lib/auth/login-errors";
 import { getAdminSession } from "@/lib/auth/session";
 import { fetchBackend } from "@/lib/auth/backend-auth";
+import { resolveLoginBranding } from "@/lib/branding/login-branding";
 import Image from "next/image";
 
 export const dynamic = "force-dynamic";
@@ -105,20 +106,9 @@ async function loadLoginBranding() {
       cache: "no-store",
     });
     if (!response.ok) throw new Error();
-    const value = (await response.json()) as {
-      siteName?: unknown;
-      primaryLogo?: { url?: unknown } | null;
-    };
-    return {
-      siteName:
-        typeof value.siteName === "string" && value.siteName ? value.siteName : "The Domain",
-      logoUrl:
-        typeof value.primaryLogo?.url === "string" && value.primaryLogo.url.startsWith("https://")
-          ? value.primaryLogo.url
-          : null,
-    };
+    return resolveLoginBranding(await response.json());
   } catch {
-    return { siteName: "The Domain", logoUrl: null };
+    return resolveLoginBranding(null);
   }
 }
 
