@@ -4,20 +4,12 @@ using TheDomain.Infrastructure.Media;
 
 namespace TheDomain.Infrastructure.Tests.Media;
 
-public sealed class CloudinaryMediaStorageServiceTests
+public sealed class CloudinaryDeliveryUrlResolverTests
 {
     [Fact]
     public void VideoThumbnailUsesSecureCloudinaryJpegTransformation()
     {
-        var service = new CloudinaryMediaStorageService(Options.Create(new CloudinaryOptions
-        {
-            Enabled = true,
-            CloudName = "test-cloud",
-            ApiKey = "test-key",
-            ApiSecret = "test-secret"
-        }));
-
-        var url = service.BuildVideoThumbnailUrl("the-domain/video-id");
+        var url = CloudinaryDeliveryUrlResolver.BuildVideoThumbnailUrl("test-cloud", "the-domain/video-id");
 
         Assert.StartsWith("https://res.cloudinary.com/test-cloud/video/upload/", url, StringComparison.Ordinal);
         Assert.Contains("so_auto", url, StringComparison.Ordinal);
@@ -59,7 +51,7 @@ public sealed class CloudinaryMediaStorageServiceTests
     [Fact]
     public void LegacyCloudinaryVideoWithoutPublicIdUsesItsExistingUrl()
     {
-        var service = CreateService();
+        var service = new CloudinaryDeliveryUrlResolver(Options.Create(new CloudinaryOptions()));
 
         var url = service.ResolveThumbnailUrl(
             MediaType.Video,
@@ -70,6 +62,19 @@ public sealed class CloudinaryMediaStorageServiceTests
         Assert.Equal(
             "https://res.cloudinary.com/legacy-cloud/video/upload/c_limit,q_auto,so_auto,w_960/v42/legacy/video.jpg",
             url);
+    }
+
+    [Fact]
+    public void VideoFrameUsesPublicCloudNameWithoutUploadCredentials()
+    {
+        var service = CreateService();
+
+        var url = service.ResolveVideoFrameUrl("https://example.com/video.mp4", "legacy/video", 1.25m);
+
+        Assert.NotNull(url);
+        Assert.StartsWith("https://res.cloudinary.com/test-cloud/video/upload/", url, StringComparison.Ordinal);
+        Assert.Contains("so_1.25", url, StringComparison.Ordinal);
+        Assert.EndsWith("/legacy/video.jpg", url, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -85,11 +90,8 @@ public sealed class CloudinaryMediaStorageServiceTests
         Assert.Null(url);
     }
 
-    private static CloudinaryMediaStorageService CreateService() => new(Options.Create(new CloudinaryOptions
+    private static CloudinaryDeliveryUrlResolver CreateService() => new(Options.Create(new CloudinaryOptions
     {
-        Enabled = true,
-        CloudName = "test-cloud",
-        ApiKey = "test-key",
-        ApiSecret = "test-secret"
+        CloudName = "test-cloud"
     }));
 }
