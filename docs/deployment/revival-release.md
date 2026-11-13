@@ -21,3 +21,10 @@ Public resolvers returned NXDOMAIN for `hetam.website` and `thedomain.hetam.webs
 ## Verified local content
 
 Use the documented archive import after reviewing [the factual sources](../content/verified-launch-content.md). No production data was changed during local rehearsal. Leave the global promotion flag disabled until staff confirms the terms and ticketing partner arrangement for an event.
+
+## Release evidence
+
+- .NET 10 Release build and 198 automated tests passed. GitHub Actions also applied the migrations to PostgreSQL 16.
+- Local PostgreSQL 18 accepted both new migrations and a dump restored successfully into a separate database.
+- Browser smoke tests passed at 320, 390, 768, 1024 and 1440 pixels. Local authenticated checks covered dashboard routes, a contact submission appearing in the inbox, and logout. A disposable event confirmed that the external booking link disappears at the booking deadline and that an enabled promotion appears while booking is open.
+- The tested public routes had no critical axe WCAG violations at 390 and 1440 pixels. Production Lighthouse and live Cloudinary upload checks require the deployed environment and approved media.

@@ -9,6 +9,7 @@ const apiUrl = process.env.THE_DOMAIN_API_BASE_URL || "http://127.0.0.1:5187";
 const website = "http://127.0.0.1:3187";
 const admin = "http://127.0.0.1:3188";
 const artifactPath = path.join(root, ".cache", "browser-smoke");
+const axePath = process.env.THE_DOMAIN_AXE_PATH;
 await mkdir(artifactPath, { recursive: true });
 
 const playwright = await import(
@@ -60,6 +61,22 @@ try {
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
         `${route} overflows at ${width}px`,
       );
+      if (axePath && [390, 1440].includes(width)) {
+        await page.addScriptTag({ path: axePath });
+        const critical = await page.evaluate(async () => {
+          const results = await window.axe.run(document, {
+            runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+          });
+          return results.violations
+            .filter((violation) => violation.impact === "critical")
+            .map((violation) => violation.id);
+        });
+        assert.deepEqual(
+          critical,
+          [],
+          `${route} has critical accessibility violations at ${width}px`,
+        );
+      }
       if (route === "/" && [390, 1440].includes(width)) {
         await page.screenshot({ path: path.join(artifactPath, `home-${width}.png`) });
         assert.equal(await page.locator("video[src]").count(), 0);
