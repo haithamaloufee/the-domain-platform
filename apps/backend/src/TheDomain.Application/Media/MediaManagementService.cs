@@ -29,10 +29,11 @@ public sealed class MediaManagementService(
         var safeName = MediaUploadValidator.SanitizeFileName(command.OriginalFileName);
         var publicId = Guid.NewGuid().ToString("N");
         var stored = await storage.UploadAsync(command.Content, safeName, publicId, mediaType, token);
+        MediaAsset media;
         try
         {
             var now = timeProvider.GetUtcNow();
-            var media = new MediaAsset(Guid.NewGuid(), safeName, safeName, mediaType, stored.Url, stored.ThumbnailUrl,
+            media = new MediaAsset(Guid.NewGuid(), safeName, safeName, mediaType, stored.Url, stored.ThumbnailUrl,
                 stored.Width, stored.Height, stored.DurationSeconds, GetOrientation(stored.Width, stored.Height), command.Category,
                 command.Caption, command.AltText, command.ApprovalStatus, stored.PublicId, now);
             repository.AddMedia(media);
@@ -56,14 +57,14 @@ public sealed class MediaManagementService(
                 InsertAt(assignments.Where(item => !removedIds.Contains(item.Id)).ToArray(), assignment, command.SortOrder);
             }
             await repository.SaveChangesAsync(token);
-            await InvalidateMedia(command.EventId.HasValue, token);
-            return EventOperationResult.Success(Map(media));
         }
         catch
         {
             try { await storage.DeleteAsync(stored.PublicId, mediaType, CancellationToken.None); } catch { }
             throw;
         }
+        await InvalidateMedia(command.EventId.HasValue, CancellationToken.None);
+        return EventOperationResult.Success(Map(media));
     }
 
     public async Task<PagedResponse<AdminMediaListItemResponse>> GetAsync(MediaListQuery query, CancellationToken token)

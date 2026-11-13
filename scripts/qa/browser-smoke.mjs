@@ -85,6 +85,20 @@ try {
     assert.equal(archive?.status(), 200);
     assert.equal(await page.getByRole("link", { name: /book now/i }).count(), 0);
   }
+  const bookingSlug = process.env.THE_DOMAIN_QA_BOOKING_SLUG;
+  if (bookingSlug) {
+    const bookingPage = await browser.newPage();
+    await bookingPage.clock.install();
+    const booking = await bookingPage.goto(`${website}/events/${encodeURIComponent(bookingSlug)}`);
+    assert.equal(booking?.status(), 200);
+    const book = bookingPage.getByRole("link", { name: /book now/i });
+    await book.waitFor();
+    assert.match((await book.getAttribute("href")) ?? "", /^https:\/\//);
+    await bookingPage.clock.fastForward(15 * 60 * 1000);
+    await bookingPage.getByText("Booking closed", { exact: true }).first().waitFor();
+    assert.equal(await book.count(), 0);
+    await bookingPage.close();
+  }
   await page.goto(`${admin}/dashboard`);
   await page.waitForURL((url) => url.pathname === "/login");
   await page.screenshot({ path: path.join(artifactPath, "admin-login.png") });

@@ -37,7 +37,8 @@ public sealed class CloudinaryMediaStorageService : IMediaStorageService
     {
         if (_cloudinary is null) return;
         cancellationToken.ThrowIfCancellationRequested();
-        await _cloudinary.DestroyAsync(new DeletionParams(publicId) { ResourceType = mediaType == MediaType.Video ? ResourceType.Video : ResourceType.Image });
+        var result = await _cloudinary.DestroyAsync(new DeletionParams(publicId) { ResourceType = mediaType == MediaType.Video ? ResourceType.Video : ResourceType.Image });
+        EnsureSuccess(result.Error);
     }
 
     private static void EnsureSuccess(Error? error)
