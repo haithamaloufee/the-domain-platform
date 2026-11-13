@@ -31,4 +31,5 @@ Use the documented archive import after reviewing [the factual sources](../conte
 - Local PostgreSQL 18 accepted both new migrations and a dump restored successfully into a separate database.
 - Browser smoke tests passed at 320, 390, 768, 1024 and 1440 pixels. Local authenticated checks covered dashboard routes, a contact submission appearing in the inbox, and logout. A disposable event confirmed that the external booking link disappears at the booking deadline and that an enabled promotion appears while booking is open.
 - A 21-item local gallery fixture confirmed that hidden media stays private, the summary returns the selected cover, approved media loads in pages of 18 and 2, and Escape closes the media viewer.
+- A local production build measured homepage LCP at 456 ms at 390 px and 264 ms at 1440 px, with zero measured layout shift on both viewports. The test used Edge on loopback with no network throttling and no hero video configured.
 - The tested public routes had no critical axe WCAG violations at 390 and 1440 pixels. Production Lighthouse and live Cloudinary upload checks require the deployed environment and approved media.

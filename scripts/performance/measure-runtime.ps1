@@ -20,7 +20,7 @@ Add-Type -AssemblyName System.Net.Http
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $apiDirectory = Join-Path $repositoryRoot "apps/backend/src/TheDomain.Api"
 $websiteDirectory = Join-Path $repositoryRoot "apps/website"
-$backendDll = Join-Path $apiDirectory "bin/$BackendConfiguration/net8.0/TheDomain.Api.dll"
+$backendDll = Join-Path $apiDirectory "bin/$BackendConfiguration/net10.0/TheDomain.Api.dll"
 $apiCapture = $null
 $websiteCapture = $null
 

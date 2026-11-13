@@ -1,6 +1,6 @@
 # Backend architecture
 
-The backend is an ASP.NET Core Web API targeting .NET 8 and organized around Clean Architecture boundaries.
+The backend is an ASP.NET Core Web API targeting .NET 10 and organized around Clean Architecture boundaries.
 
 ## Dependency direction
 

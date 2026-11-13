@@ -11,16 +11,21 @@ if (!url || !executablePath) {
 }
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const pnpmDirectory = path.join(repositoryRoot, "node_modules/.pnpm");
-const playwrightDirectory = fs
-  .readdirSync(pnpmDirectory, { withFileTypes: true })
-  .find((entry) => entry.isDirectory() && entry.name.startsWith("playwright@"));
-if (!playwrightDirectory) throw new Error("The installed Playwright runtime was not found.");
-const playwright = await import(
-  pathToFileURL(
-    path.join(pnpmDirectory, playwrightDirectory.name, "node_modules/playwright/index.mjs"),
-  ).href
-);
+const playwrightPath = process.env.THE_DOMAIN_PLAYWRIGHT_PATH || findWorkspacePlaywright();
+const playwright = await import(pathToFileURL(playwrightPath).href);
+
+function findWorkspacePlaywright() {
+  const pnpmDirectory = path.join(repositoryRoot, "node_modules/.pnpm");
+  const playwrightDirectory = fs.existsSync(pnpmDirectory)
+    ? fs
+        .readdirSync(pnpmDirectory, { withFileTypes: true })
+        .find((entry) => entry.isDirectory() && entry.name.startsWith("playwright@"))
+    : undefined;
+  if (!playwrightDirectory) {
+    throw new Error("Set THE_DOMAIN_PLAYWRIGHT_PATH to the installed Playwright index.mjs.");
+  }
+  return path.join(pnpmDirectory, playwrightDirectory.name, "node_modules/playwright/index.mjs");
+}
 
 const viewport = { width: Number(widthSource), height: Number(heightSource) };
 const browser = await playwright.chromium.launch({ executablePath, headless: true });
