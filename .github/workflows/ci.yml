@@ -96,3 +96,13 @@ jobs:
           dotnet tool restore
           dotnet ef migrations has-pending-model-changes --configuration Release --no-build --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
           dotnet ef database update --configuration Release --no-build --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
+
+  containers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, admin]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build --file "docker/${{ matrix.service }}/Dockerfile" --tag "the-domain-${{ matrix.service }}:ci" .
