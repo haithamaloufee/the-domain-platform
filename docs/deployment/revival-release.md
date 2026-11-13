@@ -27,4 +27,5 @@ Use the documented archive import after reviewing [the factual sources](../conte
 - .NET 10 Release build and 198 automated tests passed. GitHub Actions also applied the migrations to PostgreSQL 16.
 - Local PostgreSQL 18 accepted both new migrations and a dump restored successfully into a separate database.
 - Browser smoke tests passed at 320, 390, 768, 1024 and 1440 pixels. Local authenticated checks covered dashboard routes, a contact submission appearing in the inbox, and logout. A disposable event confirmed that the external booking link disappears at the booking deadline and that an enabled promotion appears while booking is open.
+- A 21-item local gallery fixture confirmed that hidden media stays private, the summary returns the selected cover, approved media loads in pages of 18 and 2, and Escape closes the media viewer.
 - The tested public routes had no critical axe WCAG violations at 390 and 1440 pixels. Production Lighthouse and live Cloudinary upload checks require the deployed environment and approved media.

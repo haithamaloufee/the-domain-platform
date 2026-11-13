@@ -98,6 +98,7 @@ public sealed class GalleryServiceTests
         public Task<IReadOnlyList<MediaCollectionItem>> ListPublicItemsAsync(Guid collectionId, int offset, int limit, CancellationToken token) =>
             Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => item.CollectionId == collectionId && item.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved)
                 .OrderBy(item => item.SortOrder).Skip(offset).Take(limit).ToArray());
+        public Task<IReadOnlyList<PublicGalleryCollectionRead>> ListPublicSummariesAsync(CancellationToken token) => throw new NotSupportedException();
         public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;
     }
 }

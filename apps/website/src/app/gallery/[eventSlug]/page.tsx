@@ -52,7 +52,7 @@ export default async function GalleryCollectionPage({ params, searchParams }: Pr
     if (error instanceof PublicApiError && error.status === 404) notFound();
     throw error;
   }
-  const { collection, nextOffset } = page;
+  const { collection, nextOffset, previousOffset } = page;
 
   const featured =
     collection.media.find((item) => item.id === collection.featuredMediaId) ?? collection.media[0];
@@ -133,12 +133,12 @@ export default async function GalleryCollectionPage({ params, searchParams }: Pr
               />
             )}
           </CinematicReveal>
-          {(offset > 0 || nextOffset !== null) && (
+          {(previousOffset !== null || nextOffset !== null) && (
             <nav aria-label="Collection pages" className="mt-8 flex flex-wrap gap-3">
-              {offset > 0 && (
+              {previousOffset !== null && (
                 <Link
                   className={buttonClasses("secondary")}
-                  href={`/gallery/${encodeURIComponent(id)}?offset=${Math.max(0, offset - 18)}`}
+                  href={`/gallery/${encodeURIComponent(id)}?offset=${previousOffset}`}
                 >
                   Previous highlights
                 </Link>

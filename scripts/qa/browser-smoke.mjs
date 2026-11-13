@@ -96,6 +96,22 @@ try {
   const page = await browser.newPage();
   const missing = await page.goto(`${website}/qa-route-does-not-exist`);
   assert.equal(missing?.status(), 404);
+  const collectionId = process.env.THE_DOMAIN_QA_COLLECTION_ID;
+  if (collectionId) {
+    const collection = await page.goto(`${website}/gallery/${encodeURIComponent(collectionId)}`);
+    assert.equal(collection?.status(), 200);
+    assert.equal(await page.getByRole("button", { name: /open (image|video)/i }).count(), 18);
+    const firstMedia = page.getByRole("button", { name: /open image/i }).first();
+    await firstMedia.click();
+    await page.getByRole("dialog").waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.getByRole("link", { name: "More highlights" }).click();
+    await page.waitForURL((url) => url.searchParams.get("offset") === "18");
+    assert.equal(await page.getByRole("button", { name: /open (image|video)/i }).count(), 2);
+    await page.getByRole("link", { name: "Previous highlights" }).click();
+    await page.waitForURL((url) => url.searchParams.get("offset") === "0");
+  }
   const archiveSlug = process.env.THE_DOMAIN_QA_ARCHIVE_SLUG;
   if (archiveSlug) {
     const archive = await page.goto(`${website}/events/${encodeURIComponent(archiveSlug)}`);

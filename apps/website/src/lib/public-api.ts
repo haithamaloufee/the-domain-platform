@@ -82,9 +82,11 @@ export const getGalleryMediaPage = cache((id: string, offset: number) =>
         throw new Error("Expected a gallery media page.");
       }
       const next = "nextOffset" in value ? value.nextOffset : null;
+      const previous = "previousOffset" in value ? value.previousOffset : null;
       return {
         collection: parseGalleryCollection(value.collection),
         nextOffset: typeof next === "number" ? next : null,
+        previousOffset: typeof previous === "number" ? previous : null,
       };
     },
   ),

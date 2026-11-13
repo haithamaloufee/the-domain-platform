@@ -10,15 +10,12 @@ public sealed class GalleryService(IGalleryRepository repository, IMediaDelivery
 
     public async Task<IReadOnlyList<GalleryCollectionSummaryResponse>> GetPublicSummariesAsync(CancellationToken token)
     {
-        var collections = await GetPublicAsync(token);
-        return collections.Select(collection =>
-        {
-            var photos = collection.Media.Count(media => media.MediaType == MediaType.Image);
-            var cover = collection.Media.FirstOrDefault(media => media.Id == collection.FeaturedMediaId);
-            return new GalleryCollectionSummaryResponse("collection", collection.Id, collection.Title,
-                collection.Description, collection.LayoutPreset, collection.Media.Count, photos,
-                collection.Media.Count - photos, cover);
-        }).ToArray();
+        var collections = await repository.ListPublicSummariesAsync(token);
+        return collections.Select(collection => new GalleryCollectionSummaryResponse("collection", collection.Id,
+            collection.Title, collection.Description, SafePreset(collection.LayoutPreset),
+            collection.PhotoCount + collection.VideoCount, collection.PhotoCount, collection.VideoCount,
+            collection.Cover is { } cover && Eligibility(cover.MediaAsset).Eligible ? MapPublicMedia(cover) : null))
+            .ToArray();
     }
 
     public async Task<GalleryMediaPageResponse?> GetPublicMediaPageAsync(Guid id, int offset, CancellationToken token)
@@ -29,7 +26,8 @@ public sealed class GalleryService(IGalleryRepository repository, IMediaDelivery
         var links = await repository.ListPublicItemsAsync(id, offset, PublicMediaPageSize + 1, token);
         if (links.Count == 0 && offset == 0) return null;
         return new(MapPublic(collection, links.Take(PublicMediaPageSize).ToArray()),
-            links.Count > PublicMediaPageSize ? offset + PublicMediaPageSize : null);
+            links.Count > PublicMediaPageSize ? offset + PublicMediaPageSize : null,
+            offset > 0 ? Math.Max(0, offset - PublicMediaPageSize) : null);
     }
     public async Task<IReadOnlyList<GalleryAdminCollectionResponse>> GetAdminAsync(CancellationToken token)
     { List<GalleryAdminCollectionResponse> result = []; foreach (var item in await repository.ListCollectionsAsync(false, token)) result.Add(await MapAdmin(item, token)); return result; }
