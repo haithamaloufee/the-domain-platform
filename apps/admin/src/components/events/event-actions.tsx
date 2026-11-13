@@ -7,12 +7,13 @@ import {
   archiveAdminEvent,
   cancelAdminEvent,
   publishAdminEvent,
+  unpublishAdminEvent,
 } from "@/lib/events/admin-events-client";
 import { publishingWarnings } from "@/lib/events/event-lifecycle";
 import { listEventMedia } from "@/lib/media/admin-media-client";
 import { activeEventCover } from "@/lib/media/event-media-rules";
 
-type EventAction = "publish" | "archive" | "cancel";
+type EventAction = "publish" | "unpublish" | "archive" | "cancel";
 
 interface EventActionsProps {
   event: AdminEventDetails;
@@ -23,6 +24,7 @@ interface EventActionsProps {
 
 const actionLabels: Record<EventAction, string> = {
   publish: "Publish",
+  unpublish: "Return to draft",
   archive: "Archive",
   cancel: "Cancel event",
 };
@@ -93,12 +95,14 @@ function availableActions(event: AdminEventDetails): EventAction[] {
   if (event.publicationStatus === EventPublicationStatus.Archived) return [];
   if (event.publicationStatus === EventPublicationStatus.Draft)
     return ["publish", "archive", "cancel"];
-  if (event.publicationStatus === EventPublicationStatus.Published) return ["archive", "cancel"];
+  if (event.publicationStatus === EventPublicationStatus.Published)
+    return ["unpublish", "archive", "cancel"];
   return ["archive"];
 }
 
 function actionRequest(action: EventAction, id: string) {
   if (action === "publish") return publishAdminEvent(id);
+  if (action === "unpublish") return unpublishAdminEvent(id);
   if (action === "archive") return archiveAdminEvent(id);
   return cancelAdminEvent(id);
 }
@@ -107,6 +111,8 @@ function confirmationMessage(action: EventAction, title: string, warnings: strin
   if (action === "publish" && warnings.length > 0)
     return `Publish “${title}” with these warnings?\n\n${warnings.map((warning) => `• ${warning}`).join("\n")}`;
   if (action === "publish") return `Publish “${title}” to the public website?`;
+  if (action === "unpublish")
+    return `Return “${title}” to draft and remove it from the public website?`;
   if (action === "archive") return `Archive “${title}”? It will no longer be publicly visible.`;
   return `Cancel “${title}”? This will mark the event as cancelled.`;
 }

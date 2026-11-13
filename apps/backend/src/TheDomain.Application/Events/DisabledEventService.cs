@@ -20,6 +20,7 @@ public sealed class DisabledEventService : IEventService
     public Task<EventOperationResult<AdminEventResponse>> CreateAsync(SaveEventRequest request, CancellationToken cancellationToken) => Disabled();
     public Task<EventOperationResult<AdminEventResponse>> UpdateAsync(Guid id, SaveEventRequest request, CancellationToken cancellationToken) => Disabled();
     public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) => Disabled();
+    public Task<EventOperationResult<AdminEventResponse>> UnpublishAsync(Guid id, CancellationToken cancellationToken) => Disabled();
     public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(Guid id, CancellationToken cancellationToken) => Disabled();
     public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) => Disabled();
     private static Task<EventOperationResult<AdminEventResponse>> Disabled() => Task.FromResult(EventOperationResult.Failure<AdminEventResponse>("Persistence is not enabled."));

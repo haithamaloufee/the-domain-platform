@@ -11,6 +11,7 @@ using TheDomain.Application.Media;
 using TheDomain.Infrastructure.Media;
 using TheDomain.Application.Homepage;
 using TheDomain.Application.Branding;
+using TheDomain.Application.Contact;
 
 namespace TheDomain.Infrastructure;
 
@@ -80,6 +81,8 @@ public static class DependencyInjection
             databaseOptions.ConnectionString,
             postgreSqlOptions => postgreSqlOptions.CommandTimeout(databaseOptions.CommandTimeoutSeconds)));
         services.AddScoped<IIdentityRepository, IdentityRepository>();
+        services.AddScoped<IUserDirectory, UserDirectory>();
+        services.AddScoped<IContactInbox, ContactInbox>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<EventRepository>();
         services.AddScoped<IEventRepository>(provider => provider.GetRequiredService<EventRepository>());

@@ -45,6 +45,10 @@ export function publishAdminEvent(id: string): Promise<AdminEventDetails> {
   return runAction(id, "publish");
 }
 
+export function unpublishAdminEvent(id: string): Promise<AdminEventDetails> {
+  return runAction(id, "unpublish");
+}
+
 export function archiveAdminEvent(id: string): Promise<AdminEventDetails> {
   return runAction(id, "archive");
 }
@@ -55,7 +59,7 @@ export function cancelAdminEvent(id: string): Promise<AdminEventDetails> {
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
-function runAction(id: string, action: "publish" | "archive" | "cancel") {
+function runAction(id: string, action: "publish" | "unpublish" | "archive" | "cancel") {
   return request(
     `/api/admin/events/${encodeURIComponent(id)}/${action}`,
     { method: "POST" },

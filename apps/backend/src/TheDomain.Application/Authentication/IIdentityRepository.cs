@@ -9,4 +9,5 @@ public interface IIdentityRepository
     Task<bool> HasUsersAsync(CancellationToken cancellationToken);
     void AddUser(ApplicationUser user);
     Task SaveChangesAsync(CancellationToken cancellationToken);
+    Task<bool> TrySaveSessionChangesAsync(CancellationToken cancellationToken);
 }

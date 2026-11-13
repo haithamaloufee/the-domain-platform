@@ -17,3 +17,7 @@ public sealed record GalleryPublicMediaResponse(Guid Id, MediaType MediaType, st
     decimal? DurationSeconds, int SortOrder);
 public sealed record GalleryPublicCollectionResponse(Guid Id, string Title, string? Description,
     GalleryLayoutPreset LayoutPreset, Guid? FeaturedMediaId, IReadOnlyList<GalleryPublicMediaResponse> Media);
+
+public sealed record GalleryMediaPageResponse(GalleryPublicCollectionResponse Collection, int? NextOffset);
+public sealed record GalleryCollectionSummaryResponse(string Kind, Guid Id, string Title, string? Description,
+    GalleryLayoutPreset LayoutPreset, int HighlightCount, int PhotoCount, int VideoCount, GalleryPublicMediaResponse? CoverMedia);

@@ -5,6 +5,7 @@ using TheDomain.Domain.Media;
 using TheDomain.Domain.Homepage;
 using TheDomain.Domain.Branding;
 using TheDomain.Domain.About;
+using TheDomain.Domain.Contact;
 
 namespace TheDomain.Infrastructure.Persistence;
 
@@ -24,6 +25,7 @@ public sealed class TheDomainDbContext(DbContextOptions<TheDomainDbContext> opti
     public DbSet<BrandingSettings> BrandingSettings => Set<BrandingSettings>();
     public DbSet<AboutSettings> AboutSettings => Set<AboutSettings>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

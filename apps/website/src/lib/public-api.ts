@@ -8,6 +8,7 @@ import type {
   PublicGalleryAlbumDetails,
   GalleryPublicCollection,
   PublicHomepageResponse,
+  HomepageCollectionPreview,
   PublicBrandingSettings,
   PublicAboutResponse,
 } from "@the-domain/types";
@@ -16,7 +17,7 @@ import {
   parseGalleryAlbumDetails,
   parseGalleryAlbums,
   parseGalleryCollection,
-  parseGalleryCollections,
+  parseGalleryCollectionSummaries,
   parsePublicHomepage,
   parsePublicEvent,
   parsePublicEvents,
@@ -64,13 +65,29 @@ export const getGalleryAlbumByEventSlug = cache(
 );
 
 export const getGalleryCollections = cache(
-  (): Promise<GalleryPublicCollection[]> =>
-    request("/api/public/gallery/collections", parseGalleryCollections),
+  (): Promise<HomepageCollectionPreview[]> =>
+    request("/api/public/gallery/collections/summaries", parseGalleryCollectionSummaries),
 );
 
 export const getGalleryCollection = cache(
   (id: string): Promise<GalleryPublicCollection> =>
     request(`/api/public/gallery/collections/${encodeURIComponent(id)}`, parseGalleryCollection),
+);
+
+export const getGalleryMediaPage = cache((id: string, offset: number) =>
+  request(
+    `/api/public/gallery/collections/${encodeURIComponent(id)}/media?offset=${offset}`,
+    (value) => {
+      if (typeof value !== "object" || value === null || !("collection" in value)) {
+        throw new Error("Expected a gallery media page.");
+      }
+      const next = "nextOffset" in value ? value.nextOffset : null;
+      return {
+        collection: parseGalleryCollection(value.collection),
+        nextOffset: typeof next === "number" ? next : null,
+      };
+    },
+  ),
 );
 
 export const getPublicHomepage = cache(

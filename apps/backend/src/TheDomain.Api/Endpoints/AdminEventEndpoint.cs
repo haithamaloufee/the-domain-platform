@@ -16,6 +16,7 @@ public static class AdminEventEndpoint
         group.MapPost("/", CreateAsync);
         group.MapPut("/{id:guid}", UpdateAsync);
         group.MapPost("/{id:guid}/publish", (Guid id, IEventService service, CancellationToken token) => ChangeStatusAsync(service.PublishAsync(id, token)));
+        group.MapPost("/{id:guid}/unpublish", (Guid id, IEventService service, CancellationToken token) => ChangeStatusAsync(service.UnpublishAsync(id, token)));
         group.MapPost("/{id:guid}/archive", (Guid id, IEventService service, CancellationToken token) => ChangeStatusAsync(service.ArchiveAsync(id, token)));
         group.MapPost("/{id:guid}/cancel", (Guid id, IEventService service, CancellationToken token) => ChangeStatusAsync(service.CancelAsync(id, token)));
         return endpoints;

@@ -6,6 +6,31 @@ namespace TheDomain.Application.Media;
 public sealed class GalleryService(IGalleryRepository repository, IMediaDeliveryUrlResolver delivery,
     TimeProvider timeProvider, IPublicOutputCacheInvalidator? cache = null) : IGalleryService
 {
+    private const int PublicMediaPageSize = 18;
+
+    public async Task<IReadOnlyList<GalleryCollectionSummaryResponse>> GetPublicSummariesAsync(CancellationToken token)
+    {
+        var collections = await GetPublicAsync(token);
+        return collections.Select(collection =>
+        {
+            var photos = collection.Media.Count(media => media.MediaType == MediaType.Image);
+            var cover = collection.Media.FirstOrDefault(media => media.Id == collection.FeaturedMediaId);
+            return new GalleryCollectionSummaryResponse("collection", collection.Id, collection.Title,
+                collection.Description, collection.LayoutPreset, collection.Media.Count, photos,
+                collection.Media.Count - photos, cover);
+        }).ToArray();
+    }
+
+    public async Task<GalleryMediaPageResponse?> GetPublicMediaPageAsync(Guid id, int offset, CancellationToken token)
+    {
+        var collection = await repository.FindCollectionAsync(id, false, token);
+        if (collection is not { IsPublishedInGallery: true, IsArchived: false }) return null;
+
+        var links = await repository.ListPublicItemsAsync(id, offset, PublicMediaPageSize + 1, token);
+        if (links.Count == 0 && offset == 0) return null;
+        return new(MapPublic(collection, links.Take(PublicMediaPageSize).ToArray()),
+            links.Count > PublicMediaPageSize ? offset + PublicMediaPageSize : null);
+    }
     public async Task<IReadOnlyList<GalleryAdminCollectionResponse>> GetAdminAsync(CancellationToken token)
     { List<GalleryAdminCollectionResponse> result = []; foreach (var item in await repository.ListCollectionsAsync(false, token)) result.Add(await MapAdmin(item, token)); return result; }
     public async Task<IReadOnlyList<GalleryPublicCollectionResponse>> GetPublicAsync(CancellationToken token)

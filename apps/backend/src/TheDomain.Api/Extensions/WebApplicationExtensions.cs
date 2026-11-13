@@ -20,6 +20,7 @@ public static class WebApplicationExtensions
         app.UseCors(CorsOptions.PolicyName);
         app.UseOutputCache();
         app.UseAuthentication();
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         return app;
@@ -41,6 +42,9 @@ public static class WebApplicationExtensions
         endpoints.MapAdminHomepageCmsEndpoints();
         endpoints.MapAboutEndpoints();
         endpoints.MapBrandingSettingsEndpoints();
+        endpoints.MapContactEndpoints();
+        endpoints.MapUserDirectoryEndpoints();
+        endpoints.MapEventPromotionEndpoints();
 
         return endpoints;
     }

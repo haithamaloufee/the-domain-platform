@@ -2,7 +2,7 @@ import { HomepageSectionKey, type PublicHomepageResponse } from "@the-domain/typ
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ContactCtaSection } from "@/components/home/contact-cta-section";
-import { FloatingVideoPlayer } from "@/components/home/floating-video-player";
+import { VenueFilm } from "@/components/home/venue-film";
 import { GalleryPreviewSection } from "@/components/home/gallery-preview-section";
 import { HomeHero } from "@/components/home/home-hero";
 import { HomepageEventsSection } from "@/components/home/homepage-events-section";
@@ -72,19 +72,19 @@ export default async function HomePage() {
     <>
       <JsonLd data={createHomepageStructuredData()} />
       <HomeHero featuredEvent={heroEvent} presentation={presentation} />
-      {presentation?.floatingVideo && (
-        <FloatingVideoPlayer
-          poster={
-            presentation.floatingVideo.poster?.url ?? presentation.floatingVideo.video.posterUrl
-          }
-          src={presentation.floatingVideo.video.url}
-        />
-      )}
       {HOMEPAGE_SECTION_ORDER.map((key) => (
         <CinematicReveal homeSection={key} key={key}>
           {sections[key]}
         </CinematicReveal>
       ))}
+      {presentation?.floatingVideo && (
+        <VenueFilm
+          poster={
+            presentation.floatingVideo.poster?.url ?? presentation.floatingVideo.video.posterUrl
+          }
+          source={presentation.floatingVideo.video.url}
+        />
+      )}
     </>
   );
 }

@@ -125,6 +125,8 @@ public sealed class EventService(
     }
     public Task<EventOperationResult<AdminEventResponse>> PublishAsync(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(id, EventPublicationStatus.Published, cancellationToken);
+    public Task<EventOperationResult<AdminEventResponse>> UnpublishAsync(Guid id, CancellationToken cancellationToken) =>
+        ChangeStatus(id, EventPublicationStatus.Draft, cancellationToken);
     public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(id, EventPublicationStatus.Archived, cancellationToken);
     public Task<EventOperationResult<AdminEventResponse>> CancelAsync(Guid id, CancellationToken cancellationToken) =>
@@ -155,7 +157,9 @@ public sealed class EventService(
         var item = await repository.FindByIdAsync(id, cancellationToken); if (item is null) return EventOperationResult.NotFound<AdminEventResponse>("Event was not found.");
         var now = timeProvider.GetUtcNow();
         if (item.PublicationStatus == target) return EventOperationResult.Success(MapAdmin(item, now));
-        if (!CanTransition(item.PublicationStatus, target))
+        if (!(target == EventPublicationStatus.Draft
+            ? item.PublicationStatus == EventPublicationStatus.Published
+            : CanTransition(item.PublicationStatus, target)))
             return EventOperationResult.Failure<AdminEventResponse>($"An event cannot transition from {item.PublicationStatus} to {target}.");
         if (target == EventPublicationStatus.Published)
         {
@@ -163,6 +167,7 @@ public sealed class EventService(
             if (publishErrors.Count > 0) return new(null, publishErrors);
             item.Publish(now);
         }
+        else if (target == EventPublicationStatus.Draft) item.Unpublish(now);
         else if (target == EventPublicationStatus.Archived) item.Archive(now);
         else item.Cancel(now);
         await repository.SaveChangesAsync(cancellationToken); await InvalidateEvents(cancellationToken); return EventOperationResult.Success(MapAdmin(item, now));

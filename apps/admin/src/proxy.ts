@@ -9,7 +9,6 @@ import {
   readUser,
   refreshWithBackend,
 } from "@/lib/auth/backend-auth";
-import { serializeValidatedAdminUser, validatedAdminUserHeader } from "@/lib/auth/validated-user";
 
 const cookieBase = {
   httpOnly: true,
@@ -27,11 +26,16 @@ export async function proxy(request: NextRequest) {
 
   try {
     const session = await validateOrRefresh(accessToken, refreshToken);
-    if (!session) return loginRedirect(request, "expired", true);
+    if (!session) {
+      if (!isLoginRequest) return loginRedirect(request, "expired");
+      const response = NextResponse.next();
+      response.headers.set("Cache-Control", "no-store");
+      clearResponseCookies(response);
+      return response;
+    }
     if (isLoginRequest) return dashboardRedirect(request, session.tokens);
 
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set(validatedAdminUserHeader, serializeValidatedAdminUser(session.user));
     if (session.tokens) setRequestCookies(request, session.tokens);
     requestHeaders.set("cookie", request.cookies.toString());
 

@@ -42,6 +42,9 @@ public sealed class EntertainmentEvent
     public EventPublicationStatus PublicationStatus { get; private set; }
     public bool IsFeatured { get; private set; }
     public bool ShowOnHomepage { get; private set; }
+    public bool PromotionEnabled { get; private set; }
+    public int? PromotionPercent { get; private set; }
+    public string? PromotionText { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public IReadOnlyCollection<EventMedia> Media => _media;
@@ -63,8 +66,17 @@ public sealed class EntertainmentEvent
             bookingClosesAtUtc, isFeatured, showOnHomepage, updatedAtUtc, bookingStatus);
 
     public void Publish(DateTimeOffset now) { PublicationStatus = EventPublicationStatus.Published; UpdatedAtUtc = now; }
+    public void Unpublish(DateTimeOffset now) { PublicationStatus = EventPublicationStatus.Draft; UpdatedAtUtc = now; }
     public void Archive(DateTimeOffset now) { PublicationStatus = EventPublicationStatus.Archived; UpdatedAtUtc = now; }
     public void Cancel(DateTimeOffset now) { PublicationStatus = EventPublicationStatus.Cancelled; UpdatedAtUtc = now; }
+
+    public void SetPromotion(bool enabled, int? percent, string? text, DateTimeOffset now)
+    {
+        PromotionEnabled = enabled;
+        PromotionPercent = percent;
+        PromotionText = text;
+        UpdatedAtUtc = now;
+    }
 
     public void AddMedia(EventMedia eventMedia, MediaAsset mediaAsset)
     {

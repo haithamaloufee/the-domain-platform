@@ -25,7 +25,6 @@ export async function fetchAuthorizedBackend(
   const refreshed = await refreshWithBackend(refreshToken);
   if (!refreshed.ok) {
     if (isAuthenticationFailure(refreshed)) {
-      await clearAuthCookies();
       return unauthorizedResponse();
     }
     return refreshed;

@@ -99,6 +99,7 @@ public sealed class InitialAdminProvisionerTests
         public Task<bool> HasUsersAsync(CancellationToken cancellationToken) => Task.FromResult(user is not null);
         public void AddUser(ApplicationUser addedUser) => user = addedUser;
         public Task SaveChangesAsync(CancellationToken cancellationToken) { SaveCount++; return Task.CompletedTask; }
+        public Task<bool> TrySaveSessionChangesAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider

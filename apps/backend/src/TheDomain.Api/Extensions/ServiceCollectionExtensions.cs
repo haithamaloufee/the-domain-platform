@@ -8,6 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
+using TheDomain.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using TheDomain.Api.Authorization;
 using TheDomain.Infrastructure.Authentication;
 using TheDomain.Api.Caching;
@@ -43,8 +47,28 @@ public static class ServiceCollectionExtensions
                 NameClaimType = ClaimTypes.Name,
                 RoleClaimType = ClaimTypes.Role
             };
+            if (jwtOptions.Enabled)
+                options.Events = new JwtBearerEvents { OnTokenValidated = ValidateActiveUserAsync };
         });
         services.AddAuthorization(AuthorizationPolicies.AddDomainPolicies);
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("auth-attempts", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 20,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+            options.AddPolicy("contact-submissions", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+        });
 
         services.AddSingleton(TimeProvider.System);
         services.AddHealthChecks();
@@ -90,5 +114,26 @@ public static class ServiceCollectionExtensions
         }));
 
         return services;
+    }
+
+    private static async Task ValidateActiveUserAsync(TokenValidatedContext context)
+    {
+        if (!Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId) ||
+            context.HttpContext.RequestServices.GetService<TheDomainDbContext>() is not { } database)
+        {
+            context.Fail("The session is invalid.");
+            return;
+        }
+
+        var current = await database.Users.AsNoTracking().Where(user => user.Id == userId && user.IsActive)
+            .Select(user => new { user.Role, user.Email, user.FullName })
+            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+        if (current is null ||
+            current.Role.ToString() != context.Principal!.FindFirstValue(ClaimTypes.Role) ||
+            current.Email != context.Principal.FindFirstValue(JwtRegisteredClaimNames.Email) ||
+            current.FullName != context.Principal.FindFirstValue(ClaimTypes.Name))
+        {
+            context.Fail("The session is invalid.");
+        }
     }
 }

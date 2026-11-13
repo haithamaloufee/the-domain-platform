@@ -2,6 +2,26 @@
 @import "@the-domain/ui/styles/tokens.css";
 @source "../../../../packages/ui/src";
 
+.domain-hero {
+  min-height: min(54rem, max(37rem, 94svh));
+}
+
+.domain-hero-light {
+  background:
+    radial-gradient(ellipse at 74% 32%, color-mix(in srgb, var(--td-color-gold) 24%, transparent), transparent 42%),
+    repeating-linear-gradient(112deg, transparent 0 8%, rgb(238 217 178 / 6%) 8.05% 8.15%, transparent 8.2% 15%),
+    linear-gradient(132deg, var(--td-color-canvas) 15%, var(--td-color-surface-high) 60%, var(--td-color-canvas));
+}
+
+.domain-hero-title {
+  max-width: 13ch;
+  overflow-wrap: anywhere;
+  font-family: var(--td-font-display);
+  font-size: clamp(2.85rem, 8vw, 8rem);
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: -0.065em;
+}
 :root {
   --site-header-height: 5rem;
   --td-font-primary: var(--font-site), "Noto Sans Arabic", "Segoe UI", Arial, sans-serif;
@@ -65,9 +85,11 @@ body::before {
     radial-gradient(circle at 12% 8%, rgb(212 175 55 / 5%), transparent 24rem),
     radial-gradient(circle at 88% 44%, rgb(227 226 231 / 2%), transparent 30rem);
 }
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 [data-public-site] :where(a[href], button:not(:disabled)) {
   cursor: pointer;

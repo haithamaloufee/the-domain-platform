@@ -5,6 +5,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCountdown } from "@/components/events/event-countdown";
 import { EventHeroMedia } from "@/components/events/event-hero-media";
+import { EventPromotion } from "@/components/events/event-promotion";
+import { Suspense } from "react";
 import {
   bookingAvailabilityLabels,
   displayStatusLabels,
@@ -133,6 +135,11 @@ export default async function EventPage({ params }: EventPageProps) {
 
       <Section className="pt-16 sm:pt-24">
         <Container>
+          {canBook && (
+            <Suspense>
+              <EventPromotion slug={event.slug} />
+            </Suspense>
+          )}
           <CinematicReveal>
             {event.displayStatus === EventDisplayStatus.Upcoming && (
               <div className="mb-14 max-w-4xl">

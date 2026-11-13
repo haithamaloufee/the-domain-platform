@@ -6,5 +6,6 @@ public interface IGalleryRepository
     Task<MediaCollection?> FindCollectionAsync(Guid id, bool tracking, CancellationToken token);
     Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(Guid collectionId, CancellationToken token);
     Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(IReadOnlyCollection<Guid> collectionIds, CancellationToken token);
+    Task<IReadOnlyList<MediaCollectionItem>> ListPublicItemsAsync(Guid collectionId, int offset, int limit, CancellationToken token);
     Task SaveChangesAsync(CancellationToken token);
 }

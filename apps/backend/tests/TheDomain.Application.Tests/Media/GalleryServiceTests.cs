@@ -95,6 +95,9 @@ public sealed class GalleryServiceTests
         public Task<MediaCollection?> FindCollectionAsync(Guid id, bool tracking, CancellationToken token) => Task.FromResult(Collections.SingleOrDefault(item => item.Id == id));
         public Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(Guid collectionId, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => item.CollectionId == collectionId).OrderBy(item => item.SortOrder).ToArray());
         public Task<IReadOnlyList<MediaCollectionItem>> ListItemsAsync(IReadOnlyCollection<Guid> collectionIds, CancellationToken token) => Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => collectionIds.Contains(item.CollectionId)).OrderBy(item => item.CollectionId).ThenBy(item => item.SortOrder).ToArray());
+        public Task<IReadOnlyList<MediaCollectionItem>> ListPublicItemsAsync(Guid collectionId, int offset, int limit, CancellationToken token) =>
+            Task.FromResult<IReadOnlyList<MediaCollectionItem>>(Items.Where(item => item.CollectionId == collectionId && item.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved)
+                .OrderBy(item => item.SortOrder).Skip(offset).Take(limit).ToArray());
         public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;
     }
 }

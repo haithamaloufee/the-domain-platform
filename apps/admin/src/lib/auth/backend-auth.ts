@@ -27,12 +27,19 @@ export function loginWithBackend(request: LoginRequest): Promise<Response> {
   });
 }
 
-export function refreshWithBackend(refreshToken: string): Promise<Response> {
-  return fetchBackend("/api/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
+const pendingRefreshes = new Map<string, Promise<Response>>();
+
+export async function refreshWithBackend(refreshToken: string): Promise<Response> {
+  let pending = pendingRefreshes.get(refreshToken);
+  if (!pending) {
+    pending = fetchBackend("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    }).finally(() => pendingRefreshes.delete(refreshToken));
+    pendingRefreshes.set(refreshToken, pending);
+  }
+  return (await pending).clone();
 }
 
 export function logoutWithBackend(refreshToken: string): Promise<Response> {

@@ -29,7 +29,6 @@ export async function GET() {
     const refreshed = await refreshWithBackend(refreshToken);
     if (!refreshed.ok) {
       if (isAuthenticationFailure(refreshed)) {
-        await clearAuthCookies();
         return unauthorizedResponse();
       }
       return unavailableResponse();

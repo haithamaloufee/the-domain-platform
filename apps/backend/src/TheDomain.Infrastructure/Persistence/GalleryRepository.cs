@@ -14,4 +14,13 @@ public sealed class GalleryRepository(TheDomainDbContext db) : IGalleryRepositor
             .Where(item => collectionIds.Contains(item.CollectionId)).OrderBy(item => item.CollectionId)
             .ThenBy(item => item.SortOrder).ThenBy(item => item.CreatedAtUtc).ToListAsync(token);
     public Task SaveChangesAsync(CancellationToken token) => db.SaveChangesAsync(token);
+
+    public async Task<IReadOnlyList<MediaCollectionItem>> ListPublicItemsAsync(Guid collectionId, int offset, int limit, CancellationToken token) =>
+        await db.MediaCollectionItems.AsNoTracking().Include(item => item.MediaAsset)
+            .Where(item => item.CollectionId == collectionId && !item.MediaAsset.IsArchived &&
+                item.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved &&
+                (item.MediaAsset.MediaType == MediaType.Image || item.MediaAsset.MediaType == MediaType.Video) &&
+                EF.Functions.ILike(item.MediaAsset.Url, "https://%"))
+            .OrderBy(item => item.SortOrder).ThenBy(item => item.CreatedAtUtc).ThenBy(item => item.MediaAssetId)
+            .Skip(offset).Take(limit).ToListAsync(token);
 }

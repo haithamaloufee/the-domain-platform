@@ -64,4 +64,13 @@ public sealed class ApplicationUser
         refreshToken.AttachTo(this);
         _refreshTokens.Add(refreshToken);
     }
+
+    public void UpdateAccess(UserRole role, bool isActive, DateTimeOffset now)
+    {
+        if (Role == role && IsActive == isActive) return;
+        Role = role;
+        IsActive = isActive;
+        UpdatedAtUtc = now;
+        foreach (var token in _refreshTokens.Where(token => token.IsActive(now))) token.Revoke(now);
+    }
 }

@@ -7,6 +7,7 @@ import {
   VideoPosterMode,
   type GalleryPublicCollection,
   type GalleryPublicMedia,
+  type HomepageCollectionPreview,
   type PublicEventDetails,
   type PublicEventListItem,
   type PublicGalleryAlbum,
@@ -107,6 +108,11 @@ export function parseGalleryCollections(value: unknown): GalleryPublicCollection
   return value.map(parseGalleryCollection);
 }
 
+export function parseGalleryCollectionSummaries(value: unknown): HomepageCollectionPreview[] {
+  if (!Array.isArray(value)) throw new Error("Invalid gallery collection summaries.");
+  return value.map(parseCollectionSummary);
+}
+
 export function parseGalleryCollection(value: unknown): GalleryPublicCollection {
   if (!isRecord(value)) throw new Error("The server returned an invalid gallery collection.");
   return {
@@ -181,8 +187,11 @@ function parseHomepageGalleryPreview(value: unknown): PublicHomepageResponse["ga
   if (!isRecord(value) || (value.kind !== "collection" && value.kind !== "albums"))
     throw new Error("Invalid homepage gallery preview.");
   if (value.kind === "albums") return { kind: "albums", albums: parseGalleryAlbums(value.albums) };
-  if (!isRecord(value.collection)) throw new Error("Invalid homepage collection preview.");
-  const collection = value.collection;
+  return parseCollectionSummary(value.collection);
+}
+
+function parseCollectionSummary(collection: unknown): HomepageCollectionPreview {
+  if (!isRecord(collection)) throw new Error("Invalid collection summary.");
   return {
     kind: "collection",
     id: requiredString(collection.id),

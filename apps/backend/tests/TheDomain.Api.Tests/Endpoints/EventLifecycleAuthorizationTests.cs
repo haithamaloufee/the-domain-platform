@@ -114,6 +114,10 @@ public sealed class EventLifecycleAuthorizationTests
             Guid id,
             CancellationToken cancellationToken) => Task.FromResult(NotFound());
 
+        public Task<EventOperationResult<AdminEventResponse>> UnpublishAsync(
+            Guid id,
+            CancellationToken cancellationToken) => Task.FromResult(NotFound());
+
         public Task<EventOperationResult<AdminEventResponse>> ArchiveAsync(
             Guid id,
             CancellationToken cancellationToken) => Task.FromResult(NotFound());

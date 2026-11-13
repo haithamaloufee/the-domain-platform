@@ -71,6 +71,11 @@ public sealed class AuthServiceTests
         public Task<bool> HasUsersAsync(CancellationToken cancellationToken) => Task.FromResult(false);
         public void AddUser(ApplicationUser user) { }
         public Task SaveChangesAsync(CancellationToken cancellationToken) { SaveCount++; return Task.CompletedTask; }
+        public async Task<bool> TrySaveSessionChangesAsync(CancellationToken cancellationToken)
+        {
+            await SaveChangesAsync(cancellationToken);
+            return true;
+        }
     }
 
     private sealed class FakePasswordHasher(bool passwordIsValid) : IPasswordHasher

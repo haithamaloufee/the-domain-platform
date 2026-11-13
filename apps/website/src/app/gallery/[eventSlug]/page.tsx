@@ -7,17 +7,18 @@ import { notFound } from "next/navigation";
 import { CollectionMediaGrid } from "@/components/gallery/collection-media-grid";
 import { CinematicReveal } from "@/components/motion/cinematic-reveal";
 import { DynamicText } from "@/components/motion/dynamic-weight-controller";
-import { getGalleryCollection, PublicApiError } from "@/lib/public-api";
+import { getGalleryMediaPage, PublicApiError } from "@/lib/public-api";
 import { createPageMetadata, getGalleryMediaSeoImage } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ eventSlug: string }>;
+  searchParams: Promise<{ offset?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { eventSlug: id } = await params;
   try {
-    const collection = await getGalleryCollection(id);
+    const { collection } = await getGalleryMediaPage(id, 0);
     const featured =
       collection.media.find((item) => item.id === collection.featuredMediaId) ??
       collection.media[0];
@@ -37,15 +38,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function GalleryCollectionPage({ params }: Props) {
+export default async function GalleryCollectionPage({ params, searchParams }: Props) {
   const { eventSlug: id } = await params;
-  let collection;
+  const requestedOffset = Number((await searchParams).offset);
+  const offset =
+    Number.isSafeInteger(requestedOffset) && requestedOffset > 0 && requestedOffset <= 100_000
+      ? requestedOffset
+      : 0;
+  let page;
   try {
-    collection = await getGalleryCollection(id);
+    page = await getGalleryMediaPage(id, offset);
   } catch (error) {
     if (error instanceof PublicApiError && error.status === 404) notFound();
     throw error;
   }
+  const { collection, nextOffset } = page;
 
   const featured =
     collection.media.find((item) => item.id === collection.featuredMediaId) ?? collection.media[0];
@@ -126,6 +133,26 @@ export default async function GalleryCollectionPage({ params }: Props) {
               />
             )}
           </CinematicReveal>
+          {(offset > 0 || nextOffset !== null) && (
+            <nav aria-label="Collection pages" className="mt-8 flex flex-wrap gap-3">
+              {offset > 0 && (
+                <Link
+                  className={buttonClasses("secondary")}
+                  href={`/gallery/${encodeURIComponent(id)}?offset=${Math.max(0, offset - 18)}`}
+                >
+                  Previous highlights
+                </Link>
+              )}
+              {nextOffset !== null && (
+                <Link
+                  className={buttonClasses("secondary")}
+                  href={`/gallery/${encodeURIComponent(id)}?offset=${nextOffset}`}
+                >
+                  More highlights
+                </Link>
+              )}
+            </nav>
+          )}
         </Container>
       </Section>
     </article>

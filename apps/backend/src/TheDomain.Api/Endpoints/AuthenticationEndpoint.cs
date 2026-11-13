@@ -13,8 +13,8 @@ public static class AuthenticationEndpoint
     public static IEndpointRouteBuilder MapAuthenticationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth").WithTags("Authentication");
-        group.MapPost("/login", LoginAsync).AllowAnonymous();
-        group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
+        group.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting("auth-attempts");
+        group.MapPost("/refresh", RefreshAsync).AllowAnonymous().RequireRateLimiting("auth-attempts");
         group.MapPost("/logout", LogoutAsync).AllowAnonymous();
         group.MapGet("/me", GetCurrentUser).RequireAuthorization();
         return endpoints;
@@ -23,7 +23,8 @@ public static class AuthenticationEndpoint
     private static async Task<Results<Ok<AuthTokensResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>> LoginAsync(
         LoginRequest request, [FromServices] IAuthService authService, HttpContext context, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(request.Email) || request.Email.Length > 320 ||
+            string.IsNullOrWhiteSpace(request.Password) || request.Password.Length > 1024)
         {
             return TypedResults.BadRequest(CreateValidationProblem("Email and password are required."));
         }
@@ -35,7 +36,7 @@ public static class AuthenticationEndpoint
     private static async Task<Results<Ok<AuthTokensResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>> RefreshAsync(
         RefreshRequest request, [FromServices] IAuthService authService, HttpContext context, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        if (string.IsNullOrWhiteSpace(request.RefreshToken) || request.RefreshToken.Length > 512)
         {
             return TypedResults.BadRequest(CreateValidationProblem("Refresh token is required."));
         }
@@ -47,7 +48,7 @@ public static class AuthenticationEndpoint
     private static async Task<Results<Ok<LogoutResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>> LogoutAsync(
         LogoutRequest request, [FromServices] IAuthService authService, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        if (string.IsNullOrWhiteSpace(request.RefreshToken) || request.RefreshToken.Length > 512)
         {
             return TypedResults.BadRequest(CreateValidationProblem("Refresh token is required."));
         }

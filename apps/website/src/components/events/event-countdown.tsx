@@ -52,11 +52,15 @@ export function EventCountdown({
       const now = Date.now();
       const milliseconds = startTimestamp - now;
       if (milliseconds <= 0) {
-        setState({ phase: Number.isFinite(end) && now < end ? "started" : "ended" });
-        return false;
+        const isLive = Number.isFinite(end) && now < end;
+        setState((current) => {
+          const phase = isLive ? "started" : "ended";
+          return current.phase === phase ? current : { phase };
+        });
+        return isLive;
       }
 
-      const totalSeconds = Math.floor(milliseconds / 1_000);
+      const totalSeconds = Math.ceil(milliseconds / 1_000);
       setState({
         phase: "running",
         value: {

@@ -5,8 +5,8 @@ using TheDomain.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration
-    .AddDotEnvFile();
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddDotEnvFile();
 
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
