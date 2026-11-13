@@ -8,9 +8,23 @@
 
 .domain-hero-light {
   background:
-    radial-gradient(ellipse at 74% 32%, color-mix(in srgb, var(--td-color-gold) 24%, transparent), transparent 42%),
-    repeating-linear-gradient(112deg, transparent 0 8%, rgb(238 217 178 / 6%) 8.05% 8.15%, transparent 8.2% 15%),
-    linear-gradient(132deg, var(--td-color-canvas) 15%, var(--td-color-surface-high) 60%, var(--td-color-canvas));
+    radial-gradient(
+      ellipse at 74% 32%,
+      color-mix(in srgb, var(--td-color-gold) 24%, transparent),
+      transparent 42%
+    ),
+    repeating-linear-gradient(
+      112deg,
+      transparent 0 8%,
+      rgb(238 217 178 / 6%) 8.05% 8.15%,
+      transparent 8.2% 15%
+    ),
+    linear-gradient(
+      132deg,
+      var(--td-color-canvas) 15%,
+      var(--td-color-surface-high) 60%,
+      var(--td-color-canvas)
+    );
 }
 
 .domain-hero-title {

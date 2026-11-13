@@ -264,6 +264,8 @@ export function parsePublicEvent(value: unknown): PublicEventDetails {
     longDescription: stringValue(value.longDescription),
     venueAddress: nullableString(value.venueAddress),
     mapUrl: nullableUrl(value.mapUrl),
+    bookingClosesAtUtc:
+      value.bookingClosesAtUtc == null ? null : dateString(value.bookingClosesAtUtc),
     media: mediaList(value.media),
     coverMedia: value.coverMedia === null ? null : mediaItem(value.coverMedia),
   };

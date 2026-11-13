@@ -16,7 +16,8 @@ public sealed record PublicEventDetailsResponse(Guid Id, string Slug, string Tit
     string LongDescription, string EventType, DateTimeOffset StartAtUtc, DateTimeOffset EndAtUtc,
     string TimeZoneId, string City, string VenueName, string? VenueAddress, string? MapUrl,
     EventDisplayStatus DisplayStatus, BookingAvailability BookingAvailability, string? ExternalBookingUrl,
-    IReadOnlyList<PublicMediaResponse> Media, PublicMediaResponse? CoverMedia);
+    IReadOnlyList<PublicMediaResponse> Media, PublicMediaResponse? CoverMedia,
+    DateTimeOffset? BookingClosesAtUtc = null);
 public sealed record AdminEventResponse(Guid Id, string Slug, string Title, string ShortDescription, string LongDescription,
     string EventType, DateTimeOffset StartAtUtc, DateTimeOffset EndAtUtc, string TimeZoneId, string City,
     string VenueName, string? VenueAddress, string? MapUrl, string? ExternalBookingUrl, bool IsBookingEnabled,

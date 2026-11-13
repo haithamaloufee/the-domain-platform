@@ -8,9 +8,7 @@ export interface LoginBranding {
 export function resolveLoginBranding(value: unknown): LoginBranding {
   const primaryLogo = isRecord(value) && isRecord(value.primaryLogo) ? value.primaryLogo : null;
   const logoUrl =
-    primaryLogo &&
-    typeof primaryLogo.url === "string" &&
-    primaryLogo.url.startsWith("https://")
+    primaryLogo && typeof primaryLogo.url === "string" && primaryLogo.url.startsWith("https://")
       ? primaryLogo.url
       : null;
 

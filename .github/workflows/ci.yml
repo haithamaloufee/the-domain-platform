@@ -25,6 +25,7 @@ jobs:
           dotnet-version: "10.0.x"
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm content:validate
@@ -46,9 +47,14 @@ jobs:
         run: |
           dotnet build apps/backend/src/TheDomain.Api -c Release
           ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5187 \
-            dotnet apps/backend/src/TheDomain.Api/bin/Release/net10.0/TheDomain.Api.dll > "$RUNNER_TEMP/domain-api.log" 2>&1 &
-          trap 'kill "$!" 2>/dev/null || true' EXIT
-          curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5187/health
+            dotnet apps/backend/src/TheDomain.Api/bin/Release/net10.0/TheDomain.Api.dll \
+              --contentRoot "$GITHUB_WORKSPACE/apps/backend/src/TheDomain.Api" > "$RUNNER_TEMP/domain-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          if ! curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5187/health; then
+            cat "$RUNNER_TEMP/domain-api.log"
+            exit 1
+          fi
           node scripts/qa/browser-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()

@@ -278,7 +278,7 @@ public sealed class EventService(
         return new(item.Id, item.Slug, item.Title, item.ShortDescription, item.LongDescription, item.EventType,
             item.StartAtUtc, item.EndAtUtc, item.TimeZoneId, item.City, item.VenueName, item.VenueAddress,
             item.MapUrl, state.DisplayStatus, state.BookingAvailability, state.SafeBookingUrl, media,
-            SelectCoverMedia(item));
+            SelectCoverMedia(item), item.BookingClosesAtUtc);
     }
     private PublicMediaResponse[] MapMedia(EntertainmentEvent item) => item.Media
         .Where(link => link.MediaAsset.ApprovalStatus == MediaApprovalStatus.Approved && HasSafePublicUrl(link.MediaAsset))

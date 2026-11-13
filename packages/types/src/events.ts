@@ -93,5 +93,6 @@ export interface PublicEventDetails extends PublicEventListItem {
   longDescription: string;
   venueAddress: string | null;
   mapUrl: string | null;
+  bookingClosesAtUtc: string | null;
   media: PublicMediaItem[];
 }

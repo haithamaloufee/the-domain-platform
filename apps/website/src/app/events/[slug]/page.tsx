@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCountdown } from "@/components/events/event-countdown";
+import { BookingAction } from "@/components/events/booking-action";
 import { EventHeroMedia } from "@/components/events/event-hero-media";
 import { EventPromotion } from "@/components/events/event-promotion";
 import { Suspense } from "react";
@@ -61,8 +62,12 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const heroMedia = event.coverMedia;
   const orderedMedia = uniqueOrderedMedia(event.media);
-  const canBook =
-    event.bookingAvailability === BookingAvailability.Open && event.externalBookingUrl !== null;
+  const bookingUrl =
+    event.bookingAvailability === BookingAvailability.Open ? event.externalBookingUrl : null;
+  const bookingDeadline =
+    event.bookingClosesAtUtc && Date.parse(event.bookingClosesAtUtc) < Date.parse(event.endAtUtc)
+      ? event.bookingClosesAtUtc
+      : event.endAtUtc;
 
   return (
     <article>
@@ -114,17 +119,7 @@ export default async function EventPage({ params }: EventPageProps) {
               </p>
             )}
             <div className="mt-8 flex flex-wrap gap-3">
-              {canBook && (
-                <a
-                  className={buttonClasses("primary")}
-                  href={event.externalBookingUrl ?? undefined}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <DynamicText kind="action">Book now</DynamicText>
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              )}
+              {bookingUrl && <BookingAction href={bookingUrl} closesAt={bookingDeadline} />}
               <Link className={buttonClasses("secondary")} href="/events">
                 <DynamicText kind="action">All events</DynamicText>
               </Link>
@@ -135,7 +130,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
       <Section className="pt-16 sm:pt-24">
         <Container>
-          {canBook && (
+          {bookingUrl && (
             <Suspense>
               <EventPromotion slug={event.slug} />
             </Suspense>
