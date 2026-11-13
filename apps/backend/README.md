@@ -75,7 +75,7 @@ Initial SuperAdmin provisioning is disabled by default. It runs only when persis
 
 For local provisioning, apply migrations before the first API startup. Once the SuperAdmin exists, set `InitialAdmin__Enabled=false` for subsequent runs. The local password must be changed before any shared or real deployment.
 
-The committed local tool manifest pins `dotnet-ef` 8.0.11. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
+The committed local tool manifest pins `dotnet-ef` 10.0.15. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
 
 Serilog writes structured events to the console only. Production exceptions return RFC-style Problem Details without exception messages or stack traces.
 

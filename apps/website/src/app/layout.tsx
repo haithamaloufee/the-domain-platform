@@ -11,6 +11,9 @@ import { getWebsiteUrl } from "@/lib/seo";
 import { fallbackBranding } from "@the-domain/utils";
 import "./globals.css";
 
+// CMS data and deployment configuration are read by the running website.
+export const dynamic = "force-dynamic";
+
 const siteFont = localFont({
   src: "./fonts/Manrope-Variable.ttf",
   weight: "200 800",

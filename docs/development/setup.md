@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-- .NET SDK 8 or newer
+- .NET 10 SDK
 - Docker with Docker Compose
-- Node.js 22 or newer
+- Node.js 26 LTS
 - pnpm 11.12.0
 
 ## 1. Install dependencies

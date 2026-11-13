@@ -88,6 +88,7 @@ async function request<T>(path: `/${string}`, parse: (value: unknown) => T): Pro
   const response = await fetch(`${getPublicApiBaseUrl().replace(/\/$/, "")}${path}`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(5_000),
   });
 
   if (!response.ok) {
