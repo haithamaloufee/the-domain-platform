@@ -4,7 +4,7 @@ Release from the reviewed GitHub commit after CI and the production smoke checks
 
 ## Website
 
-Use the dedicated `the-domain-entertainment` Vercel project rooted at `apps/website`, with shared workspace source available to the build and Node 26 selected. Install the root lockfile with `pnpm@11.12.0` and `--frozen-lockfile`. Build with the Next.js preset. Configure `THE_DOMAIN_API_BASE_URL` separately in Preview and Production. Set `NEXT_PUBLIC_WEBSITE_URL` to `https://thedomain.haitham.website` in Production. Keep preview deployments protected and excluded from indexing. Use a Vercel team eligible for commercial production hosting.
+Use the dedicated `the-domain-entertainment` Vercel project rooted at `apps/website`, with shared workspace source available to the build and Node 26 selected. Install the root lockfile with the pnpm version pinned in `package.json` and `--frozen-lockfile`. Build with the Next.js preset. Configure `THE_DOMAIN_API_BASE_URL` separately in Preview and Production. Set `NEXT_PUBLIC_WEBSITE_URL` to `https://thedomain.haitham.website` in Production. Keep preview deployments protected and excluded from indexing. Use a Vercel team eligible for commercial production hosting.
 
 ## API and administration
 

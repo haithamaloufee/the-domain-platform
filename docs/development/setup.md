@@ -5,7 +5,7 @@
 - .NET 10 SDK
 - Docker with Docker Compose
 - Node.js 26 LTS
-- pnpm 11.12.0
+- pnpm 11.28.9
 
 ## 1. Install dependencies
 
