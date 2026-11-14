@@ -4,7 +4,7 @@ Release from the reviewed GitHub commit after CI and the production smoke checks
 
 ## Website
 
-Use a Vercel project rooted at `apps/website`, enable source files outside the root for workspace packages, and select Node 26. Ensure the build installs the root lockfile with `pnpm@11.12.0` and `--frozen-lockfile`. Build with the Next.js preset. Configure `THE_DOMAIN_API_BASE_URL` on the server and `NEXT_PUBLIC_WEBSITE_URL` for the production canonical origin. Use the final origin only for Production and prevent indexing of previews.
+Use the dedicated `the-domain-entertainment` Vercel project rooted at `apps/website`, with shared workspace source available to the build and Node 26 selected. Install the root lockfile with `pnpm@11.12.0` and `--frozen-lockfile`. Build with the Next.js preset. Configure `THE_DOMAIN_API_BASE_URL` separately in Preview and Production. Set `NEXT_PUBLIC_WEBSITE_URL` to `https://thedomain.haitham.website` in Production. Keep preview deployments protected and excluded from indexing. Use a Vercel team eligible for commercial production hosting.
 
 ## API and administration
 
@@ -12,13 +12,15 @@ The API and admin Dockerfiles use the repository root as the build context. Prov
 
 For a new deployment, use [Render Docker web services](https://render.com/docs/docker) for the API and admin, with managed PostgreSQL on the same [Frankfurt private network](https://render.com/docs/regions). Use the provider's internal database connection and restrict public database access. Verify the team's service and database plans before provisioning.
 
+For a disposable preview, Render's [free services](https://render.com/docs/free) can host the API, admin and an isolated test database. Build both services from the repository root using `docker/api/Dockerfile` and `docker/admin/Dockerfile`. Keep test data disposable because free PostgreSQL expires after 30 days and has no backups. Free web services cannot run one-off jobs. Use a controlled migration client with temporary allowlisted database access for preview setup, and remove that access after migrating. Use a separate Cloudinary test configuration and a preview-only administrator.
+
 The media route streams uploads through the admin service. Verify the provider ingress size and timeout with a disposable image and a video larger than Vercel's function-body limit. Keep the bootstrap administrator secret only for the first controlled start. Configure a retention policy for enquiries before activating the public form.
 
 Before applying `20260718061336_RemoveStaticPublicCopyOwnership` to an existing database, export the affected records, compare them against `docs/content/sprint-05d-static-copy.before.json`, and rehearse backup restoration on a separate instance. Preserve any differences for the owner before the release. The contact inbox and event promotion migrations add new storage.
 
 ## DNS and portfolio
 
-Public resolvers returned NXDOMAIN for `hetam.website` and `thedomain.hetam.website` on 13 November 2026. The registry RDAP endpoint returned 404 for the apex. Verify registration and delegation inside the owner's registrar account before adding a subdomain record. After Vercel identifies the required CNAME and any ownership TXT record, add those records with the authoritative DNS provider. Verify HTTPS and the expected deployed commit. Review the existing portfolio entry in `haithamaloufee/profolio` after production validation and update it with the verified live URL and authorized screenshots.
+The portfolio runs at `https://haitham.website` and `https://www.haitham.website` on the separate `profolio` Vercel project. GoDaddy is authoritative through `ns57.domaincontrol.com` and `ns58.domaincontrol.com`. Vercel verified ownership of `thedomain.haitham.website` on the `the-domain-entertainment` project and requested one record, `thedomain CNAME 92a9c7c25733623d.vercel-dns-017.com.`. Verify the current recommendation before applying it in GoDaddy. Limit DNS changes to that record and verify HTTPS and the expected deployed commit. Update the existing portfolio entry in `haithamaloufee/profolio` with the verified live URL and authorized screenshots after production validation.
 
 ## Verified local content
 
