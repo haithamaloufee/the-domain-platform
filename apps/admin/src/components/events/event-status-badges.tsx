@@ -23,7 +23,7 @@ const displayLabels: Record<EventDisplayStatusValue, string> = {
 };
 
 const bookingLabels: Record<BookingAvailabilityValue, string> = {
-  [BookingAvailability.Hidden]: "Hidden",
+  [BookingAvailability.Hidden]: "Unavailable",
   [BookingAvailability.NotOpenYet]: "Not open yet",
   [BookingAvailability.Open]: "Open",
   [BookingAvailability.Closed]: "Closed",

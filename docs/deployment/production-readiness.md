@@ -56,6 +56,12 @@ The API already validates that production CORS contains at least one explicit or
 
 Cloudinary should use a production-specific folder prefix and restricted credentials. Keep original upload limits aligned with the documented image/video policy. The database stores URLs and metadata only. Test transformations, delivery formats, poster generation, and CDN behavior against real approved media before launch.
 
+Video uploads generate and persist a secure Cloudinary JPEG poster URL using an automatically selected frame, a 960-pixel width limit, and automatic quality. Confirm that this transformation is permitted by the production Cloudinary account's transformation restrictions before launch.
+
+Previously stored Cloudinary videos without a persisted poster use the same secure transformation at response time. The resolver prefers the asset's stored Cloudinary URL so records remain compatible if media originated under an older cloud name; unsupported or malformed legacy values retain the existing no-poster UI fallback.
+
+The admin BFF keeps a short timeout for normal backend requests and uses a bounded 10-minute timeout only for media uploads. Confirm that the selected hosting providers allow request durations and body sizes compatible with the configured media limits; otherwise large uploads will require an infrastructure-level adjustment before launch.
+
 ## Rollback and recovery
 
 - Keep the previous API, admin, and website artifacts available for application rollback.

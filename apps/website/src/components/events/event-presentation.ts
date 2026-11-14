@@ -1,7 +1,6 @@
 import {
   BookingAvailability,
   EventDisplayStatus,
-  EventMediaUsage,
   MediaType,
   type BookingAvailabilityValue,
   type EventDisplayStatusValue,
@@ -10,8 +9,8 @@ import {
 
 export const displayStatusLabels: Record<EventDisplayStatusValue, string> = {
   [EventDisplayStatus.Upcoming]: "Upcoming",
-  [EventDisplayStatus.Live]: "Live now",
-  [EventDisplayStatus.Finished]: "Finished",
+  [EventDisplayStatus.Live]: "Happening now",
+  [EventDisplayStatus.Finished]: "Ended",
   [EventDisplayStatus.Cancelled]: "Cancelled",
 };
 
@@ -23,27 +22,13 @@ export const bookingAvailabilityLabels: Record<BookingAvailabilityValue, string>
   [BookingAvailability.SoldOut]: "Sold out",
 };
 
-const eventMediaPriority = [
-  EventMediaUsage.Hero,
-  EventMediaUsage.Cover,
-  EventMediaUsage.Poster,
-  EventMediaUsage.Thumbnail,
-  EventMediaUsage.Gallery,
-] as const;
-
-export function selectEventMedia(media: PublicMediaItem[]): PublicMediaItem | null {
-  for (const usage of eventMediaPriority) {
-    const match = media.find((item) => item.usage === usage && item.isFeatured);
-    if (match) return match;
-    const fallback = media.find((item) => item.usage === usage);
-    if (fallback) return fallback;
-  }
-  return media[0] ?? null;
-}
-
 export function mediaImageSource(media: PublicMediaItem | null): string | null {
   if (!media) return null;
-  return media.thumbnailUrl ?? (media.mediaType === MediaType.Image ? media.url : null);
+  return (
+    media.videoPoster.posterUrl ??
+    media.thumbnailUrl ??
+    (media.mediaType === MediaType.Image ? media.url : null)
+  );
 }
 
 export function formatEventDate(value: string, timeZone: string): string {

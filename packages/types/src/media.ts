@@ -34,25 +34,35 @@ export const EventMediaUsage = {
 
 export type EventMediaUsage = (typeof EventMediaUsage)[keyof typeof EventMediaUsage];
 
+export const VideoPosterMode = {
+  Automatic: 1,
+  Timestamp: 2,
+  CustomImage: 3,
+} as const;
+
+export type VideoPosterMode = (typeof VideoPosterMode)[keyof typeof VideoPosterMode];
+
 export interface AdminMediaListItem {
   id: string;
+  fileName: string;
+  originalFileName: string;
   mediaType: MediaType;
   url: string;
   thumbnailUrl: string | null;
   orientation: MediaOrientation;
   category: string | null;
+  caption: string | null;
+  altText: string | null;
   approvalStatus: MediaApprovalStatus;
+  isArchived: boolean;
+  archivedAtUtc: string | null;
   createdAtUtc: string;
 }
 
 export interface AdminMediaDetails extends AdminMediaListItem {
-  fileName: string;
-  originalFileName: string;
   width: number | null;
   height: number | null;
   durationSeconds: number | null;
-  caption: string | null;
-  altText: string | null;
   updatedAtUtc: string;
 }
 
@@ -68,6 +78,8 @@ export interface MediaListQuery {
   eventId?: string;
   usage?: string;
   search?: string;
+  isArchived?: boolean | null;
+  collectionId?: string;
 }
 
 export interface UploadMediaRequestMetadata {
@@ -100,6 +112,31 @@ export interface UpdateEventMediaRequest {
   isFeatured: boolean;
 }
 
+export interface ReorderEventMediaRequest {
+  eventMediaIds: string[];
+}
+
+export interface EventCoverPresentation {
+  focalPointX: number;
+  focalPointY: number;
+  zoom: number;
+}
+
+export type UpdateEventCoverPresentationRequest = EventCoverPresentation;
+
+export interface VideoPosterPresentation {
+  mode: VideoPosterMode;
+  timestampSeconds: number | null;
+  customPosterMediaAssetId: string | null;
+  posterUrl: string | null;
+}
+
+export interface UpdateVideoPosterRequest {
+  mode: VideoPosterMode;
+  timestampSeconds: number | null;
+  customPosterMediaAssetId: string | null;
+}
+
 export interface EventMediaResponse {
   id: string;
   eventId: string;
@@ -108,6 +145,8 @@ export interface EventMediaResponse {
   sortOrder: number;
   isFeatured: boolean;
   createdAtUtc: string;
+  presentation: EventCoverPresentation;
+  videoPoster: VideoPosterPresentation;
 }
 
 export interface AdminEventMediaItem extends EventMediaResponse {
@@ -132,6 +171,8 @@ export interface PublicMediaItem {
   usage: EventMediaUsage;
   sortOrder: number;
   isFeatured: boolean;
+  presentation: EventCoverPresentation;
+  videoPoster: VideoPosterPresentation;
 }
 
 export interface PublicGalleryAlbum {
@@ -157,4 +198,40 @@ export interface PublicGalleryAlbumDetails {
   city: string;
   venueName: string;
   media: PublicMediaItem[];
+}
+
+export interface MediaCollection {
+  id: string;
+  name: string;
+  isArchived: boolean;
+  itemCount: number;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  archivedAtUtc: string | null;
+}
+
+export interface MediaCollectionItem {
+  mediaAssetId: string;
+  sortOrder: number;
+  media: AdminMediaListItem;
+}
+
+export interface MediaUsageEvent {
+  eventId: string;
+  eventTitle: string;
+  usage: EventMediaUsage;
+  isCustomPoster: boolean;
+}
+
+export interface MediaUsage {
+  mediaAssetId: string;
+  events: MediaUsageEvent[];
+  collections: MediaCollection[];
+  branding: Array<{ role: string }>;
+  canPermanentlyDelete: boolean;
+}
+
+export interface PermanentDeleteMediaResponse {
+  id: string;
+  originalFileName: string;
 }

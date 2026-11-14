@@ -16,6 +16,7 @@ public sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsse
         builder.Property(item => item.Caption).HasMaxLength(1000); builder.Property(item => item.AltText).HasMaxLength(500);
         builder.Property(item => item.ApprovalStatus).HasConversion<string>().HasMaxLength(16).IsRequired(); builder.Property(item => item.CloudinaryPublicId).HasMaxLength(255);
         builder.Property(item => item.CreatedAtUtc).HasColumnType("timestamp with time zone"); builder.Property(item => item.UpdatedAtUtc).HasColumnType("timestamp with time zone");
-        builder.HasIndex(item => item.ApprovalStatus); builder.HasIndex(item => item.MediaType); builder.HasIndex(item => item.CloudinaryPublicId).IsUnique();
+        builder.Property(item => item.IsArchived).HasDefaultValue(false).IsRequired(); builder.Property(item => item.ArchivedAtUtc).HasColumnType("timestamp with time zone");
+        builder.HasIndex(item => item.ApprovalStatus); builder.HasIndex(item => item.MediaType); builder.HasIndex(item => item.IsArchived); builder.HasIndex(item => item.CloudinaryPublicId).IsUnique();
     }
 }

@@ -5,17 +5,26 @@ import { buttonClasses, Card, EmptyState } from "@the-domain/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
+import { isSafeBookingUrl } from "@/lib/events/event-lifecycle";
+import { listEventMedia } from "@/lib/media/admin-media-client";
+import { activeEventCover } from "@/lib/media/event-media-rules";
 import { EventActions } from "./event-actions";
 import { BookingBadge, DisplayBadge, PublicationBadge } from "./event-status-badges";
 
 export function EventDetails({ eventId }: { eventId: string }) {
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
+  const [hasEligibleCover, setHasEligibleCover] = useState(false);
   const [error, setError] = useState("");
 
   async function load() {
     setError("");
     try {
-      setEvent(await getAdminEvent(eventId));
+      const [loadedEvent, media] = await Promise.all([
+        getAdminEvent(eventId),
+        listEventMedia(eventId),
+      ]);
+      setEvent(loadedEvent);
+      setHasEligibleCover(activeEventCover(media) !== null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load this event.");
     }
@@ -23,9 +32,12 @@ export function EventDetails({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     let isActive = true;
-    getAdminEvent(eventId)
-      .then((item) => {
-        if (isActive) setEvent(item);
+    Promise.all([getAdminEvent(eventId), listEventMedia(eventId)])
+      .then(([item, media]) => {
+        if (isActive) {
+          setEvent(item);
+          setHasEligibleCover(activeEventCover(media) !== null);
+        }
       })
       .catch((loadError: unknown) => {
         if (isActive)
@@ -128,10 +140,17 @@ export function EventDetails({ eventId }: { eventId: string }) {
           <Card className="p-6 sm:p-8">
             <DetailSection title="External booking">
               <div className="grid gap-6 sm:grid-cols-2">
-                <Detail label="CTA enabled" value={event.isBookingEnabled ? "Yes" : "No"} />
                 <Detail
-                  label="Availability"
+                  label="Stored booking state"
+                  value={<BookingBadge status={event.bookingStatus} />}
+                />
+                <Detail
+                  label="Effective availability"
                   value={<BookingBadge status={event.bookingAvailability} />}
+                />
+                <Detail
+                  label="Public CTA actionable"
+                  value={event.isBookingEnabled ? "Yes" : "No"}
                 />
                 <Detail
                   label="Opens"
@@ -150,11 +169,16 @@ export function EventDetails({ eventId }: { eventId: string }) {
                   }
                 />
               </div>
-              {event.externalBookingUrl && (
+              {event.externalBookingUrl && isSafeBookingUrl(event.externalBookingUrl) && (
                 <ExternalLink
                   href={event.externalBookingUrl}
                   label="Open external ticketing page"
                 />
+              )}
+              {event.externalBookingUrl && !isSafeBookingUrl(event.externalBookingUrl) && (
+                <p className="mt-6 border-l-2 border-error bg-error/10 px-3 py-2 text-sm text-error">
+                  The stored booking URL is not safe HTTPS and will not be exposed publicly.
+                </p>
               )}
             </DetailSection>
           </Card>
@@ -166,8 +190,22 @@ export function EventDetails({ eventId }: { eventId: string }) {
             <p className="mt-2 text-sm leading-6 text-ink-muted">
               Status changes apply immediately and may affect public visibility.
             </p>
+            {!hasEligibleCover && (
+              <p
+                className="mt-4 border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm leading-6 text-warning"
+                role="status"
+              >
+                This event has no eligible cover. It can still be published, but public views will
+                use their artwork fallback.
+              </p>
+            )}
             <div className="mt-6">
-              <EventActions event={event} onChanged={setEvent} onError={setError} />
+              <EventActions
+                event={event}
+                hasEligibleCover={hasEligibleCover}
+                onChanged={setEvent}
+                onError={setError}
+              />
             </div>
           </Card>
           <Card className="p-6">
@@ -230,7 +268,12 @@ function Detail({
 
 function ExternalLink({ href, label }: { href: string; label: string }) {
   return (
-    <a className={buttonClasses("secondary", "mt-6")} href={href} rel="noreferrer" target="_blank">
+    <a
+      className={buttonClasses("secondary", "mt-6")}
+      href={href}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
       {label}
     </a>
   );

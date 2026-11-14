@@ -1,29 +1,31 @@
 import type { PublicEventListItem } from "@the-domain/types";
-import { Container, EmptyState, Section } from "@the-domain/ui";
-import { PublicEventCard } from "@/components/events/public-event-card";
+import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
+import Link from "next/link";
+import { HomepageEventPreview } from "./homepage-event-preview";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function PreviousEventsSection({
   events,
   unavailable,
+  title,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section className="border-y border-line bg-surface/25">
       <Container>
         <HomeSectionHeader
-          actionHref="/events"
-          actionLabel="Explore The Archive"
-          description="Finished events return as approved highlights—an evolving record of the rooms, stages, and audiences that shaped each experience."
           eyebrow="Previous Events"
-          title="The night ends. The story remains."
+          title={title ?? "The night ends. The story remains."}
         />
         {events.length > 0 ? (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5">
             {events.map((event) => (
-              <PublicEventCard event={event} key={event.id} variant="compact" />
+              <HomepageEventPreview event={event} key={event.id} />
             ))}
           </div>
         ) : (
@@ -40,6 +42,19 @@ export function PreviousEventsSection({
                   : "The archive is being prepared"
               }
             />
+          </div>
+        )}
+        {events.length > 0 && (
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/events"
+            >
+              <DynamicText kind="action">Explore The Archive</DynamicText>
+            </Link>
           </div>
         )}
       </Container>

@@ -5,13 +5,17 @@ import { getAdminAuthConfig } from "./auth-config";
 
 const requestTimeoutMilliseconds = 10_000;
 
-export async function fetchBackend(path: `/${string}`, init: RequestInit): Promise<Response> {
+export async function fetchBackend(
+  path: `/${string}`,
+  init: RequestInit,
+  timeoutMilliseconds = requestTimeoutMilliseconds,
+): Promise<Response> {
   const { apiBaseUrl } = getAdminAuthConfig();
   return fetch(`${apiBaseUrl}${path}`, {
     ...init,
     cache: "no-store",
     headers: { Accept: "application/json", ...init.headers },
-    signal: AbortSignal.timeout(requestTimeoutMilliseconds),
+    signal: AbortSignal.timeout(timeoutMilliseconds),
   });
 }
 
@@ -23,12 +27,19 @@ export function loginWithBackend(request: LoginRequest): Promise<Response> {
   });
 }
 
-export function refreshWithBackend(refreshToken: string): Promise<Response> {
-  return fetchBackend("/api/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
+const pendingRefreshes = new Map<string, Promise<Response>>();
+
+export async function refreshWithBackend(refreshToken: string): Promise<Response> {
+  let pending = pendingRefreshes.get(refreshToken);
+  if (!pending) {
+    pending = fetchBackend("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    }).finally(() => pendingRefreshes.delete(refreshToken));
+    pendingRefreshes.set(refreshToken, pending);
+  }
+  return (await pending).clone();
 }
 
 export function logoutWithBackend(refreshToken: string): Promise<Response> {

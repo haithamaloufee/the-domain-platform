@@ -9,7 +9,7 @@ Shared boundaries are deliberate:
 - `packages/utils` contains framework-neutral helpers and the typed fetch client foundation.
 - `packages/config` contains strict TypeScript and Next.js ESLint defaults.
 
-Both apps default to React Server Components. Client components are introduced only where browser interaction requires them. Public website API reads use a website-owned, server-only fetch boundary with runtime contract validation; browser components never receive an API origin. Development requests use `no-store`, while production requests revalidate every 60 seconds.
+Both apps default to React Server Components. Client components are introduced only where browser interaction requires them. Public Website getters use a server-only, runtime-validated boundary, `cache: "no-store"` for persistence semantics, and React `cache()` for request-scope memoization. Backend Output Cache supplies cross-request caching and tag eviction.
 
 Public routes are `/`, `/events`, `/events/[slug]`, `/gallery`, `/gallery/[eventSlug]`, `/about`, `/services`, and `/contact`. The public website remains authentication-free.
 
@@ -21,11 +21,11 @@ Gallery album summaries expose cover and media counts. Full ordered gallery meta
 
 ## Public homepage composition
 
-The `/` route composes `getFeaturedEvents`, `getUpcomingEvents`, `getPreviousEvents`, and `getGalleryAlbums` in one Server Component boundary. Requests run concurrently and settle independently, allowing an unavailable public endpoint to degrade only its own section. Featured and upcoming results are deduplicated before a bounded preview is rendered; previous events and albums are separately limited. The hero uses an approved cover or thumbnail when available and falls back to a media-free branded surface without requesting a video source.
+The `/` route awaits one memoized `getPublicHomepage` read before emitting its page tree. This removes the former Hero/Footer-first stream while retaining independent Layout Suspense boundaries for dynamic Header-logo and Footer branding. API failure still renders every static section shell with code-owned empty states.
 
-Homepage presentation is split into small server components under `apps/website/src/components/home`. Non-API editorial content is typed and centralized in `apps/website/src/content/homepage-content.ts`. This file is an explicit temporary adapter for statistics, services, partners, and section copy; a future homepage CMS can replace its values while retaining the section components and public data boundary.
+Homepage presentation remains split into small Server Components under `apps/website/src/components/home`. Typed editorial modules under `apps/website/src/content` own exact wording and fixed CTAs. `HOMEPAGE_SECTION_ORDER` is the single composition authority and preserves the published order: Statistics, Events, Why, Previous Events, Gallery, Services, Partners, Contact. Public/admin contracts contain no ordering or visibility fields.
 
-Sprint 12B composes `getPublicHomepage`, `getPublicStatistics`, and `getPublicPartners` alongside the existing event/gallery requests. Each CMS request settles independently. Published content replaces only matching editorial fields; missing or unpublished content keeps the Sprint 11 adapter. Empty statistic and partner collections preserve their non-fabricated awaiting-data states. Services remain local because service management is a separate future module rather than part of the homepage CMS persistence model.
+The consolidated response bounds current events to two, previous events to two, a selected collection to one cover plus counts (or three fallback albums), and statistics to slots 1-4; it returns all visible partners. Static text never crosses the API. Hero and floating-video media remain CMS-owned, and video sources remain deferred.
 
 ## Public presentation and motion layer
 
@@ -65,6 +65,6 @@ The editor groups assignments by usage and keeps draft changes in component stat
 
 ## Admin homepage CMS boundary
 
-Authenticated editors manage homepage copy, statistics, and partners at `/dashboard/homepage`, `/dashboard/statistics`, and `/dashboard/partners`. Client components call only same-origin BFF handlers under `/api/admin/homepage`, `/api/admin/statistics/*`, and `/api/admin/partners/*`. A CMS route layer reuses the authorized backend request helper, rejects cross-site mutations, validates request and response contracts, and sanitizes backend failures.
+Authenticated editors manage Homepage publication/media, statistic values, and partners at `/dashboard/homepage`, `/dashboard/statistics`, and `/dashboard/partners`. They cannot edit static copy, fixed CTAs, section order, or section visibility. Client components call only same-origin BFF handlers and retain the existing authenticated CMS route boundary.
 
 Homepage content has an explicit Draft/Published state. Statistics require both Visible and Verified to enter public projections. Partners require Visible; Featured affects presentation priority but does not bypass visibility. DELETE is documented and presented as reversible soft-hide. Partner logos remain URL references in this sprint, so the media upload architecture is unchanged.

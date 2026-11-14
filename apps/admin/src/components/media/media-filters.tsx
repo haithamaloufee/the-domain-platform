@@ -14,7 +14,7 @@ export function MediaFilters({
   const [values, setValues] = useState(initial);
   return (
     <form
-      className="grid gap-4 border border-line bg-surface-raised p-5 md:grid-cols-2 xl:grid-cols-6"
+      className="grid gap-4 border border-line bg-surface-raised p-5 md:grid-cols-2 xl:grid-cols-7"
       onSubmit={(event) => {
         event.preventDefault();
         onApply({ ...values, pageNumber: 1 });
@@ -79,6 +79,22 @@ export function MediaFilters({
           value={values.category ?? ""}
         />
       </FilterField>
+      <FilterField label="Archive">
+        <Select
+          aria-label="Archive state"
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              isArchived: event.target.value === "all" ? null : event.target.value === "true",
+            }))
+          }
+          value={values.isArchived === null ? "all" : String(values.isArchived ?? false)}
+        >
+          <option value="false">Active media</option>
+          <option value="true">Archived media</option>
+          <option value="all">All media</option>
+        </Select>
+      </FilterField>
       {values.eventId && (
         <p className="md:col-span-2 xl:col-span-4 self-end text-sm text-ink-muted">
           Filtered to event <span className="text-ink">{values.eventId}</span>
@@ -92,8 +108,19 @@ export function MediaFilters({
           className={buttonClasses("ghost")}
           onClick={() => {
             const reset = values.eventId
-              ? { eventId: values.eventId, pageNumber: 1, pageSize: 20 }
-              : { pageNumber: 1, pageSize: 20 };
+              ? {
+                  eventId: values.eventId,
+                  collectionId: values.collectionId,
+                  isArchived: false,
+                  pageNumber: 1,
+                  pageSize: 20,
+                }
+              : {
+                  collectionId: values.collectionId,
+                  isArchived: false,
+                  pageNumber: 1,
+                  pageSize: 20,
+                };
             setValues(reset);
             onApply(reset);
           }}

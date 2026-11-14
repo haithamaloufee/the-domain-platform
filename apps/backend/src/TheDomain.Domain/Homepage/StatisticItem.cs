@@ -5,11 +5,13 @@ public sealed class StatisticItem
     private StatisticItem() { }
 
     public StatisticItem(Guid id, string label, string value, string? suffix, string? description,
-        int sortOrder, bool isVisible, bool isVerified, DateTimeOffset createdAtUtc)
+        int sortOrder, bool isVisible, bool isVerified, DateTimeOffset createdAtUtc,
+        int? slotNumber = null)
     {
         Id = id;
         Apply(label, value, suffix, description, sortOrder, isVisible, isVerified, createdAtUtc);
         CreatedAtUtc = createdAtUtc;
+        SlotNumber = slotNumber;
     }
 
     public Guid Id { get; private set; }
@@ -18,6 +20,7 @@ public sealed class StatisticItem
     public string? Suffix { get; private set; }
     public string? Description { get; private set; }
     public int SortOrder { get; private set; }
+    public int? SlotNumber { get; private set; }
     public bool IsVisible { get; private set; }
     public bool IsVerified { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -29,6 +32,16 @@ public sealed class StatisticItem
 
     public void Show(DateTimeOffset updatedAtUtc) { IsVisible = true; UpdatedAtUtc = updatedAtUtc; }
     public void Hide(DateTimeOffset updatedAtUtc) { IsVisible = false; UpdatedAtUtc = updatedAtUtc; }
+    public void SetSortOrder(int value, DateTimeOffset now) { ArgumentOutOfRangeException.ThrowIfNegative(value); SortOrder = value; UpdatedAtUtc = now; }
+    public void AssignSlot(int slotNumber, DateTimeOffset now)
+    {
+        if (slotNumber is < 1 or > 4) throw new ArgumentOutOfRangeException(nameof(slotNumber));
+        SlotNumber = slotNumber;
+        SortOrder = slotNumber - 1;
+        IsVisible = true;
+        IsVerified = true;
+        UpdatedAtUtc = now;
+    }
 
     private void Apply(string label, string value, string? suffix, string? description,
         int sortOrder, bool isVisible, bool isVerified, DateTimeOffset updatedAtUtc)

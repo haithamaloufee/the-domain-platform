@@ -9,11 +9,40 @@
   --td-color-gold-bright: #f2ca50;
   --td-color-line: #343539;
   --td-color-error: #ffb4ab;
+  --td-color-info: #9ecaff;
+  --td-color-warning: #f2ca50;
+  --td-color-success: #86d993;
   --td-font-display: var(--font-syne), "Arial Black", sans-serif;
   --td-font-body: var(--font-inter), Arial, sans-serif;
   --td-font-label: var(--font-geist), Arial, sans-serif;
+  --td-type-display: clamp(2.25rem, 4.8vw, 4.75rem);
+  --td-type-page: clamp(2.5rem, 5vw, 4.5rem);
+  --td-type-section: clamp(2rem, 4vw, 3.75rem);
+  --td-type-card: clamp(1.5rem, 2vw, 2rem);
+  --td-type-body-lg: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  --td-type-body: 1rem;
+  --td-type-label: 0.75rem;
+  --td-leading-display: 0.98;
+  --td-leading-heading: 1.08;
+  --td-leading-body: 1.7;
+  --td-tracking-display: -0.045em;
+  --td-tracking-heading: -0.035em;
+  --td-tracking-label: 0.14em;
   --td-container-max: 90rem;
   --td-gutter: clamp(1.25rem, 4vw, 4rem);
-  --td-section-space: clamp(5rem, 10vw, 10rem);
+  --td-section-space: clamp(5.5rem, 9vw, 10rem);
+  --td-text-measure: 68ch;
+  --td-heading-measure: 15ch;
+  --td-radius-sm: 0.25rem;
+  --td-radius-md: 0.5rem;
+  --td-border-width: 1px;
+  --td-focus-width: 2px;
+  --td-focus-offset: 4px;
+  --td-media-overlay: linear-gradient(
+    to top,
+    rgb(13 14 18 / 96%) 0%,
+    rgb(13 14 18 / 66%) 50%,
+    rgb(13 14 18 / 22%) 100%
+  );
   --transition-fast: 160ms cubic-bezier(0.2, 0, 0, 1);
 }

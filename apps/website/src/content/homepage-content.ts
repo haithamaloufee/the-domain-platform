@@ -15,10 +15,10 @@ export const homepageContent = {
     ],
   },
   statistics: [
-    { label: "Events", value: "—", note: "Awaiting verified data" },
-    { label: "Experiences", value: "—", note: "Awaiting verified data" },
-    { label: "Partners", value: "—", note: "Awaiting verified data" },
-    { label: "Media Moments", value: "—", note: "Awaiting verified data" },
+    { label: "Years creating experiences", value: "10", suffix: "+" },
+    { label: "Events produced", value: "75", suffix: "+" },
+    { label: "Guests welcomed", value: "120", suffix: "K+" },
+    { label: "Creative partners", value: "50", suffix: "+" },
   ],
   services: [
     {

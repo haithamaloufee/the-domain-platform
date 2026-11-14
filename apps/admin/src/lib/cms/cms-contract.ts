@@ -6,6 +6,7 @@ import type {
   CreateStatisticRequest,
   UpdateHomepageContentRequest,
 } from "@the-domain/types";
+import { MediaType } from "@the-domain/types";
 
 type CmsRequest = UpdateHomepageContentRequest | CreateStatisticRequest | CreatePartnerRequest;
 export type CmsRequestShape = "homepage" | "statistic" | "partner";
@@ -19,6 +20,7 @@ export function parseAdminHomepage(value: unknown): AdminHomepageContent | null 
     isPublished: booleanValue(value.isPublished),
     createdAtUtc: dateString(value.createdAtUtc),
     updatedAtUtc: dateString(value.updatedAtUtc),
+    builder: parseBuilder(value.builder),
   };
 }
 
@@ -31,6 +33,7 @@ export function parseAdminStatistic(value: unknown): AdminStatisticItem {
   if (!isRecord(value)) throw new Error("The server returned an invalid statistic.");
   return {
     id: requiredString(value.id),
+    slotNumber: positiveInteger(value.slotNumber),
     ...parseStatisticFields(value),
     createdAtUtc: dateString(value.createdAtUtc),
     updatedAtUtc: dateString(value.updatedAtUtc),
@@ -65,29 +68,58 @@ export function parseCmsRequest(value: unknown, shape: CmsRequestShape): CmsRequ
 }
 
 function parseHomepageFields(value: Record<string, unknown>): UpdateHomepageContentRequest {
+  const builder = isRecord(value.builder) ? parseBuilder(value.builder) : null;
   return {
-    heroEyebrow: boundedString(value.heroEyebrow, 100),
-    heroTitle: boundedString(value.heroTitle, 200),
-    heroAccent: nullableBoundedString(value.heroAccent, 200),
-    heroDescription: boundedString(value.heroDescription, 1_000),
-    primaryCtaLabel: boundedString(value.primaryCtaLabel, 100),
-    primaryCtaHref: boundedString(value.primaryCtaHref, 2_048),
-    secondaryCtaLabel: nullableBoundedString(value.secondaryCtaLabel, 100),
-    secondaryCtaHref: nullableBoundedString(value.secondaryCtaHref, 2_048),
-    whyTitle: boundedString(value.whyTitle, 200),
-    whyDescription: boundedString(value.whyDescription, 2_000),
-    servicesTitle: boundedString(value.servicesTitle, 200),
-    servicesDescription: boundedString(value.servicesDescription, 1_000),
-    partnersTitle: boundedString(value.partnersTitle, 200),
-    partnersDescription: boundedString(value.partnersDescription, 1_000),
-    contactTitle: boundedString(value.contactTitle, 200),
-    contactDescription: boundedString(value.contactDescription, 1_000),
-    contactCtaLabel: boundedString(value.contactCtaLabel, 100),
-    contactCtaHref: boundedString(value.contactCtaHref, 2_048),
     isPublished: booleanValue(value.isPublished),
+    heroMediaAssetId: nullableBoundedString(
+      value.heroMediaAssetId ?? builder?.heroMediaAssetId ?? null,
+      64,
+    ),
+    galleryCollectionId: nullableBoundedString(
+      value.galleryCollectionId ?? builder?.galleryCollectionId ?? null,
+      64,
+    ),
+    isFloatingVideoEnabled: booleanValue(
+      value.isFloatingVideoEnabled ?? builder?.isFloatingVideoEnabled ?? false,
+    ),
+    floatingVideoMediaAssetId: nullableBoundedString(
+      value.floatingVideoMediaAssetId ?? builder?.floatingVideoMediaAssetId ?? null,
+      64,
+    ),
+    floatingVideoPosterMediaAssetId: nullableBoundedString(
+      value.floatingVideoPosterMediaAssetId ?? builder?.floatingVideoPosterMediaAssetId ?? null,
+      64,
+    ),
   };
 }
-
+function parseBuilder(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid homepage builder settings.");
+  return {
+    heroMediaAssetId: nullableBoundedString(value.heroMediaAssetId, 64),
+    galleryCollectionId: nullableBoundedString(value.galleryCollectionId, 64),
+    heroMedia: value.heroMedia === null ? null : parseHeroMedia(value.heroMedia),
+    isFloatingVideoEnabled: booleanValue(value.isFloatingVideoEnabled),
+    floatingVideoMediaAssetId: nullableBoundedString(value.floatingVideoMediaAssetId, 64),
+    floatingVideoPosterMediaAssetId: nullableBoundedString(
+      value.floatingVideoPosterMediaAssetId,
+      64,
+    ),
+    floatingVideoMedia:
+      value.floatingVideoMedia === null ? null : parseHeroMedia(value.floatingVideoMedia),
+    floatingVideoPoster:
+      value.floatingVideoPoster === null ? null : parseHeroMedia(value.floatingVideoPoster),
+  };
+}
+function parseHeroMedia(value: unknown) {
+  if (!isRecord(value)) throw new Error("Invalid hero media.");
+  return {
+    id: requiredString(value.id),
+    mediaType: nonNegativeInteger(value.mediaType) as MediaType,
+    url: boundedString(value.url, 2048),
+    posterUrl: nullableBoundedString(value.posterUrl, 2048),
+    altText: nullableBoundedString(value.altText, 500),
+  };
+}
 function parseStatisticFields(value: Record<string, unknown>): CreateStatisticRequest {
   return {
     label: boundedString(value.label, 100),
@@ -110,6 +142,7 @@ function parsePartnerFields(value: Record<string, unknown>): CreatePartnerReques
     sortOrder: nonNegativeInteger(value.sortOrder),
     isVisible: booleanValue(value.isVisible),
     isFeatured: booleanValue(value.isFeatured),
+    logoMediaAssetId: nullableBoundedString(value.logoMediaAssetId, 64),
   };
 }
 
@@ -140,6 +173,12 @@ function booleanValue(value: unknown): boolean {
 function nonNegativeInteger(value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0)
     throw new Error("Expected a non-negative integer.");
+  return value;
+}
+
+function positiveInteger(value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1)
+    throw new Error("Expected a positive integer.");
   return value;
 }
 

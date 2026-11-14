@@ -1,7 +1,22 @@
 export type { ApiProblem, PagedResponse } from "./api";
 export { UserRole } from "./auth";
 export { BookingAvailability, EventDisplayStatus, EventPublicationStatus } from "./events";
-export { EventMediaUsage, MediaApprovalStatus, MediaOrientation, MediaType } from "./media";
+export { GalleryLayoutPreset } from "./gallery";
+export type {
+  GalleryAdminCollection,
+  GalleryAdminMedia,
+  GalleryPublicCollection,
+  GalleryPublicMedia,
+  SaveGalleryPresentationRequest,
+  GalleryLayoutPreset as GalleryLayoutPresetValue,
+} from "./gallery";
+export {
+  EventMediaUsage,
+  MediaApprovalStatus,
+  MediaOrientation,
+  MediaType,
+  VideoPosterMode,
+} from "./media";
 export type {
   AdminUser,
   AuthErrorResponse,
@@ -30,14 +45,32 @@ export type {
   AdminStatisticItem,
   CreatePartnerRequest,
   CreateStatisticRequest,
-  PublicHomepageContent,
   PublicHomepageResponse,
   PublicPartner,
   PublicStatisticItem,
+  StatisticsPresentation,
+  HomepageBuilderSettings,
+  HomepageMediaSummary,
+  HomepagePresentation,
+  HomepageStatistic,
+  HomepageGalleryPreview,
+  HomepageCollectionPreview,
   UpdateHomepageContentRequest,
   UpdatePartnerRequest,
   UpdateStatisticRequest,
 } from "./homepage";
+export { HomepageSectionKey } from "./homepage";
+export { AboutHeroPresentation } from "./about";
+export type {
+  AboutMedia,
+  AdminAboutSettings,
+  SaveAboutSettingsRequest,
+  SaveTeamMemberRequest,
+  AdminTeamMember,
+  PublicAboutSettings,
+  PublicTeamMember,
+  PublicAboutResponse,
+} from "./about";
 export type {
   AdminEventMediaItem,
   AdminMediaDetails,
@@ -46,15 +79,32 @@ export type {
   AdminMediaResponse,
   AssignEventMediaRequest,
   EventMediaResponse,
+  EventCoverPresentation,
   EventMediaUsage as EventMediaUsageValue,
   MediaApprovalStatus as MediaApprovalStatusValue,
   MediaListQuery,
+  MediaCollection,
+  MediaCollectionItem,
+  MediaUsage,
+  MediaUsageEvent,
   MediaOrientation as MediaOrientationValue,
   MediaType as MediaTypeValue,
   PublicGalleryAlbum,
   PublicGalleryAlbumDetails,
   PublicMediaItem,
+  ReorderEventMediaRequest,
   UpdateEventMediaRequest,
+  UpdateEventCoverPresentationRequest,
   UpdateMediaMetadataRequest,
+  UpdateVideoPosterRequest,
   UploadMediaRequestMetadata,
+  PermanentDeleteMediaResponse,
+  VideoPosterMode as VideoPosterModeValue,
+  VideoPosterPresentation,
 } from "./media";
+export type {
+  BrandingMedia,
+  BrandingSettings,
+  PublicBrandingSettings,
+  UpdateBrandingSettingsRequest,
+} from "./branding";

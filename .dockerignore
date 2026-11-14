@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/.next
+**/bin
+**/obj
+**/.env
+**/.env.*
+**/TestResults
+.cache
+.playwright-mcp
+artifacts
+assets/raw-media
+docs/design/stitch-export

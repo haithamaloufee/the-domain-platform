@@ -7,6 +7,7 @@ import type {
   UpdateHomepageContentRequest,
   UpdatePartnerRequest,
   UpdateStatisticRequest,
+  StatisticsPresentation,
 } from "@the-domain/types";
 import {
   parseAdminHomepage,
@@ -34,6 +35,25 @@ export function updateAdminHomepage(
 
 export function listAdminStatistics(): Promise<AdminStatisticItem[]> {
   return request("/api/admin/statistics", { method: "GET" }, parseAdminStatistics);
+}
+export function getStatisticsPresentation(): Promise<StatisticsPresentation> {
+  return request("/api/admin/statistics/presentation", { method: "GET" }, parsePresentation);
+}
+export function saveStatisticsPresentation(
+  input: StatisticsPresentation,
+): Promise<StatisticsPresentation> {
+  return request(
+    "/api/admin/statistics/presentation",
+    { method: "PUT", headers: jsonHeaders, body: JSON.stringify(input) },
+    parsePresentation,
+  );
+}
+function parsePresentation(value: unknown): StatisticsPresentation {
+  if (typeof value !== "object" || value === null)
+    throw new Error("Invalid statistics presentation.");
+  const item = value as Record<string, unknown>;
+  if (typeof item.isEnabled !== "boolean") throw new Error("Invalid statistics presentation.");
+  return { isEnabled: item.isEnabled };
 }
 
 export function createAdminStatistic(input: CreateStatisticRequest): Promise<AdminStatisticItem> {

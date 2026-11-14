@@ -1,48 +1,72 @@
+import { Container, EmptyState, Section } from "@the-domain/ui";
 import type { Metadata } from "next";
-import { Container, EmptyState, Section, SectionHeader } from "@the-domain/ui";
-import { AlbumCard } from "@/components/gallery/album-card";
-import { getGalleryAlbums } from "@/lib/public-api";
+import { CollectionCard } from "@/components/gallery/collection-card";
+import { CinematicReveal } from "@/components/motion/cinematic-reveal";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
+import { getGalleryCollections } from "@/lib/public-api";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Event Gallery",
-  description: "Explore approved photography and film from previous Domain events.",
+  title: "Gallery",
+  description: "Explore curated photography and film from The Domain.",
   path: "/gallery",
 });
 
 export const revalidate = 60;
 
 export default async function GalleryPage() {
-  const albums = await loadAlbums();
+  let collections = null;
+  try {
+    collections = await getGalleryCollections();
+  } catch {}
+
   return (
     <>
-      <Section className="architectural-grid border-b border-line pb-12 sm:pb-16">
+      <Section className="architectural-grid border-b border-line py-20 sm:py-28 lg:py-32">
         <Container>
-          <SectionHeader
-            description="Photography and film from the experiences that continue to define The Domain."
-            eyebrow="Event archive"
-            title="Gallery"
-          />
+          <header className="max-w-5xl">
+            <p className="type-eyebrow text-gold">
+              <DynamicText kind="label">Visual archive</DynamicText>
+            </p>
+            <h1 className="type-page-heading mt-5 text-ink">
+              <DynamicText kind="heading">Gallery</DynamicText>
+            </h1>
+            <p className="type-body-lead mt-7 text-ink-muted">
+              <DynamicText>
+                Curated photography and film from the experiences that continue to define The
+                Domain.
+              </DynamicText>
+            </p>
+          </header>
         </Container>
       </Section>
-      <Section className="cinematic-reveal">
+
+      <Section>
         <Container>
-          {albums === null ? (
+          {collections === null ? (
             <EmptyState
-              description="The gallery archive could not be reached. Please try again shortly."
+              description="The Gallery could not be reached. Please try again shortly."
               title="The archive is temporarily off screen"
             />
-          ) : albums.length === 0 ? (
+          ) : collections.length === 0 ? (
             <EmptyState
-              description="Approved event albums will appear here after they are published."
-              title="No gallery albums yet"
+              description="Curated collections will appear here after they are published."
+              title="No Gallery collections yet"
             />
           ) : (
-            <div className="grid gap-5 lg:grid-cols-2">
-              {albums.map((album, index) => (
-                <AlbumCard album={album} key={album.eventId} priority={index < 2} />
-              ))}
-            </div>
+            <CinematicReveal>
+              <div className="grid gap-5 lg:grid-cols-12 lg:gap-y-8">
+                {collections.map((collection, index) => (
+                  <CollectionCard
+                    className={collectionCardClass(index)}
+                    collection={collection}
+                    key={collection.id}
+                    priority={index < 2}
+                    variant={index === 0 ? "wide" : index % 3 === 1 ? "tall" : "standard"}
+                  />
+                ))}
+              </div>
+            </CinematicReveal>
           )}
         </Container>
       </Section>
@@ -50,10 +74,7 @@ export default async function GalleryPage() {
   );
 }
 
-async function loadAlbums() {
-  try {
-    return await getGalleryAlbums();
-  } catch {
-    return null;
-  }
+function collectionCardClass(index: number): string {
+  if (index === 0) return "lg:col-span-12";
+  return index % 4 === 1 || index % 4 === 0 ? "lg:col-span-5" : "lg:col-span-7";
 }

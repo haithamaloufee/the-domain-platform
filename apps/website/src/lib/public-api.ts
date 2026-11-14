@@ -1,26 +1,29 @@
 import "server-only";
 
+import { cache } from "react";
 import type {
   PublicEventDetails,
   PublicEventListItem,
   PublicGalleryAlbum,
   PublicGalleryAlbumDetails,
+  GalleryPublicCollection,
   PublicHomepageResponse,
-  PublicPartner,
-  PublicStatisticItem,
+  HomepageCollectionPreview,
+  PublicBrandingSettings,
+  PublicAboutResponse,
 } from "@the-domain/types";
 import { getPublicApiBaseUrl } from "./environment";
 import {
   parseGalleryAlbumDetails,
   parseGalleryAlbums,
+  parseGalleryCollection,
+  parseGalleryCollectionSummaries,
   parsePublicHomepage,
-  parsePublicPartners,
-  parsePublicStatistics,
   parsePublicEvent,
   parsePublicEvents,
+  parsePublicBranding,
+  parsePublicAbout,
 } from "./public-contract";
-
-const publicRevalidationSeconds = 60;
 
 export class PublicApiError extends Error {
   constructor(
@@ -32,49 +35,79 @@ export class PublicApiError extends Error {
   }
 }
 
-export function getUpcomingEvents(): Promise<PublicEventListItem[]> {
-  return request("/api/public/events/upcoming", parsePublicEvents);
-}
+export const getUpcomingEvents = cache(
+  (): Promise<PublicEventListItem[]> => request("/api/public/events/upcoming", parsePublicEvents),
+);
 
-export function getPreviousEvents(): Promise<PublicEventListItem[]> {
-  return request("/api/public/events/previous", parsePublicEvents);
-}
+export const getPreviousEvents = cache(
+  (): Promise<PublicEventListItem[]> => request("/api/public/events/previous", parsePublicEvents),
+);
 
-export function getFeaturedEvents(): Promise<PublicEventListItem[]> {
-  return request("/api/public/events/featured", parsePublicEvents);
-}
+export const getFeaturedEvents = cache(
+  (): Promise<PublicEventListItem[]> => request("/api/public/events/featured", parsePublicEvents),
+);
 
-export function getEventBySlug(slug: string): Promise<PublicEventDetails> {
-  return request(`/api/public/events/${encodeURIComponent(slug)}`, parsePublicEvent);
-}
+export const getEventBySlug = cache(
+  (slug: string): Promise<PublicEventDetails> =>
+    request(`/api/public/events/${encodeURIComponent(slug)}`, parsePublicEvent),
+);
 
-export function getGalleryAlbums(): Promise<PublicGalleryAlbum[]> {
-  return request("/api/public/gallery/albums", parseGalleryAlbums);
-}
+export const getGalleryAlbums = cache(
+  (): Promise<PublicGalleryAlbum[]> => request("/api/public/gallery/albums", parseGalleryAlbums),
+);
 
-export function getGalleryAlbumByEventSlug(eventSlug: string): Promise<PublicGalleryAlbumDetails> {
-  return request(
-    `/api/public/gallery/albums/${encodeURIComponent(eventSlug)}`,
-    parseGalleryAlbumDetails,
-  );
-}
+export const getGalleryAlbumByEventSlug = cache(
+  (eventSlug: string): Promise<PublicGalleryAlbumDetails> =>
+    request(
+      `/api/public/gallery/albums/${encodeURIComponent(eventSlug)}`,
+      parseGalleryAlbumDetails,
+    ),
+);
 
-export function getPublicHomepage(): Promise<PublicHomepageResponse> {
-  return request("/api/public/homepage", parsePublicHomepage);
-}
+export const getGalleryCollections = cache(
+  (): Promise<HomepageCollectionPreview[]> =>
+    request("/api/public/gallery/collections/summaries", parseGalleryCollectionSummaries),
+);
 
-export function getPublicStatistics(): Promise<PublicStatisticItem[]> {
-  return request("/api/public/statistics", parsePublicStatistics);
-}
+export const getGalleryCollection = cache(
+  (id: string): Promise<GalleryPublicCollection> =>
+    request(`/api/public/gallery/collections/${encodeURIComponent(id)}`, parseGalleryCollection),
+);
 
-export function getPublicPartners(): Promise<PublicPartner[]> {
-  return request("/api/public/partners", parsePublicPartners);
-}
+export const getGalleryMediaPage = cache((id: string, offset: number) =>
+  request(
+    `/api/public/gallery/collections/${encodeURIComponent(id)}/media?offset=${offset}`,
+    (value) => {
+      if (typeof value !== "object" || value === null || !("collection" in value)) {
+        throw new Error("Expected a gallery media page.");
+      }
+      const next = "nextOffset" in value ? value.nextOffset : null;
+      const previous = "previousOffset" in value ? value.previousOffset : null;
+      return {
+        collection: parseGalleryCollection(value.collection),
+        nextOffset: typeof next === "number" ? next : null,
+        previousOffset: typeof previous === "number" ? previous : null,
+      };
+    },
+  ),
+);
+
+export const getPublicHomepage = cache(
+  (): Promise<PublicHomepageResponse> => request("/api/public/homepage", parsePublicHomepage),
+);
+
+export const getPublicBranding = cache(
+  (): Promise<PublicBrandingSettings> => request("/api/public/branding", parsePublicBranding),
+);
+export const getPublicAbout = cache(
+  (): Promise<PublicAboutResponse> => request("/api/public/about", parsePublicAbout),
+);
 
 async function request<T>(path: `/${string}`, parse: (value: unknown) => T): Promise<T> {
   const response = await fetch(`${getPublicApiBaseUrl().replace(/\/$/, "")}${path}`, {
-    ...getCacheOptions(),
+    cache: "no-store",
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(5_000),
   });
 
   if (!response.ok) {
@@ -92,10 +125,4 @@ async function request<T>(path: `/${string}`, parse: (value: unknown) => T): Pro
     if (error instanceof PublicApiError) throw error;
     throw new PublicApiError("The public API returned an invalid response.", 502);
   }
-}
-
-function getCacheOptions(): RequestInit & { next?: { revalidate: number } } {
-  return process.env.NODE_ENV === "development"
-    ? { cache: "no-store" }
-    : { next: { revalidate: publicRevalidationSeconds } };
 }

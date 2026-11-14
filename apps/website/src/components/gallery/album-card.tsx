@@ -4,6 +4,7 @@ import { cn } from "@the-domain/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { formatEventDate, mediaImageSource } from "@/components/events/event-presentation";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function AlbumCard({
   album,
@@ -57,17 +58,17 @@ export function AlbumCard({
             compact ? "text-3xl sm:text-4xl" : "text-3xl sm:text-5xl",
           )}
         >
-          {album.title}
+          <DynamicText kind="heading">{album.title}</DynamicText>
         </Heading>
         <p className="mt-3 text-sm text-ink-muted">
-          {album.city} / {album.venueName}
+          <DynamicText>{`${album.city} / ${album.venueName}`}</DynamicText>
         </p>
         <p className="mt-2 font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
           {album.photoCount} photos / {album.videoCount} videos
         </p>
         <div className="mt-6">
-          <Link className={buttonClasses("primary")} href={`/gallery/${album.eventSlug}`}>
-            View Album
+          <Link className={buttonClasses("primary")} href={`/events/${album.eventSlug}`}>
+            <DynamicText kind="action">View Event</DynamicText>
           </Link>
         </div>
       </div>

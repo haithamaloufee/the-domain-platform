@@ -12,6 +12,8 @@ import {
   parseMediaDetails,
   parseMediaPage,
   parseMetadataRequest,
+  parsePresentationRequest,
+  parseVideoPosterRequest,
 } from "./media-contract";
 
 const queryKeys = [
@@ -24,7 +26,10 @@ const queryKeys = [
   "eventId",
   "usage",
   "search",
+  "isArchived",
+  "collectionId",
 ] as const;
+const mediaUploadTimeoutMilliseconds = 10 * 60 * 1_000;
 
 type ResponseShape = "page" | "details" | "assignment" | "assignments" | "empty";
 
@@ -82,7 +87,12 @@ export async function proxyMediaUpload(request: NextRequest) {
       if (typeof value === "string" && value.length <= 2_000) outgoing.set(key, value);
     }
 
-    return proxyRequest("/api/admin/media/upload", { method: "POST", body: outgoing }, "details");
+    return proxyRequest(
+      "/api/admin/media/upload",
+      { method: "POST", body: outgoing },
+      "details",
+      mediaUploadTimeoutMilliseconds,
+    );
   } catch {
     return errorResponse("The upload request could not be read.", 400);
   }
@@ -102,6 +112,42 @@ export async function proxyEventMediaUpdate(request: NextRequest, path: `/${stri
   const body = await readJson(request, parseAssignmentUpdate);
   if (!body) return errorResponse("Please review the media assignment and try again.", 400);
   return proxyJsonMutation(request, path, "PUT", body, "assignment");
+}
+
+export function proxyEventMediaCover(request: NextRequest, path: `/${string}`) {
+  return proxyMutation(request, path, { method: "POST" }, "assignment");
+}
+
+export async function proxyEventMediaPresentation(request: NextRequest, path: `/${string}`) {
+  const body = await readJson(request, parsePresentationRequest);
+  if (!body) return errorResponse("Please review the cover position and zoom.", 400);
+  return proxyJsonMutation(request, path, "PUT", body, "assignment");
+}
+
+export async function proxyEventMediaVideoPoster(request: NextRequest, path: `/${string}`) {
+  const body = await readJson(request, parseVideoPosterRequest);
+  if (!body) return errorResponse("Please review the video poster choice.", 400);
+  return proxyJsonMutation(request, path, "PUT", body, "assignment");
+}
+
+export async function proxyEventMediaReorder(request: NextRequest, path: `/${string}`) {
+  if (!isSameOriginRequest(request)) return errorResponse("Request origin is not allowed.", 403);
+  let value: unknown;
+  try {
+    value = await request.json();
+  } catch {
+    return errorResponse("Please provide a valid media order.", 400);
+  }
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("eventMediaIds" in value) ||
+    !Array.isArray(value.eventMediaIds) ||
+    value.eventMediaIds.some((id) => typeof id !== "string" || !id)
+  ) {
+    return errorResponse("Please provide every assigned media identifier exactly once.", 400);
+  }
+  return proxyJsonMutation(request, path, "POST", { eventMediaIds: value.eventMediaIds }, "empty");
 }
 
 export function proxyEventMediaDelete(request: NextRequest, path: `/${string}`) {
@@ -133,9 +179,14 @@ function proxyMutation(
   return proxyRequest(path, init, shape);
 }
 
-async function proxyRequest(path: `/${string}`, init: RequestInit, shape: ResponseShape) {
+async function proxyRequest(
+  path: `/${string}`,
+  init: RequestInit,
+  shape: ResponseShape,
+  timeoutMilliseconds?: number,
+) {
   try {
-    const response = await fetchAuthorizedBackend(path, init);
+    const response = await fetchAuthorizedBackend(path, init, timeoutMilliseconds);
     if (!response.ok) return mapBackendError(response);
     if (shape === "empty" || response.status === 204) {
       return new NextResponse(null, {

@@ -2,44 +2,51 @@ import type { AuthErrorResponse, AuthSessionResponse, LoginRequest } from "@the-
 import { NextRequest, NextResponse } from "next/server";
 import { loginWithBackend, readTokens } from "@/lib/auth/backend-auth";
 import { setAuthCookies } from "@/lib/auth/auth-cookies";
+import { getLoginErrorMessage } from "@/lib/auth/login-errors";
 import { isSameOriginRequest } from "@/lib/auth/route-security";
-
-const invalidCredentials = "Invalid email or password.";
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) {
-    return NextResponse.json<AuthErrorResponse>(
-      { message: "Request origin is not allowed." },
-      { status: 403 },
-    );
+    return errorResponse(403);
   }
 
   const input = await readLoginRequest(request);
   if (!input) {
-    return NextResponse.json<AuthErrorResponse>({ message: invalidCredentials }, { status: 400 });
+    return errorResponse(400);
   }
 
   try {
     const response = await loginWithBackend(input);
     if (!response.ok) {
-      const status = response.status === 401 || response.status === 400 ? 401 : 503;
-      const message =
-        status === 401 ? invalidCredentials : "Unable to connect to the server. Please try again.";
-      return NextResponse.json<AuthErrorResponse>({ message }, { status });
+      return errorResponse(mapBackendStatus(response.status));
     }
 
     const tokens = await readTokens(response);
     await setAuthCookies(tokens);
-    return NextResponse.json<AuthSessionResponse>({
-      user: tokens.user,
-      expiresAtUtc: tokens.expiresAtUtc,
-    });
-  } catch {
-    return NextResponse.json<AuthErrorResponse>(
-      { message: "Unable to connect to the server. Please try again." },
-      { status: 503 },
+    return NextResponse.json<AuthSessionResponse>(
+      {
+        user: tokens.user,
+        expiresAtUtc: tokens.expiresAtUtc,
+      },
+      { headers: { "Cache-Control": "no-store" } },
     );
+  } catch {
+    return errorResponse(503);
   }
+}
+
+function mapBackendStatus(status: number): number {
+  if (status === 400 || status === 401) return 401;
+  if (status === 429) return 429;
+  if (status === 502 || status === 503 || status === 504) return 503;
+  return 500;
+}
+
+function errorResponse(status: number) {
+  return NextResponse.json<AuthErrorResponse>(
+    { message: getLoginErrorMessage(status) },
+    { status, headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 async function readLoginRequest(request: NextRequest): Promise<LoginRequest | null> {

@@ -1,9 +1,24 @@
-import { AdminPlaceholder } from "@/components/layout/admin-placeholder";
-export default function Page() {
+import { UserRole } from "@the-domain/types";
+import { EmptyState, SectionHeader } from "@the-domain/ui";
+import { UserDirectory } from "@/components/operations/user-directory";
+import { requireAdminSession } from "@/lib/auth/session";
+
+export default async function UsersPage() {
+  const user = await requireAdminSession();
   return (
-    <AdminPlaceholder
-      title="Users and roles"
-      description="Role-based administration will be enabled only when real authentication is integrated."
-    />
+    <div className="grid max-w-6xl gap-8">
+      <SectionHeader
+        title="Users and roles"
+        description="Manage staff accounts and dashboard permissions."
+      />
+      {user.role === UserRole.SuperAdmin ? (
+        <UserDirectory currentUserId={user.id} />
+      ) : (
+        <EmptyState
+          title="Access restricted"
+          description="Only a super administrator can manage staff access."
+        />
+      )}
+    </div>
   );
 }

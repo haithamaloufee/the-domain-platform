@@ -46,10 +46,31 @@ public sealed class ApplicationUser
         UpdatedAtUtc = timestamp;
     }
 
+    public void ResetPassword(string passwordHash, DateTimeOffset timestamp)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+        PasswordHash = passwordHash;
+        UpdatedAtUtc = timestamp;
+
+        foreach (var refreshToken in _refreshTokens.Where(token => token.IsActive(timestamp)))
+        {
+            refreshToken.Revoke(timestamp);
+        }
+    }
+
     public void AddRefreshToken(RefreshToken refreshToken)
     {
         ArgumentNullException.ThrowIfNull(refreshToken);
         refreshToken.AttachTo(this);
         _refreshTokens.Add(refreshToken);
+    }
+
+    public void UpdateAccess(UserRole role, bool isActive, DateTimeOffset now)
+    {
+        if (Role == role && IsActive == isActive) return;
+        Role = role;
+        IsActive = isActive;
+        UpdatedAtUtc = now;
+        foreach (var token in _refreshTokens.Where(token => token.IsActive(now))) token.Revoke(now);
     }
 }

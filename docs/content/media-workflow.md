@@ -22,7 +22,7 @@ Removing an assignment deletes only the `EventMedia` relationship. It never hide
 
 The public event list chooses one featured cover candidate by usage priority; full approved event media is loaded only on event detail. Gallery lists expose one cover and counts, while album detail preserves the approved Gallery assignment order. The public grid initially reveals 24 items, supports photo/video filters, and loads additional batches on request. Videos use poster metadata and never autoplay. Drag-and-drop ordering, bulk migration, and direct browser-to-Cloudinary upload remain intentionally unimplemented.
 
-The public homepage consumes only the cover projection from featured/upcoming events and gallery-album summaries. A featured cover or video thumbnail may frame the hero, but the homepage does not load a video source or request full event/album media. Event and album previews remain bounded and link visitors to the dedicated detail routes. Homepage-specific media selection and section visibility remain future CMS responsibilities.
+The public Homepage consumes one consolidated read model. Event previews use cover projections only; a selected collection contributes one cover plus counts, otherwise three album summaries are returned. Hero, floating video, and selected collection remain CMS/Media-owned, while section composition is deterministic Website code. Video sources are not emitted until deferred browser loading begins.
 
 A future bulk importer must use controlled concurrency, resumable/background processing, per-item validation, and audit reporting. The full production archive must never be committed to this repository.
 

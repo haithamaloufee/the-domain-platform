@@ -7,7 +7,7 @@ export default function EventsLoading() {
       <BrandedLoader compact />
       <Section className="pt-0">
         <Container>
-          <div className="space-y-8" role="status">
+          <div className="grid gap-5 md:grid-cols-2" role="status">
             <EventCardSkeleton />
             <EventCardSkeleton />
             <span className="sr-only">Loading public events</span>

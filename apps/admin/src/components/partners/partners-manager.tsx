@@ -1,7 +1,13 @@
 "use client";
 
-import type { AdminPartner, CreatePartnerRequest } from "@the-domain/types";
-import { Card, EmptyState, Input, Textarea, buttonClasses } from "@the-domain/ui";
+import {
+  MediaApprovalStatus,
+  MediaType,
+  type AdminMediaListItem,
+  type AdminPartner,
+  type CreatePartnerRequest,
+} from "@the-domain/types";
+import { Card, EmptyState, Input, Select, Textarea, buttonClasses } from "@the-domain/ui";
 import Image, { type ImageLoaderProps } from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -19,6 +25,7 @@ import {
   showAdminPartner,
   updateAdminPartner,
 } from "@/lib/cms/admin-cms-client";
+import { listAdminMedia, uploadAdminMedia } from "@/lib/media/admin-media-client";
 
 const emptyPartner: CreatePartnerRequest = {
   name: "",
@@ -29,6 +36,7 @@ const emptyPartner: CreatePartnerRequest = {
   sortOrder: 0,
   isVisible: false,
   isFeatured: false,
+  logoMediaAssetId: null,
 };
 
 export function PartnersManager() {
@@ -83,6 +91,36 @@ export function PartnersManager() {
       setBusyId(null);
     }
   }
+  function move(id: string, direction: -1 | 1) {
+    setItems((current) => {
+      const index = current.findIndex((item) => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      if (item) next.splice(target, 0, item);
+      return next.map((value, order) => ({ ...value, sortOrder: order }));
+    });
+  }
+  async function saveOrder() {
+    setBusyId("order");
+    try {
+      const saved = await Promise.all(
+        items.map((item) =>
+          updateAdminPartner(item.id, { ...toRequest(item), sortOrder: item.sortOrder }),
+        ),
+      );
+      setItems(sortPartners(saved));
+      setFeedback({ message: "Partner order saved.", tone: "success" });
+    } catch (error) {
+      setFeedback({
+        message: error instanceof Error ? error.message : "Unable to save order.",
+        tone: "error",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (state === "loading")
     return (
@@ -110,8 +148,8 @@ export function PartnersManager() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-3xl text-sm leading-6 text-ink-muted">
-          Only visible partners appear publicly. Logo URLs reference approved external assets; logo
-          uploading remains in the media workflow, outside this sprint.
+          Only visible partners appear publicly. Logos reuse approved Media Library images without
+          duplicating assets.
         </p>
         <button
           className={buttonClasses("primary", "shrink-0")}
@@ -123,6 +161,14 @@ export function PartnersManager() {
       </div>
 
       <CmsFeedback message={feedback.message} tone={feedback.tone} />
+      <button
+        className={buttonClasses("secondary")}
+        disabled={busyId === "order"}
+        onClick={() => void saveOrder()}
+        type="button"
+      >
+        Save visual order
+      </button>
 
       {editing && (
         <PartnerForm
@@ -210,6 +256,22 @@ export function PartnersManager() {
               </div>
               <div className="flex flex-wrap gap-2 lg:max-w-72 lg:justify-end">
                 <button
+                  aria-label={`Move ${item.name} up`}
+                  className={buttonClasses("ghost", "px-2")}
+                  onClick={() => move(item.id, -1)}
+                  type="button"
+                >
+                  Up
+                </button>
+                <button
+                  aria-label={`Move ${item.name} down`}
+                  className={buttonClasses("ghost", "px-2")}
+                  onClick={() => move(item.id, 1)}
+                  type="button"
+                >
+                  Down
+                </button>
+                <button
                   className={buttonClasses("secondary", "min-h-10 px-3")}
                   disabled={busyId === item.id}
                   onClick={() => setEditing(item)}
@@ -278,6 +340,35 @@ function PartnerForm({
   >({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [logos, setLogos] = useState<AdminMediaListItem[]>([]);
+  useEffect(() => {
+    void listAdminMedia({
+      pageNumber: 1,
+      pageSize: 100,
+      mediaType: String(MediaType.Image),
+      approvalStatus: String(MediaApprovalStatus.Approved),
+      isArchived: false,
+    }).then((value) => setLogos([...value.items]));
+  }, []);
+  async function uploadLogo(file: File) {
+    setSaving(true);
+    try {
+      const media = await uploadAdminMedia(file, {
+        approvalStatus: MediaApprovalStatus.Approved,
+        category: "Partner logos",
+        altText: fields.name || "Partner logo",
+      });
+      setLogos((current) => [media, ...current]);
+      update("logoMediaAssetId", media.id);
+      update("logoUrl", media.url);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error ? uploadError.message : "Unable to upload partner logo.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function update<K extends keyof CreatePartnerRequest>(name: K, value: CreatePartnerRequest[K]) {
     setFields((current) => ({ ...current, [name]: value }));
@@ -347,6 +438,34 @@ function PartnerForm({
               placeholder="https://…"
               type="url"
               value={fields.logoUrl ?? ""}
+            />
+          </CmsField>
+          <CmsField label="Media Library logo" name="partner-logo-media">
+            <Select
+              id="partner-logo-media"
+              onChange={(event) => {
+                const id = event.target.value || null;
+                update("logoMediaAssetId", id);
+                const selected = logos.find((value) => value.id === id);
+                if (selected) update("logoUrl", selected.url);
+              }}
+              value={fields.logoMediaAssetId ?? ""}
+            >
+              <option value="">Use legacy URL or no logo</option>
+              {logos.map((logo) => (
+                <option key={logo.id} value={logo.id}>
+                  {logo.caption || logo.originalFileName}
+                </option>
+              ))}
+            </Select>
+            <input
+              accept="image/*"
+              className="mt-3 block text-xs"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadLogo(file);
+              }}
+              type="file"
             />
           </CmsField>
           <CmsField error={errors.websiteUrl} label="Website URL" name="partner-website">
@@ -477,6 +596,7 @@ function toRequest(item: AdminPartner): CreatePartnerRequest {
     sortOrder: item.sortOrder,
     isVisible: item.isVisible,
     isFeatured: item.isFeatured,
+    logoMediaAssetId: item.logoMediaAssetId,
   };
 }
 

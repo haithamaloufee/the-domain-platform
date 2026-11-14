@@ -68,6 +68,12 @@ async function mapBackendError(response: Response) {
   if (response.status === 403)
     return errorResponse("You do not have permission to manage events.", 403);
   if (response.status === 404) return errorResponse("Event was not found.", 404);
+  if (response.status === 429)
+    return errorResponse("Too many event requests. Please wait and try again.", 429);
+  if (response.status === 409) {
+    const message = await readSafeProblemDetail(response);
+    return errorResponse(message ?? "This event conflicts with an existing record.", 409);
+  }
 
   if (response.status === 400) {
     const message = await readSafeProblemDetail(response);

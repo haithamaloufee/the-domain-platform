@@ -42,7 +42,8 @@ public sealed class AuthService(
         token.Revoke(now, replacement.TokenHash);
         token.User.AddRefreshToken(CreateRefreshToken(token.User.Id, replacement, now, ipAddress, userAgent));
         var accessToken = jwtTokenService.CreateAccessToken(token.User);
-        await repository.SaveChangesAsync(cancellationToken);
+        if (!await repository.TrySaveSessionChangesAsync(cancellationToken))
+            return AuthenticationResult.Failure(InvalidRefreshToken);
 
         return AuthenticationResult.Success(CreateResponse(token.User, accessToken, replacement.RawToken));
     }
@@ -56,8 +57,7 @@ public sealed class AuthService(
         }
 
         token.Revoke(timeProvider.GetUtcNow());
-        await repository.SaveChangesAsync(cancellationToken);
-        return true;
+        return await repository.TrySaveSessionChangesAsync(cancellationToken);
     }
 
     private AuthTokensResponse IssueTokens(ApplicationUser user, DateTimeOffset now, string? ipAddress, string? userAgent)

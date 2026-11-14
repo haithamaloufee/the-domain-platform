@@ -18,7 +18,9 @@ public static class WebApplicationExtensions
 
         app.UseSerilogRequestLogging();
         app.UseCors(CorsOptions.PolicyName);
+        app.UseOutputCache();
         app.UseAuthentication();
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         return app;
@@ -33,8 +35,16 @@ public static class WebApplicationExtensions
         endpoints.MapPublicHomepageEndpoints();
         endpoints.MapAdminEventEndpoints();
         endpoints.MapAdminMediaEndpoints();
+        endpoints.MapAdminMediaCollectionEndpoints();
+        endpoints.MapAdminGalleryEndpoints();
+        endpoints.MapPublicGalleryEndpoints();
         endpoints.MapAdminEventMediaEndpoints();
         endpoints.MapAdminHomepageCmsEndpoints();
+        endpoints.MapAboutEndpoints();
+        endpoints.MapBrandingSettingsEndpoints();
+        endpoints.MapContactEndpoints();
+        endpoints.MapUserDirectoryEndpoints();
+        endpoints.MapEventPromotionEndpoints();
 
         return endpoints;
     }

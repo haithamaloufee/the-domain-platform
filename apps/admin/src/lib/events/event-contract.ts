@@ -27,6 +27,7 @@ export function parseAdminEvent(value: unknown): AdminEventDetails {
     mapUrl: nullableString(value.mapUrl),
     externalBookingUrl: nullableString(value.externalBookingUrl),
     isBookingEnabled: booleanValue(value.isBookingEnabled),
+    bookingStatus: bookingAvailability(value.bookingStatus),
     bookingOpensAtUtc: nullableDateString(value.bookingOpensAtUtc),
     bookingClosesAtUtc: nullableDateString(value.bookingClosesAtUtc),
     publicationStatus: publicationStatus(value.publicationStatus),
@@ -51,7 +52,7 @@ export function parseSaveEventRequest(value: unknown): SaveEventRequest | null {
 
   try {
     return {
-      slug: boundedString(value.slug),
+      slug: nullableBoundedString(value.slug),
       title: boundedString(value.title),
       shortDescription: boundedString(value.shortDescription),
       longDescription: boundedString(value.longDescription),
@@ -64,7 +65,11 @@ export function parseSaveEventRequest(value: unknown): SaveEventRequest | null {
       venueAddress: nullableBoundedString(value.venueAddress),
       mapUrl: nullableBoundedString(value.mapUrl),
       externalBookingUrl: nullableBoundedString(value.externalBookingUrl),
-      isBookingEnabled: booleanValue(value.isBookingEnabled),
+      isBookingEnabled: optionalBooleanValue(value.isBookingEnabled),
+      bookingStatus:
+        value.bookingStatus === undefined || value.bookingStatus === null
+          ? null
+          : bookingAvailability(value.bookingStatus),
       bookingOpensAtUtc: nullableDateString(value.bookingOpensAtUtc),
       bookingClosesAtUtc: nullableDateString(value.bookingClosesAtUtc),
       isFeatured: booleanValue(value.isFeatured),
@@ -102,13 +107,18 @@ function nullableString(value: unknown): string | null {
 }
 
 function nullableBoundedString(value: unknown): string | null {
-  if (value === null || value === "") return null;
+  if (value === undefined || value === null || value === "") return null;
   return boundedString(value);
 }
 
 function booleanValue(value: unknown): boolean {
   if (typeof value !== "boolean") throw new Error("Expected a boolean.");
   return value;
+}
+
+function optionalBooleanValue(value: unknown): boolean | null {
+  if (value === undefined || value === null) return null;
+  return booleanValue(value);
 }
 
 function dateString(value: unknown): string {

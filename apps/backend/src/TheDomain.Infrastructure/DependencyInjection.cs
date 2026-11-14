@@ -10,6 +10,8 @@ using TheDomain.Application.Events;
 using TheDomain.Application.Media;
 using TheDomain.Infrastructure.Media;
 using TheDomain.Application.Homepage;
+using TheDomain.Application.Branding;
+using TheDomain.Application.Contact;
 
 namespace TheDomain.Infrastructure;
 
@@ -58,6 +60,7 @@ public static class DependencyInjection
             cloudinaryOptions.MaxVideoSizeMb * 1024L * 1024L,
             CreateAllowedMediaTypes(cloudinaryOptions)));
         services.AddScoped<IMediaStorageService, CloudinaryMediaStorageService>();
+        services.AddSingleton<IMediaDeliveryUrlResolver, CloudinaryDeliveryUrlResolver>();
 
         if (!databaseOptions.Enabled)
         {
@@ -66,7 +69,11 @@ public static class DependencyInjection
             services.AddScoped<DisabledMediaService>();
             services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<DisabledMediaService>());
             services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<DisabledMediaService>());
+            services.AddScoped<IMediaOrganizationService, DisabledMediaOrganizationService>();
+            services.AddScoped<IGalleryService, DisabledGalleryService>();
             services.AddScoped<IHomepageCmsService, DisabledHomepageCmsService>();
+            services.AddScoped<IBrandingSettingsService, DisabledBrandingSettingsService>();
+            services.AddScoped<TheDomain.Application.About.IAboutService, TheDomain.Application.About.DisabledAboutService>();
             return services;
         }
 
@@ -74,15 +81,27 @@ public static class DependencyInjection
             databaseOptions.ConnectionString,
             postgreSqlOptions => postgreSqlOptions.CommandTimeout(databaseOptions.CommandTimeoutSeconds)));
         services.AddScoped<IIdentityRepository, IdentityRepository>();
+        services.AddScoped<IUserDirectory, UserDirectory>();
+        services.AddScoped<IContactInbox, ContactInbox>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<EventRepository>();
+        services.AddScoped<IEventRepository>(provider => provider.GetRequiredService<EventRepository>());
+        services.AddScoped<IPublicEventReadRepository>(provider => provider.GetRequiredService<EventRepository>());
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IMediaOrganizationRepository, MediaOrganizationRepository>();
         services.AddScoped<MediaManagementService>();
         services.AddScoped<IMediaManagementService>(provider => provider.GetRequiredService<MediaManagementService>());
         services.AddScoped<IMediaQueryService>(provider => provider.GetRequiredService<MediaManagementService>());
+        services.AddScoped<IMediaOrganizationService, MediaOrganizationService>();
+        services.AddScoped<IGalleryRepository, GalleryRepository>();
+        services.AddScoped<IGalleryService, GalleryService>();
         services.AddScoped<IHomepageCmsRepository, HomepageCmsRepository>();
+        services.AddScoped<TheDomain.Application.About.IAboutRepository, AboutRepository>();
+        services.AddScoped<TheDomain.Application.About.IAboutService, TheDomain.Application.About.AboutService>();
         services.AddScoped<IHomepageCmsService, HomepageCmsService>();
+        services.AddScoped<IBrandingSettingsRepository, BrandingSettingsRepository>();
+        services.AddScoped<IBrandingSettingsService, BrandingSettingsService>();
         if (jwtOptions.Enabled && initialAdminOptions.Enabled)
         {
             services.AddHostedService<InitialAdminProvisioner>();
@@ -101,8 +120,12 @@ public static class DependencyInjection
     {
         Dictionary<string, string[]> known = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["image/jpeg"] = [".jpg", ".jpeg"], ["image/png"] = [".png"], ["image/webp"] = [".webp"],
-            ["video/mp4"] = [".mp4"], ["video/webm"] = [".webm"], ["video/quicktime"] = [".mov"]
+            ["image/jpeg"] = [".jpg", ".jpeg"],
+            ["image/png"] = [".png"],
+            ["image/webp"] = [".webp"],
+            ["video/mp4"] = [".mp4"],
+            ["video/webm"] = [".webm"],
+            ["video/quicktime"] = [".mov"]
         };
         return options.AllowedImageMimeTypes.Concat(options.AllowedVideoMimeTypes)
             .Distinct(StringComparer.OrdinalIgnoreCase).Where(known.ContainsKey)

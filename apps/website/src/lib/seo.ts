@@ -1,9 +1,10 @@
 import "server-only";
 
-import { MediaType, type PublicMediaItem } from "@the-domain/types";
+import { MediaType, type GalleryPublicMedia, type PublicMediaItem } from "@the-domain/types";
+import { THE_DOMAIN_SITE_NAME } from "@the-domain/utils/site-identity";
 import type { Metadata } from "next";
 
-export const siteName = "The Domain Entertainment";
+export const siteName = THE_DOMAIN_SITE_NAME;
 export const defaultDescription = "Premium entertainment experiences and events in Jordan.";
 
 const localWebsiteUrl = new URL("http://localhost:3000");
@@ -69,7 +70,9 @@ export function createPageMetadata({
 
 export function getPublicMediaSeoImage(media: PublicMediaItem | null | undefined): string | null {
   if (!media) return null;
-  return media.mediaType === MediaType.Image ? media.url : media.thumbnailUrl;
+  return media.mediaType === MediaType.Image
+    ? media.url
+    : (media.videoPoster.posterUrl ?? media.thumbnailUrl);
 }
 
 export function getFirstPublicMediaSeoImage(
@@ -80,4 +83,11 @@ export function getFirstPublicMediaSeoImage(
     if (image) return image;
   }
   return null;
+}
+
+export function getGalleryMediaSeoImage(
+  media: GalleryPublicMedia | null | undefined,
+): string | null {
+  if (!media) return null;
+  return media.mediaType === MediaType.Image ? media.url : media.posterUrl;
 }

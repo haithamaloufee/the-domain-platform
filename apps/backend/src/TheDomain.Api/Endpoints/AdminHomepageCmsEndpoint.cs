@@ -20,22 +20,18 @@ public static class AdminHomepageCmsEndpoint
             .RequireAuthorization(AuthorizationPolicies.AdminDashboardAccess);
         statistics.MapGet("/", (IHomepageCmsService service, CancellationToken token) =>
             service.GetAdminStatisticsAsync(token));
-        statistics.MapPost("/", CreateStatisticAsync);
+        statistics.MapGet("/presentation", (IHomepageCmsService service, CancellationToken token) => service.GetStatisticsPresentationAsync(token));
+        statistics.MapPut("/presentation", async (SaveStatisticsPresentationRequest request, IHomepageCmsService service, CancellationToken token) => ToResult(await service.SaveStatisticsPresentationAsync(request, token)));
         statistics.MapPut("/{id:guid}", async (Guid id, SaveStatisticRequest request,
             IHomepageCmsService service, CancellationToken token) =>
             ToResult(await service.UpdateStatisticAsync(id, request, token)));
-        statistics.MapPost("/{id:guid}/show", async (Guid id, IHomepageCmsService service,
-            CancellationToken token) => ToResult(await service.SetStatisticVisibilityAsync(id, true, token)));
-        statistics.MapPost("/{id:guid}/hide", async (Guid id, IHomepageCmsService service,
-            CancellationToken token) => ToResult(await service.SetStatisticVisibilityAsync(id, false, token)));
-        statistics.MapDelete("/{id:guid}", async (Guid id, IHomepageCmsService service,
-            CancellationToken token) => ToResult(await service.SetStatisticVisibilityAsync(id, false, token)));
 
         var partners = endpoints.MapGroup("/api/admin/partners").WithTags("Admin Partners")
             .RequireAuthorization(AuthorizationPolicies.AdminDashboardAccess);
         partners.MapGet("/", (IHomepageCmsService service, CancellationToken token) =>
             service.GetAdminPartnersAsync(token));
         partners.MapPost("/", CreatePartnerAsync);
+        partners.MapPost("/reorder", async (ReorderHomepageItemsRequest request, IHomepageCmsService service, CancellationToken token) => ToResult(await service.ReorderPartnersAsync(request, token)));
         partners.MapPut("/{id:guid}", async (Guid id, SavePartnerRequest request,
             IHomepageCmsService service, CancellationToken token) =>
             ToResult(await service.UpdatePartnerAsync(id, request, token)));
@@ -47,15 +43,6 @@ public static class AdminHomepageCmsEndpoint
             CancellationToken token) => ToResult(await service.SetPartnerVisibilityAsync(id, false, token)));
 
         return endpoints;
-    }
-
-    private static async Task<IResult> CreateStatisticAsync(SaveStatisticRequest request,
-        IHomepageCmsService service, CancellationToken token)
-    {
-        var result = await service.CreateStatisticAsync(request, token);
-        return result.IsSuccess
-            ? Results.Created($"/api/admin/statistics/{result.Value!.Id}", result.Value)
-            : ToProblem(result);
     }
 
     private static async Task<IResult> CreatePartnerAsync(SavePartnerRequest request,

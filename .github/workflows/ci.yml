@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+          cache: pnpm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm content:validate
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm --filter @the-domain/website test
+      - run: pnpm --filter @the-domain/website test:request-dedup
+      - name: Admin tests
+        run: |
+          for suite in auth events presentation gallery branding partners-statistics about-team homepage-ownership; do
+            pnpm --filter @the-domain/admin run "test:$suite"
+          done
+      - name: Install Chromium for browser smoke tests
+        run: |
+          npm install --prefix "$RUNNER_TEMP/domain-browser" --no-save playwright@1.61.1 axe-core@4.11.1
+          node "$RUNNER_TEMP/domain-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Run browser smoke tests
+        env:
+          THE_DOMAIN_PLAYWRIGHT_PATH: ${{ runner.temp }}/domain-browser/node_modules/playwright/index.mjs
+          THE_DOMAIN_AXE_PATH: ${{ runner.temp }}/domain-browser/node_modules/axe-core/axe.min.js
+        run: |
+          dotnet build apps/backend/src/TheDomain.Api -c Release
+          ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5187 \
+            dotnet apps/backend/src/TheDomain.Api/bin/Release/net10.0/TheDomain.Api.dll \
+              --contentRoot "$GITHUB_WORKSPACE/apps/backend/src/TheDomain.Api" > "$RUNNER_TEMP/domain-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          if ! curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5187/health; then
+            cat "$RUNNER_TEMP/domain-api.log"
+            exit 1
+          fi
+          node scripts/qa/browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-smoke-screenshots
+          path: .cache/browser-smoke/
+          if-no-files-found: ignore
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: the_domain_ci
+          POSTGRES_USER: the_domain_ci
+          POSTGRES_PASSWORD: disposable_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U the_domain_ci -d the_domain_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet restore apps/backend/TheDomain.Backend.sln
+      - run: dotnet build apps/backend/TheDomain.Backend.sln -c Release --no-restore
+      - run: dotnet test apps/backend/TheDomain.Backend.sln -c Release --no-build --no-restore
+      - name: Verify migrations against PostgreSQL
+        working-directory: apps/backend
+        env:
+          Database__ConnectionString: Host=localhost;Database=the_domain_ci;Username=the_domain_ci;Password=disposable_ci_password
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --configuration Release --no-build --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
+          dotnet ef database update --configuration Release --no-build --project src/TheDomain.Infrastructure --startup-project src/TheDomain.Api
+
+  containers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, admin]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build --file "docker/${{ matrix.service }}/Dockerfile" --tag "the-domain-${{ matrix.service }}:ci" .

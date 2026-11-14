@@ -1,24 +1,26 @@
 "use client";
 
 import { cn } from "@the-domain/utils";
+import { UserRole } from "@the-domain/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/events", label: "Events" },
-  { href: "/dashboard/media", label: "Media" },
-  { href: "/dashboard/gallery", label: "Gallery" },
-  { href: "/dashboard/homepage", label: "Homepage" },
-  { href: "/dashboard/partners", label: "Partners" },
-  { href: "/dashboard/statistics", label: "Statistics" },
-  { href: "/dashboard/discounts", label: "Discounts" },
-  { href: "/dashboard/messages", label: "Messages" },
-  { href: "/dashboard/users", label: "Users & roles" },
-  { href: "/dashboard/settings", label: "Settings" },
+  { href: "/dashboard/events", label: "Events", role: UserRole.Admin },
+  { href: "/dashboard/media", label: "Media", role: UserRole.MediaManager },
+  { href: "/dashboard/gallery", label: "Gallery", role: UserRole.MediaManager },
+  { href: "/dashboard/homepage", label: "Homepage", role: UserRole.Admin },
+  { href: "/dashboard/about", label: "About & Team", role: UserRole.Admin },
+  { href: "/dashboard/partners", label: "Partners", role: UserRole.Admin },
+  { href: "/dashboard/statistics", label: "Statistics", role: UserRole.Admin },
+  { href: "/dashboard/discounts", label: "Discounts", role: UserRole.Admin },
+  { href: "/dashboard/messages", label: "Messages", role: UserRole.Admin },
+  { href: "/dashboard/users", label: "Users & roles", role: UserRole.SuperAdmin },
+  { href: "/dashboard/settings", label: "Settings", role: UserRole.Admin },
 ] as const;
 
-export function AdminSidebar() {
+export function AdminSidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
 
   return (
@@ -31,22 +33,24 @@ export function AdminSidebar() {
       </div>
       <nav aria-label="Admin navigation" className="overflow-x-auto p-3 lg:overflow-visible">
         <ul className="flex min-w-max gap-1 lg:min-w-0 lg:flex-col">
-          {items.map((item) => (
-            <li key={item.href}>
-              <Link
-                aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className={cn(
-                  "block border-l px-3 py-2.5 font-label text-xs uppercase tracking-[0.1em] transition",
-                  isActive(pathname, item.href)
-                    ? "border-gold bg-surface-raised text-gold"
-                    : "border-transparent text-ink-muted hover:border-gold hover:bg-surface-raised hover:text-ink",
-                )}
-                href={item.href}
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
+          {items
+            .filter((item) => !("role" in item) || role >= item.role)
+            .map((item) => (
+              <li key={item.href}>
+                <Link
+                  aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-11 items-center border-l px-3 py-2.5 font-label text-xs uppercase tracking-[0.1em] transition",
+                    isActive(pathname, item.href)
+                      ? "border-gold bg-surface-raised text-gold"
+                      : "border-transparent text-ink-muted hover:border-gold hover:bg-surface-raised hover:text-ink",
+                  )}
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
         </ul>
       </nav>
     </aside>

@@ -17,4 +17,17 @@ public sealed class IdentityRepository(TheDomainDbContext dbContext) : IIdentity
     public Task<bool> HasUsersAsync(CancellationToken cancellationToken) => dbContext.Users.AnyAsync(cancellationToken);
     public void AddUser(ApplicationUser user) => dbContext.Users.Add(user);
     public Task SaveChangesAsync(CancellationToken cancellationToken) => dbContext.SaveChangesAsync(cancellationToken);
+
+    public async Task<bool> TrySaveSessionChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException exception) when (exception.Entries.All(entry => entry.Entity is RefreshToken))
+        {
+            return false;
+        }
+    }
 }

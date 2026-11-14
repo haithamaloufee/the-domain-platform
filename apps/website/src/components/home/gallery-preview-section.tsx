@@ -1,30 +1,40 @@
-import type { PublicGalleryAlbum } from "@the-domain/types";
-import { Container, EmptyState, Section } from "@the-domain/ui";
+import type { HomepageCollectionPreview, PublicGalleryAlbum } from "@the-domain/types";
+import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
+import Link from "next/link";
 import { AlbumCard } from "@/components/gallery/album-card";
+import { CollectionCard } from "@/components/gallery/collection-card";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function GalleryPreviewSection({
   albums,
   unavailable,
+  collection,
+  title,
 }: {
   albums: PublicGalleryAlbum[];
   unavailable: boolean;
+  collection?: HomepageCollectionPreview | null;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section>
       <Container>
         <HomeSectionHeader
-          actionHref="/gallery"
-          actionLabel="Open The Gallery"
-          description="A focused selection of approved event albums, using cover imagery only until a visitor chooses to enter the full gallery."
           eyebrow="Gallery Preview"
-          title="Moments with their own afterlife."
+          title={title ?? "Moments with their own afterlife."}
         />
-        {albums.length > 0 ? (
+        {collection ? (
+          <div className="mt-10" data-reveal="card">
+            <CollectionCard collection={collection} priority={false} />
+          </div>
+        ) : albums.length > 0 ? (
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {albums.map((album, index) => (
               <div
                 className={index === 0 ? "md:col-span-2 lg:col-span-1" : undefined}
+                data-reveal="card"
                 key={album.eventId}
               >
                 <AlbumCard album={album} compact headingLevel="h3" />
@@ -45,6 +55,19 @@ export function GalleryPreviewSection({
                   : "Gallery moments are being selected"
               }
             />
+          </div>
+        )}
+        {(collection || albums.length > 0) && (
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/gallery"
+            >
+              <DynamicText kind="action">Open The Gallery</DynamicText>
+            </Link>
           </div>
         )}
       </Container>

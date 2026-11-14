@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TheDomain.Domain.Homepage;
+using TheDomain.Domain.Media;
 
 namespace TheDomain.Infrastructure.Persistence.Configurations;
 
@@ -21,5 +22,6 @@ public sealed class PartnerConfiguration : IEntityTypeConfiguration<Partner>
         builder.HasIndex(item => item.Slug).IsUnique();
         builder.HasIndex(item => new { item.IsVisible, item.SortOrder });
         builder.HasIndex(item => item.IsFeatured);
+        builder.HasOne<MediaAsset>().WithMany().HasForeignKey(item => item.LogoMediaAssetId).OnDelete(DeleteBehavior.Restrict);
     }
 }

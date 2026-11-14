@@ -37,6 +37,8 @@ public sealed class MediaAsset
     public string? CloudinaryPublicId { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
+    public bool IsArchived { get; private set; }
+    public DateTimeOffset? ArchivedAtUtc { get; private set; }
 
     public void UpdateMetadata(string? category, string? caption, string? altText, DateTimeOffset now)
     {
@@ -45,4 +47,6 @@ public sealed class MediaAsset
 
     public void Approve(DateTimeOffset now) { ApprovalStatus = MediaApprovalStatus.Approved; UpdatedAtUtc = now; }
     public void Hide(DateTimeOffset now) { ApprovalStatus = MediaApprovalStatus.Hidden; UpdatedAtUtc = now; }
+    public void Archive(DateTimeOffset now) { IsArchived = true; ArchivedAtUtc = now; UpdatedAtUtc = now; }
+    public void Restore(DateTimeOffset now) { IsArchived = false; ArchivedAtUtc = null; UpdatedAtUtc = now; }
 }

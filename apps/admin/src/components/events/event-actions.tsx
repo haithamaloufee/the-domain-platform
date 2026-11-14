@@ -7,29 +7,55 @@ import {
   archiveAdminEvent,
   cancelAdminEvent,
   publishAdminEvent,
+  unpublishAdminEvent,
 } from "@/lib/events/admin-events-client";
+import { publishingWarnings } from "@/lib/events/event-lifecycle";
+import { listEventMedia } from "@/lib/media/admin-media-client";
+import { activeEventCover } from "@/lib/media/event-media-rules";
 
-type EventAction = "publish" | "archive" | "cancel";
+type EventAction = "publish" | "unpublish" | "archive" | "cancel";
 
 interface EventActionsProps {
   event: AdminEventDetails;
+  hasEligibleCover?: boolean;
   onChanged: (event: AdminEventDetails) => void;
   onError?: (message: string) => void;
 }
 
 const actionLabels: Record<EventAction, string> = {
   publish: "Publish",
+  unpublish: "Return to draft",
   archive: "Archive",
   cancel: "Cancel event",
 };
 
-export function EventActions({ event, onChanged, onError }: EventActionsProps) {
+export function EventActions({ event, hasEligibleCover, onChanged, onError }: EventActionsProps) {
   const [pendingAction, setPendingAction] = useState<EventAction | null>(null);
   const actions = availableActions(event);
 
   async function run(action: EventAction) {
-    const confirmed = window.confirm(confirmationMessage(action, event.title));
-    if (!confirmed) return;
+    let coverIsEligible = hasEligibleCover;
+
+    if (action === "publish" && coverIsEligible === undefined) {
+      setPendingAction(action);
+      onError?.("");
+      try {
+        coverIsEligible = activeEventCover(await listEventMedia(event.id)) !== null;
+      } catch (error) {
+        onError?.(
+          error instanceof Error ? error.message : "Unable to verify this event's cover media.",
+        );
+        setPendingAction(null);
+        return;
+      }
+    }
+
+    const warnings = action === "publish" ? publishingWarnings(event, coverIsEligible ?? true) : [];
+    const confirmed = window.confirm(confirmationMessage(action, event.title, warnings));
+    if (!confirmed) {
+      setPendingAction(null);
+      return;
+    }
 
     setPendingAction(action);
     onError?.("");
@@ -69,18 +95,24 @@ function availableActions(event: AdminEventDetails): EventAction[] {
   if (event.publicationStatus === EventPublicationStatus.Archived) return [];
   if (event.publicationStatus === EventPublicationStatus.Draft)
     return ["publish", "archive", "cancel"];
-  if (event.publicationStatus === EventPublicationStatus.Published) return ["archive", "cancel"];
+  if (event.publicationStatus === EventPublicationStatus.Published)
+    return ["unpublish", "archive", "cancel"];
   return ["archive"];
 }
 
 function actionRequest(action: EventAction, id: string) {
   if (action === "publish") return publishAdminEvent(id);
+  if (action === "unpublish") return unpublishAdminEvent(id);
   if (action === "archive") return archiveAdminEvent(id);
   return cancelAdminEvent(id);
 }
 
-function confirmationMessage(action: EventAction, title: string): string {
+function confirmationMessage(action: EventAction, title: string, warnings: string[]): string {
+  if (action === "publish" && warnings.length > 0)
+    return `Publish “${title}” with these warnings?\n\n${warnings.map((warning) => `• ${warning}`).join("\n")}`;
   if (action === "publish") return `Publish “${title}” to the public website?`;
+  if (action === "unpublish")
+    return `Return “${title}” to draft and remove it from the public website?`;
   if (action === "archive") return `Archive “${title}”? It will no longer be publicly visible.`;
   return `Cancel “${title}”? This will mark the event as cancelled.`;
 }

@@ -3,6 +3,7 @@
 import {
   EventMediaUsage,
   MediaApprovalStatus,
+  type AdminMediaDetails,
   type AdminEventListItem,
   type EventMediaUsageValue,
   type MediaApprovalStatusValue,
@@ -10,15 +11,16 @@ import {
 import { buttonClasses, Card, Input, Select, Textarea } from "@the-domain/ui";
 import { useEffect, useRef, useState } from "react";
 import { listAdminEvents } from "@/lib/events/admin-events-client";
-import { uploadAdminMedia } from "@/lib/media/admin-media-client";
+import { assignMediaToEvent, uploadAdminMedia } from "@/lib/media/admin-media-client";
 import { eventMediaUsageLabels } from "./media-labels";
 
-type UploadStatus = "waiting" | "uploading" | "success" | "failed";
+type UploadStatus = "waiting" | "uploading" | "success" | "failed" | "assignment-failed";
 interface QueueItem {
   id: string;
   file: File;
   status: UploadStatus;
   error?: string;
+  uploaded?: AdminMediaDetails;
 }
 
 const allowedFiles: Record<string, { label: string; maximumBytes: number }> = {
@@ -30,10 +32,14 @@ const allowedFiles: Record<string, { label: string; maximumBytes: number }> = {
 };
 
 export function MediaUploadQueue({
+  deferEventAssignment = false,
   eventId,
+  lockEvent = false,
   onCompleted,
 }: {
+  deferEventAssignment?: boolean;
   eventId?: string;
+  lockEvent?: boolean;
   onCompleted: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,6 +58,7 @@ export function MediaUploadQueue({
   const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
+    if (lockEvent) return;
     let isActive = true;
     listAdminEvents()
       .then((items) => {
@@ -61,7 +68,7 @@ export function MediaUploadQueue({
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [lockEvent]);
 
   function addFiles(files: FileList | File[]) {
     const additions = Array.from(files).map((file) => {
@@ -84,17 +91,35 @@ export function MediaUploadQueue({
     for (const item of waiting) {
       updateStatus(item.id, "uploading");
       try {
-        await uploadAdminMedia(item.file, {
+        const uploaded = await uploadAdminMedia(item.file, {
           category,
           caption,
           altText,
           approvalStatus,
-          eventId: selectedEventId || undefined,
-          usage: selectedEventId ? usage : undefined,
-          sortOrder: selectedEventId ? sortOrder : undefined,
-          isFeatured: selectedEventId ? isFeatured : undefined,
+          eventId: selectedEventId && !deferEventAssignment ? selectedEventId : undefined,
+          usage: selectedEventId && !deferEventAssignment ? usage : undefined,
+          sortOrder: selectedEventId && !deferEventAssignment ? sortOrder : undefined,
+          isFeatured: selectedEventId && !deferEventAssignment ? isFeatured : undefined,
         });
-        updateStatus(item.id, "success");
+        if (selectedEventId && deferEventAssignment) {
+          try {
+            await assignMediaToEvent(selectedEventId, {
+              mediaAssetId: uploaded.id,
+              usage,
+              sortOrder,
+              isFeatured,
+            });
+          } catch (assignmentError) {
+            updateStatus(
+              item.id,
+              "assignment-failed",
+              `Upload succeeded and remains in the Media Library, but assignment failed. ${assignmentError instanceof Error ? assignmentError.message : "Try the assignment again."}`,
+              uploaded,
+            );
+            continue;
+          }
+        }
+        updateStatus(item.id, "success", undefined, uploaded);
         completed = true;
       } catch (error) {
         updateStatus(item.id, "failed", error instanceof Error ? error.message : "Upload failed.");
@@ -104,9 +129,36 @@ export function MediaUploadQueue({
     if (completed) onCompleted();
   }
 
-  function updateStatus(id: string, status: UploadStatus, error?: string) {
+  async function retryAssignment(item: QueueItem) {
+    if (!item.uploaded || !selectedEventId) return;
+    updateStatus(item.id, "uploading", undefined, item.uploaded);
+    try {
+      await assignMediaToEvent(selectedEventId, {
+        mediaAssetId: item.uploaded.id,
+        usage,
+        sortOrder,
+        isFeatured,
+      });
+      updateStatus(item.id, "success", undefined, item.uploaded);
+      onCompleted();
+    } catch (error) {
+      updateStatus(
+        item.id,
+        "assignment-failed",
+        error instanceof Error ? error.message : "Assignment failed. Try again.",
+        item.uploaded,
+      );
+    }
+  }
+
+  function updateStatus(
+    id: string,
+    status: UploadStatus,
+    error?: string,
+    uploaded?: AdminMediaDetails,
+  ) {
     setQueue((current) =>
-      current.map((item) => (item.id === id ? { ...item, status, error } : item)),
+      current.map((item) => (item.id === id ? { ...item, status, error, uploaded } : item)),
     );
   }
 
@@ -170,19 +222,28 @@ export function MediaUploadQueue({
             <option value={MediaApprovalStatus.Hidden}>Hidden</option>
           </Select>
         </Field>
-        <Field label="Assign to event">
-          <Select
-            onChange={(event) => setSelectedEventId(event.target.value)}
-            value={selectedEventId}
-          >
-            <option value="">No event assignment</option>
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.title}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        {lockEvent ? (
+          <div>
+            <span className="font-label text-[0.6875rem] uppercase tracking-[0.12em] text-ink-muted">
+              Assignment
+            </span>
+            <p className="mt-3 text-sm text-ink">This event</p>
+          </div>
+        ) : (
+          <Field label="Assign to event">
+            <Select
+              onChange={(event) => setSelectedEventId(event.target.value)}
+              value={selectedEventId}
+            >
+              <option value="">No event assignment</option>
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.title}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field className="lg:col-span-2" label="Caption">
           <Textarea
             className="min-h-24"
@@ -269,6 +330,15 @@ export function MediaUploadQueue({
                 >
                   {item.status}
                 </span>
+                {item.status === "assignment-failed" && (
+                  <button
+                    className={buttonClasses("secondary", "px-3")}
+                    onClick={() => void retryAssignment(item)}
+                    type="button"
+                  >
+                    Retry assignment
+                  </button>
+                )}
               </li>
             ))}
           </ul>

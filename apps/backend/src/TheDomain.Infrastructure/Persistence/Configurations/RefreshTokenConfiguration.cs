@@ -19,6 +19,8 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.Property(token => token.UserAgent).HasMaxLength(512);
         builder.Property(token => token.ExpiresAtUtc).HasColumnType("timestamp with time zone");
         builder.Property(token => token.CreatedAtUtc).HasColumnType("timestamp with time zone");
-        builder.Property(token => token.RevokedAtUtc).HasColumnType("timestamp with time zone");
+        builder.Property(token => token.RevokedAtUtc)
+            .HasColumnType("timestamp with time zone")
+            .IsConcurrencyToken();
     }
 }

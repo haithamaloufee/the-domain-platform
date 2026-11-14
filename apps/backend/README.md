@@ -71,11 +71,11 @@ Access tokens default to 15 minutes. Refresh tokens default to 14 days, are rota
 
 Refresh-token identifiers are assigned by the application and explicitly mapped as non-generated EF keys. This ensures login and rotation insert new token rows while updating the tracked user or prior token in the same transaction.
 
-Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged.
+Initial SuperAdmin provisioning is disabled by default. It runs only when persistence, authentication, and `InitialAdmin__Enabled` are all enabled and only when no user exists. Configure its email, full name, and a strong password through untracked environment values. The password is hashed and never logged. A guarded `InitialAdmin__ResetExistingPassword` recovery switch can rotate only the configured user's password during one Development startup and revokes existing refresh tokens; it defaults to false and is rejected outside Development.
 
 For local provisioning, apply migrations before the first API startup. Once the SuperAdmin exists, set `InitialAdmin__Enabled=false` for subsequent runs. The local password must be changed before any shared or real deployment.
 
-The committed local tool manifest pins `dotnet-ef` 8.0.11. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
+The committed local tool manifest pins `dotnet-ef` 10.0.15. Run `dotnet tool restore` before migration commands on a new workstation. The first migration is `AddIdentitySchema`.
 
 Serilog writes structured events to the console only. Production exceptions return RFC-style Problem Details without exception messages or stack traces.
 
@@ -103,6 +103,6 @@ Admin media APIs provide single-file upload, bounded pagination, metadata editin
 
 ## Homepage CMS
 
-The homepage CMS stores one application-identified content record, verified statistics, and partner/sponsor metadata. `GET /api/public/homepage` returns published content plus visible verified statistics and visible partners. Standalone reads are available at `/api/public/statistics` and `/api/public/partners`. Before content is published, the aggregate response contains `content: null`; empty statistic and partner arrays are valid.
+The Homepage singleton stores publication and dynamic media/presentation only. `GET /api/public/homepage` is the bounded consolidated read model for presentation, statistic values, event previews, Gallery preview, and visible partners. Static wording, fixed CTAs, section order, and section visibility are Website-owned. `/api/public/statistics` and `/api/public/partners` remain deprecated compatibility reads and are not Homepage dependencies.
 
-Protected `/api/admin/homepage`, `/api/admin/statistics`, and `/api/admin/partners` routes prepare the Sprint 12B admin workflow. They require `AdminDashboardAccess`, validate explicit DTOs, enforce unique partner slugs, and implement statistic/partner deletion as soft hide. The `AddHomepageCms` migration creates the three tables and indexes without seeding content, metrics, partners, logos, or media.
+Protected `/api/admin/homepage`, `/api/admin/statistics`, and `/api/admin/partners` routes require `AdminDashboardAccess`, validate explicit DTOs, enforce unique partner slugs, and implement statistic/partner deletion as soft hide. Homepage admin payloads cannot change static copy or public composition.

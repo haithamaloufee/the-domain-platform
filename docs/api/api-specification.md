@@ -35,11 +35,11 @@ The admin frontend mirrors these endpoints with same-origin BFF routes. Media ro
 
 Homepage CMS public endpoints are:
 
-- `GET /api/public/homepage` returns nullable published homepage content, visible verified statistics, and visible partners.
-- `GET /api/public/statistics` returns the same ordered safe statistic projection.
-- `GET /api/public/partners` returns the same ordered safe partner projection.
+- `GET /api/public/homepage` is the consolidated Homepage read model: dynamic media presentation, statistic slots 1-4, two current events, two previous events, one collection cover plus counts or three fallback albums, and all visible partners.
+- `GET /api/public/statistics` retains its compatibility response and emits `Deprecation: true`; the Website no longer calls it.
+- `GET /api/public/partners` retains its compatibility response and emits `Deprecation: true`; the Website no longer calls it.
 
-Empty arrays and `content: null` are valid before administrators publish verified records. Public DTOs omit IDs, audit timestamps, draft/publish flags, verification flags, visibility flags, sort controls, and storage-provider data.
+Static wording, fixed internal CTAs, and Homepage section composition are Website-owned and absent from public/admin DTOs. The public response contains no `sectionOrder` or `disabledSections`. Empty operational arrays are valid.
 
 Homepage CMS admin endpoints require `AdminDashboardAccess`:
 
@@ -51,6 +51,6 @@ Homepage CMS admin endpoints require `AdminDashboardAccess`:
 - `PUT|DELETE /api/admin/partners/{id}`
 - `POST /api/admin/partners/{id}/show|hide`
 
-Homepage PUT creates or updates the singleton record. Statistic verification remains an explicit admin-controlled field; visibility alone does not make an unverified value public. Partner slugs are unique. DELETE for statistics and partners performs the same reversible hide operation as the hide endpoint.
+Homepage PUT creates or updates publication and dynamic media/presentation only; it cannot reorder or hide sections. Partner slugs are unique. DELETE for statistics and partners performs the same reversible hide operation as the hide endpoint.
 
 The admin frontend mirrors these CMS endpoints on the admin origin with the same route shapes. BFF handlers authenticate from HttpOnly cookies, rotate an expired access token at most once, enforce same-origin mutations, runtime-validate the shared CMS contracts, and reduce backend failures to safe `{ message }` responses. They never return tokens, raw Problem Details, exception data, or backend configuration.

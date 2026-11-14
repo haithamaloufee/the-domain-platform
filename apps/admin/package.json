@@ -7,15 +7,26 @@
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "eslint .",
+    "test:auth": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/login-foundation.test.mjs",
+    "test:events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/event-wizard.test.mjs",
+    "test:presentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/presentation-ordering.test.mjs",
+    "test:gallery": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/gallery-manager.test.mjs",
+    "test:branding": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/branding-settings.test.mjs",
+    "test:partners-statistics": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/partners-statistics.test.mjs",
+    "test:about-team": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/about-team.test.mjs",
+    "test:homepage-ownership": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-loader ./tests/ts-loader.mjs --test tests/homepage-ownership.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@the-domain/types": "workspace:*",
     "@the-domain/ui": "workspace:*",
     "@the-domain/utils": "workspace:*",
-    "next": "16.2.10",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.2",
@@ -24,7 +35,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.2",
     "typescript": "5.9.3"
   }

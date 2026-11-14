@@ -30,7 +30,7 @@ export const BookingAvailability = {
 export type BookingAvailability = (typeof BookingAvailability)[keyof typeof BookingAvailability];
 
 export interface SaveEventRequest {
-  slug: string;
+  slug: string | null;
   title: string;
   shortDescription: string;
   longDescription: string;
@@ -43,18 +43,22 @@ export interface SaveEventRequest {
   venueAddress: string | null;
   mapUrl: string | null;
   externalBookingUrl: string | null;
-  isBookingEnabled: boolean;
+  isBookingEnabled?: boolean | null;
+  bookingStatus?: BookingAvailability | null;
   bookingOpensAtUtc: string | null;
   bookingClosesAtUtc: string | null;
   isFeatured: boolean;
   showOnHomepage: boolean;
 }
 
-export type CreateEventRequest = SaveEventRequest;
+export type CreateEventRequest = Omit<SaveEventRequest, "slug"> & { slug?: string | null };
 export type UpdateEventRequest = SaveEventRequest;
 
 export interface AdminEventDetails extends SaveEventRequest {
   id: string;
+  slug: string;
+  isBookingEnabled: boolean;
+  bookingStatus: BookingAvailability;
   publicationStatus: EventPublicationStatus;
   displayStatus: EventDisplayStatus;
   bookingAvailability: BookingAvailability;
@@ -85,9 +89,10 @@ export interface PublicEventListItem {
   coverMedia: PublicMediaItem | null;
 }
 
-export interface PublicEventDetails extends Omit<PublicEventListItem, "coverMedia"> {
+export interface PublicEventDetails extends PublicEventListItem {
   longDescription: string;
   venueAddress: string | null;
   mapUrl: string | null;
+  bookingClosesAtUtc: string | null;
   media: PublicMediaItem[];
 }

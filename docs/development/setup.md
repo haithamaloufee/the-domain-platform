@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-- .NET SDK 8 or newer
+- .NET 10 SDK
 - Docker with Docker Compose
-- Node.js 22 or newer
-- pnpm 11.12.0
+- Node.js 26 LTS
+- pnpm 11.28.9
 
 ## 1. Install dependencies
 
@@ -61,6 +61,8 @@ dotnet run --project src/TheDomain.Api
 ```
 
 Open `http://localhost:5000/swagger`. Verify `http://localhost:5000/health` and `http://localhost:5000/api/info`. The first successful startup provisions the configured SuperAdmin only when the database contains no users. The password is hashed and not logged. Disable `InitialAdmin__Enabled` after provisioning, and never reuse the local password in a real deployment.
+
+If the ignored local environment password changes after that first startup, login will correctly continue using the stored hash. For local recovery only, set `InitialAdmin__ResetExistingPassword=true` for one Development API startup, confirm login, and immediately restore it to `false`. The reset targets only the configured email and revokes that user's refresh tokens. The API rejects this switch outside Development; never use it as a production password-management workflow.
 
 ## 6. Start the frontend applications
 

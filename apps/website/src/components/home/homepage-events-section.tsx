@@ -1,34 +1,31 @@
 import type { PublicEventListItem } from "@the-domain/types";
-import { Container, EmptyState, Section } from "@the-domain/ui";
-import { PublicEventCard } from "@/components/events/public-event-card";
+import { Container, EmptyState, Section, buttonClasses } from "@the-domain/ui";
+import Link from "next/link";
+import { HomepageEventPreview } from "./homepage-event-preview";
 import { HomeSectionHeader } from "./home-section-header";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
 export function HomepageEventsSection({
   events,
   unavailable,
+  title,
 }: {
   events: PublicEventListItem[];
   unavailable: boolean;
+  title?: string;
+  description?: string;
 }) {
   return (
     <Section>
       <Container>
         <HomeSectionHeader
-          actionHref="/events"
-          actionLabel="View All Events"
-          description="Featured experiences lead the programme, followed by what is coming next. Booking remains on the event's verified external platform."
           eyebrow="Featured & Upcoming"
-          title="The next frame is taking shape."
+          title={title ?? "The next frame is taking shape."}
         />
         {events.length > 0 ? (
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
-            {events.map((event, index) => (
-              <PublicEventCard
-                event={event}
-                key={event.id}
-                priority={index === 0}
-                variant="compact"
-              />
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5">
+            {events.map((event) => (
+              <HomepageEventPreview event={event} key={event.id} />
             ))}
           </div>
         ) : (
@@ -41,6 +38,19 @@ export function HomepageEventsSection({
               }
               title={unavailable ? "Events are temporarily off screen" : "No upcoming events yet"}
             />
+          </div>
+        )}
+        {events.length > 0 && (
+          <div className="mt-10 text-center" data-reveal="copy">
+            <Link
+              className={buttonClasses(
+                "secondary",
+                "homepage-section-cta homepage-section-cta--prominent",
+              )}
+              href="/events"
+            >
+              <DynamicText kind="action">View All Events</DynamicText>
+            </Link>
           </div>
         )}
       </Container>

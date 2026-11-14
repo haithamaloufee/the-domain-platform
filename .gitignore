@@ -53,5 +53,7 @@ docker/volumes/
 
 # Tool and test artifacts
 .cache/
+.playwright-mcp/
 .nyc_output/
 TestResults/
+scripts/dev/.demo-content-manifest.json

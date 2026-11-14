@@ -18,6 +18,10 @@ public static class AdminMediaEndpoint
         group.MapPut("/{id:guid}/metadata", async (Guid id, UpdateMediaMetadataRequest request, IMediaManagementService service, CancellationToken token) => ToResult(await service.UpdateMetadataAsync(id, request, token)));
         group.MapPost("/{id:guid}/approve", async (Guid id, IMediaManagementService service, CancellationToken token) => ToResult(await service.ApproveAsync(id, token)));
         group.MapPost("/{id:guid}/hide", async (Guid id, IMediaManagementService service, CancellationToken token) => ToResult(await service.HideAsync(id, token)));
+        group.MapPost("/{id:guid}/archive", async (Guid id, IMediaOrganizationService service, CancellationToken token) => ToResult(await service.ArchiveMediaAsync(id, token)));
+        group.MapPost("/{id:guid}/restore", async (Guid id, IMediaOrganizationService service, CancellationToken token) => ToResult(await service.RestoreMediaAsync(id, token)));
+        group.MapGet("/{id:guid}/usage", async (Guid id, IMediaOrganizationService service, CancellationToken token) => await service.GetUsageAsync(id, token) is { } usage ? Results.Ok(usage) : Results.NotFound(Problem("Media asset was not found.", 404)));
+        group.MapDelete("/{id:guid}/permanent", async (Guid id, [FromBody] PermanentDeleteMediaRequest request, IMediaOrganizationService service, CancellationToken token) => ToResult(await service.PermanentlyDeleteMediaAsync(id, request, token)));
         group.MapDelete("/{id:guid}", async (Guid id, IMediaManagementService service, CancellationToken token) => ToResult(await service.HideAsync(id, token)));
         return endpoints;
     }
@@ -37,6 +41,11 @@ public static class AdminMediaEndpoint
         return ToResult(await service.UploadAsync(command, token));
     }
 
-    private static IResult ToResult<T>(EventOperationResult<T> result) => result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(Problem(string.Join(" ", result.Errors), 400));
+    private static IResult ToResult<T>(EventOperationResult<T> result)
+    {
+        if (result.IsSuccess) return Results.Ok(result.Value);
+        var status = result.FailureKind == EventFailureKind.NotFound ? 404 : result.FailureKind == EventFailureKind.Conflict ? 409 : 400;
+        return Results.Problem(Problem(string.Join(" ", result.Errors), status));
+    }
     private static ProblemDetails Problem(string detail, int status) => new() { Status = status, Title = "Media operation failed.", Detail = detail, Type = $"https://httpstatuses.com/{status}" };
 }

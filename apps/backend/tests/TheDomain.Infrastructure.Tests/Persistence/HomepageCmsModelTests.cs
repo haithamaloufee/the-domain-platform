@@ -33,6 +33,18 @@ public sealed class HomepageCmsModelTests
         Assert.Equal($"\"Id\" = '{HomepageContent.SingletonId}'", constraint.Sql);
     }
 
+    [Fact]
+    public void HomepageCompositionIsNotDatabaseOwned()
+    {
+        using var context = CreateContext();
+        var entity = context.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(HomepageContent));
+
+        Assert.Null(entity!.FindProperty("SectionOrder"));
+        Assert.Null(entity.FindProperty("DisabledSections"));
+        Assert.DoesNotContain(typeof(HomepageContent).GetProperties(), property =>
+            property.Name is "SectionOrder" or "DisabledSections");
+    }
+
     private static TheDomainDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<TheDomainDbContext>()

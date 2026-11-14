@@ -1,18 +1,17 @@
-import type { PublicHomepageContent } from "@the-domain/types";
 import { Container, Section, buttonClasses } from "@the-domain/ui";
 import Link from "next/link";
 import { homepageContent } from "@/content/homepage-content";
+import { homeContent } from "@/content/home";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
 
-export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageContent | null }) {
-  const content = cmsContent
-    ? {
-        eyebrow: homepageContent.contact.eyebrow,
-        title: cmsContent.contactTitle,
-        description: cmsContent.contactDescription,
-        label: cmsContent.contactCtaLabel,
-        href: cmsContent.contactCtaHref,
-      }
-    : { ...homepageContent.contact, label: "Contact The Domain", href: "/contact" };
+export function ContactCtaSection() {
+  const content = {
+    eyebrow: homepageContent.contact.eyebrow,
+    title: homeContent.contact.title,
+    description: homeContent.contact.description,
+    label: homeContent.contact.cta.label,
+    href: homeContent.contact.cta.href,
+  };
   return (
     <Section className="architectural-grid relative isolate overflow-hidden border-t border-line bg-surface">
       <div
@@ -22,18 +21,20 @@ export function ContactCtaSection({ cmsContent }: { cmsContent: PublicHomepageCo
       <Container className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div>
           <p className="font-label text-xs font-semibold uppercase tracking-[0.16em] text-gold">
-            {content.eyebrow}
+            <DynamicText kind="label">{content.eyebrow}</DynamicText>
           </p>
           <h2 className="mt-5 max-w-5xl font-display text-5xl font-bold leading-[0.98] tracking-[-0.05em] text-ink sm:text-7xl">
-            {content.title}
+            <DynamicText kind="heading">{content.title}</DynamicText>
           </h2>
-          <p className="mt-7 max-w-2xl text-base leading-8 text-ink-muted">{content.description}</p>
+          <p className="mt-7 max-w-2xl text-base leading-8 text-ink-muted" data-reveal="copy">
+            <DynamicText>{content.description}</DynamicText>
+          </p>
         </div>
         <Link
-          className={buttonClasses("primary", "w-full sm:w-auto sm:min-w-48")}
+          className={buttonClasses("primary", "homepage-section-cta w-full sm:w-auto sm:min-w-48")}
           href={content.href}
         >
-          {content.label}
+          <DynamicText kind="action">{content.label}</DynamicText>
         </Link>
       </Container>
     </Section>

@@ -1,8 +1,12 @@
 using System.Globalization;
 using Serilog;
+using TheDomain.Api.Configuration;
 using TheDomain.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddDotEnvFile();
 
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)

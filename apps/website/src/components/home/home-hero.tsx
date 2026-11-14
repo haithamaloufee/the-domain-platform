@@ -1,98 +1,109 @@
-import type { PublicEventListItem, PublicHomepageContent } from "@the-domain/types";
-import { Badge, Container, buttonClasses } from "@the-domain/ui";
+import { MediaType, type HomepagePresentation, type PublicEventListItem } from "@the-domain/types";
+import { Container, buttonClasses } from "@the-domain/ui";
+import { eventCoverRenderData } from "@the-domain/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { formatEventDate, mediaImageSource } from "@/components/events/event-presentation";
-import { homepageContent } from "@/content/homepage-content";
+import { EventCoverImage } from "@/components/events/event-cover-image";
+import { DynamicText } from "@/components/motion/dynamic-weight-controller";
+import { homeContent } from "@/content/home";
+import { HeroBackgroundVideo } from "./hero-background-video";
+import { formatEventDate } from "@/components/events/event-presentation";
 
 export function HomeHero({
-  content,
+  presentation,
   featuredEvent,
 }: {
-  content: PublicHomepageContent | null;
+  presentation: HomepagePresentation | null;
   featuredEvent: PublicEventListItem | null;
 }) {
-  const source = mediaImageSource(featuredEvent?.coverMedia ?? null);
-  const hero = content
-    ? {
-        eyebrow: content.heroEyebrow,
-        headline: content.heroTitle,
-        accent: content.heroAccent,
-        description: content.heroDescription,
-        primaryLabel: content.primaryCtaLabel,
-        primaryHref: content.primaryCtaHref,
-        secondaryLabel: content.secondaryCtaLabel,
-        secondaryHref: content.secondaryCtaHref,
-      }
-    : {
-        ...homepageContent.hero,
-        primaryLabel: "Explore Events",
-        primaryHref: "/events",
-        secondaryLabel: "View Gallery",
-        secondaryHref: "/gallery",
-      };
+  const source = eventCoverRenderData(featuredEvent?.coverMedia ?? null);
+  const configuredMedia = presentation?.heroMedia ?? null;
+  const hero = homeContent.hero;
 
   return (
-    <section className="relative isolate flex min-h-[calc(100svh-4rem)] items-end overflow-hidden border-b border-line">
-      <div aria-hidden="true" className="architectural-grid absolute inset-0 -z-10 opacity-20" />
-      {source ? (
+    <section className="domain-hero relative isolate -mt-[var(--site-header-height)] flex items-end overflow-hidden border-b border-line">
+      {configuredMedia?.mediaType === MediaType.Video ? (
+        <HeroBackgroundVideo
+          poster={configuredMedia.posterUrl ?? undefined}
+          src={configuredMedia.url}
+        />
+      ) : configuredMedia?.mediaType === MediaType.Image ? (
         <Image
-          alt={featuredEvent?.coverMedia?.altText ?? ""}
-          className="cinematic-media -z-20 object-cover"
+          alt=""
+          aria-hidden="true"
+          className="-z-20 object-cover"
           fill
           priority
           sizes="100vw"
-          src={source}
+          src={configuredMedia.url}
+        />
+      ) : source ? (
+        <EventCoverImage
+          className="-z-20 object-cover"
+          media={featuredEvent!.coverMedia!}
+          priority
+          sizes="100vw"
         />
       ) : (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_72%_18%,rgba(212,175,55,0.12),transparent_30%),linear-gradient(145deg,#1a1b1f_0%,#0d0e12_55%)]"
-        />
+        <div aria-hidden="true" className="domain-hero-light absolute inset-0 -z-20" />
       )}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-canvas via-canvas/65 to-canvas/15" />
       <div
         aria-hidden="true"
-        className="absolute inset-y-0 left-[8vw] -z-10 hidden w-px bg-gradient-to-b from-transparent via-line to-transparent lg:block"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgb(7_8_10/.76)_0%,transparent_27%),linear-gradient(90deg,rgb(7_8_10/.84)_0%,rgb(7_8_10/.34)_48%,rgb(7_8_10/.12)_100%),radial-gradient(ellipse_at_center,transparent_44%,rgb(7_8_10/.38)_100%),linear-gradient(to_top,var(--td-color-canvas)_0%,rgb(13_14_18/.72)_18%,transparent_58%)]"
       />
-
-      <Container className="pb-16 pt-28 sm:pb-20 lg:pb-24">
-        <div className="max-w-5xl">
-          <Badge>{hero.eyebrow}</Badge>
-          <h1 className="mt-7 max-w-6xl break-words font-display text-[clamp(3.25rem,12vw,6.5rem)] font-extrabold leading-[0.9] tracking-[-0.06em] text-ink">
-            {hero.headline}
-            {hero.accent && <span className="block text-gold">{hero.accent}</span>}
-          </h1>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-ink-muted sm:text-lg sm:leading-8">
-            {hero.description}
+      <Container className="grid items-end gap-12 pb-12 pt-32 sm:pb-20 sm:pt-40 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.3fr)] lg:gap-12">
+        <div data-hero-reveal>
+          <p className="type-eyebrow text-gold" data-hero-part="eyebrow">
+            <DynamicText kind="label">{hero.eyebrow}</DynamicText>
           </p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryHref}>
-              {hero.primaryLabel}
+          <div className="mt-6 overflow-hidden" data-hero-part="headline-mask">
+            <h1 className="domain-hero-title text-ink">
+              <DynamicText kind="heading">{hero.title}</DynamicText>
+              {hero.accent && (
+                <span className="block text-gold">
+                  <DynamicText kind="heading">{hero.accent}</DynamicText>
+                </span>
+              )}
+            </h1>
+          </div>
+          <p
+            className="mt-7 max-w-xl text-[clamp(1rem,1.4vw,1.3rem)] leading-8 text-ink/76"
+            data-hero-part="copy"
+          >
+            <DynamicText>{hero.description}</DynamicText>
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3" data-hero-part="actions">
+            <Link className={buttonClasses("primary", "sm:min-w-44")} href={hero.primaryCta.href}>
+              <DynamicText kind="action">{hero.primaryCta.label}</DynamicText>
             </Link>
-            {hero.secondaryLabel && hero.secondaryHref && (
-              <Link className={buttonClasses("secondary", "sm:min-w-44")} href={hero.secondaryHref}>
-                {hero.secondaryLabel}
-              </Link>
-            )}
+            <Link
+              className={buttonClasses("secondary", "sm:min-w-44")}
+              href={hero.secondaryCta.href}
+            >
+              <DynamicText kind="action">{hero.secondaryCta.label}</DynamicText>
+            </Link>
           </div>
         </div>
-
         {featuredEvent && (
           <Link
-            className="mt-14 grid min-h-20 max-w-xl gap-2 border-l border-gold py-2 pl-5 transition-[border-color,transform] hover:translate-x-1 hover:border-gold-bright focus-visible:outline-2 focus-visible:outline-offset-4 sm:grid-cols-[auto_1fr] sm:gap-x-5"
-            href={`/events/${featuredEvent.slug}`}
+            className="group grid max-w-sm gap-2 border-t border-gold/55 bg-canvas/65 px-4 py-4 transition hover:bg-canvas sm:px-5 sm:py-5"
+            href={`/events/${encodeURIComponent(featuredEvent.slug)}`}
           >
-            <span className="font-label text-[0.6875rem] uppercase tracking-[0.14em] text-gold">
-              Featured
+            <span className="font-label text-xs uppercase tracking-widest text-gold">
+              On the programme
             </span>
-            <span className="font-display text-xl font-bold text-ink sm:col-span-2 sm:row-start-2 sm:text-2xl">
+            <span className="flex items-baseline justify-between gap-3 text-lg font-semibold text-ink">
               {featuredEvent.title}
+              <span
+                aria-hidden="true"
+                className="text-gold transition-transform group-hover:translate-x-1"
+              >
+                ↗
+              </span>
             </span>
-            <span className="text-sm text-ink-muted sm:col-start-2 sm:row-start-1 sm:text-right">
-              {formatEventDate(featuredEvent.startAtUtc, featuredEvent.timeZoneId)} ·{" "}
-              {featuredEvent.city}
-            </span>
+            <time className="text-sm text-ink-muted" dateTime={featuredEvent.startAtUtc}>
+              {formatEventDate(featuredEvent.startAtUtc, featuredEvent.timeZoneId)}
+            </time>
           </Link>
         )}
       </Container>

@@ -22,7 +22,7 @@ To test CMS locally, apply the approved backend migrations, start the API on por
 
 Cloudinary configuration is needed only for media upload testing, not CMS text/statistic/partner management. Dashboard metrics, password management, user administration, rich text, partner logo upload, final cinematic animation polish, and bulk media migration remain out of scope.
 
-The frontend workspace does not yet include a test runner. The admin integration is validated through strict TypeScript, zero-warning ESLint, and production builds rather than introducing an unplanned testing stack; route-level integration tests should be added with the dedicated frontend testing foundation.
+The frontend workspace does not yet include a component test framework. Dependency-free tests for the pure login validation, safe error mapping, and remember-email storage rules run with `pnpm --filter @the-domain/admin test:auth`; interactive form behavior remains part of browser QA. The wider admin integration is validated through strict TypeScript, zero-warning ESLint, and production builds rather than introducing an unplanned testing stack; route-level integration tests should be added with the dedicated frontend testing foundation.
 
 ## Production configuration
 

@@ -7,10 +7,12 @@ import { useEffect, useState } from "react";
 import { getAdminEvent } from "@/lib/events/admin-events-client";
 import { MediaLibrary } from "./media-library";
 import { MediaUploadQueue } from "./media-upload-queue";
+import { MediaCollections } from "./media-collections";
 
 export function MediaWorkspace({ eventId }: { eventId?: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [event, setEvent] = useState<AdminEventDetails | null>(null);
+  const [collectionId, setCollectionId] = useState<string>();
 
   useEffect(() => {
     if (!eventId) return;
@@ -59,11 +61,19 @@ export function MediaWorkspace({ eventId }: { eventId?: string }) {
           />
         </div>
       </section>
+      <div className="pt-12">
+        <MediaCollections activeId={collectionId} onSelect={setCollectionId} />
+      </div>
       <section aria-labelledby="media-library-title" className="pt-12">
         <h2 className="mb-6 font-display text-2xl font-bold text-ink" id="media-library-title">
           Stored media
         </h2>
-        <MediaLibrary eventId={eventId} refreshSignal={refreshKey} />
+        <MediaLibrary
+          collectionId={collectionId}
+          eventId={eventId}
+          key={collectionId ?? "all"}
+          refreshSignal={refreshKey}
+        />
       </section>
     </>
   );

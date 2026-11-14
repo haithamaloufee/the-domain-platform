@@ -9,7 +9,6 @@ import {
   readUser,
   refreshWithBackend,
 } from "@/lib/auth/backend-auth";
-import { serializeValidatedAdminUser, validatedAdminUserHeader } from "@/lib/auth/validated-user";
 
 const cookieBase = {
   httpOnly: true,
@@ -18,16 +17,25 @@ const cookieBase = {
 };
 
 export async function proxy(request: NextRequest) {
+  const isLoginRequest = request.nextUrl.pathname === "/login";
   const accessToken = request.cookies.get(accessTokenCookieName)?.value;
   const refreshToken = request.cookies.get(refreshTokenCookieName)?.value;
-  if (!accessToken && !refreshToken) return loginRedirect(request, "expired", true);
+  if (!accessToken && !refreshToken) {
+    return isLoginRequest ? NextResponse.next() : loginRedirect(request, "expired", true);
+  }
 
   try {
     const session = await validateOrRefresh(accessToken, refreshToken);
-    if (!session) return loginRedirect(request, "expired", true);
+    if (!session) {
+      if (!isLoginRequest) return loginRedirect(request, "expired");
+      const response = NextResponse.next();
+      response.headers.set("Cache-Control", "no-store");
+      clearResponseCookies(response);
+      return response;
+    }
+    if (isLoginRequest) return dashboardRedirect(request, session.tokens);
 
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set(validatedAdminUserHeader, serializeValidatedAdminUser(session.user));
     if (session.tokens) setRequestCookies(request, session.tokens);
     requestHeaders.set("cookie", request.cookies.toString());
 
@@ -36,12 +44,13 @@ export async function proxy(request: NextRequest) {
     if (session.tokens) setResponseCookies(response, session.tokens);
     return response;
   } catch {
+    if (isLoginRequest && request.nextUrl.searchParams.has("reason")) return NextResponse.next();
     return loginRedirect(request, "unavailable");
   }
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/login", "/dashboard/:path*"],
 };
 
 async function validateOrRefresh(
@@ -95,6 +104,13 @@ function loginRedirect(request: NextRequest, reason: "expired" | "unavailable", 
   loginUrl.searchParams.set("reason", reason);
   const response = NextResponse.redirect(loginUrl);
   if (clear) clearResponseCookies(response);
+  return response;
+}
+
+function dashboardRedirect(request: NextRequest, tokens?: AuthTokensResponse) {
+  const response = NextResponse.redirect(new URL("/dashboard", request.url));
+  response.headers.set("Cache-Control", "no-store");
+  if (tokens) setResponseCookies(response, tokens);
   return response;
 }
 

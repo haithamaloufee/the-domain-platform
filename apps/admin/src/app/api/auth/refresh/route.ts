@@ -1,7 +1,7 @@
 import type { AuthErrorResponse, AuthSessionResponse } from "@the-domain/types";
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticationFailure, readTokens, refreshWithBackend } from "@/lib/auth/backend-auth";
-import { clearAuthCookies, readAuthTokens, setAuthCookies } from "@/lib/auth/auth-cookies";
+import { readAuthTokens, setAuthCookies } from "@/lib/auth/auth-cookies";
 import { isSameOriginRequest } from "@/lib/auth/route-security";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     const response = await refreshWithBackend(refreshToken);
     if (!response.ok) {
       if (isAuthenticationFailure(response)) {
-        await clearAuthCookies();
         return expiredResponse();
       }
       return unavailableResponse();
